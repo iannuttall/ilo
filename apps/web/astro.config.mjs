@@ -1,9 +1,11 @@
 import cloudflare from '@astrojs/cloudflare'
 import mdx from '@astrojs/mdx'
+import { unified } from '@astrojs/markdown-remark'
 import react from '@astrojs/react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, sessionDrivers } from 'astro/config'
 import { fileURLToPath } from 'node:url'
+import rehypeCodeFrame from './scripts/rehype-code-frame.mjs'
 
 const srcDir = fileURLToPath(new URL('./src', import.meta.url))
 const reactRuntimeDeps = [
@@ -16,6 +18,7 @@ export default defineConfig({
   site: process.env.SITE_URL ?? 'https://ilo.so',
   adapter: cloudflare({ configPath: './wrangler.jsonc', imageService: 'passthrough', prerenderEnvironment: 'node' }),
   integrations: [react(), mdx()],
+  markdown: { processor: unified({ rehypePlugins: [rehypeCodeFrame] }) },
   output: 'server',
   session: { driver: sessionDrivers.lruCache() },
   trailingSlash: 'never',

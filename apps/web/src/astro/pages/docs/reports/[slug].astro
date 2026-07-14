@@ -5,7 +5,12 @@ import {
   getXReportDoc,
   getXReportDocNavigation,
   xReportDocPath,
+  xReportDocs,
 } from '../../../../lib/x-report-docs'
+
+export const prerender = true
+export const getStaticPaths = () =>
+  xReportDocs.map((doc) => ({ params: { slug: doc.slug } }))
 
 const slug = Astro.params.slug ?? ''
 const doc = getXReportDoc(slug)

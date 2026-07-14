@@ -1,6 +1,6 @@
 # ilo web
 
-The Astro site and public Cloudflare Worker tool API for ilo.so.
+The statically generated Astro site and minimal Cloudflare Worker for ilo.so.
 
 ## Local development
 
@@ -8,7 +8,9 @@ The Astro site and public Cloudflare Worker tool API for ilo.so.
 pnpm -C apps/web dev
 ```
 
-The public pages, blog posts, report guides, and tools are rendered by Astro. Runtime API routes are limited to the free X, Bluesky, and link-preview tools under `/api/tools`.
+Marketing pages, blog posts, report guides, docs, and tool shells are prerendered. The Worker only handles legacy redirects and the same-origin X, Bluesky, and link-preview requests made by the browser tools under `/api/tools`.
+
+Those routes are website plumbing, not a documented API. Direct and cross-origin callers receive a `404`.
 
 ## Optional environment
 
@@ -29,7 +31,7 @@ pnpm -C apps/web build
 pnpm -C apps/web exec wrangler deploy --dry-run
 ```
 
-The generated Worker must not contain D1, KV, R2, queue, auth, or billing bindings.
+The generated Worker must not contain D1, KV, R2, queue, auth, or billing bindings. The build also emits a Markdown version of every static page, `llms.txt`, `agent-routes.json`, and the published ilo skill.
 
 ## Deploy to Cloudflare
 

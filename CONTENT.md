@@ -66,7 +66,8 @@ Do not repeat the surface list as a substitute for explaining the product.
 - **ilo** is the product.
 - **`ilo`** is the command.
 - **`iloso`** is the npm package and an equivalent executable where required.
-- **CLI**, **MCP server**, and **skill** are product surfaces.
+- **CLI**, **MCP server**, **skill**, and **TypeScript package** are product
+  surfaces.
 - Speak of the skill in the singular.
 - A **draft** is saved content that has not been published.
 - A **scheduled draft** has a future publishing time.
@@ -161,7 +162,9 @@ For setup pages, prefer this order:
 3. Explain the X app requirement and callback URL.
 4. Create the first useful draft.
 5. Add MCP or the skill if an agent is part of the workflow.
-6. Explain scheduling and confirmation before the first publish.
+6. Use the TypeScript package when the workflow belongs inside another Node
+   application.
+7. Explain scheduling and confirmation before the first publish.
 
 Introduce a command before its code block. Commands must be complete and
 copyable. Explain the expected result and the common failure that would block

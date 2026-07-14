@@ -23,7 +23,8 @@ ilo is local-first open source software.
 
 - Do not add accounts, auth, billing, subscriptions, credits, or a hosted draft database.
 - Do not add a remote MCP server. MCP runs locally over stdio.
-- The CLI and MCP must call the same implementation in `packages/core`.
+- The CLI, MCP server, and public TypeScript exports must call the same
+  implementation in `packages/core`.
 - Provider credentials and OAuth tokens belong in the operating system keychain.
 - Non-secret settings may live under `~/.config/ilo`.
 - Drafts, schedules, and publish attempts live in the local SQLite database.
@@ -35,10 +36,13 @@ ilo is local-first open source software.
 `apps/web` preserves the existing public ilo.so URLs, design, blog posts, report guides, and tools.
 
 - Keep pages static where possible.
-- Use the Worker only for public tool API routes and request handling that needs runtime logic.
+- Use the Worker only for same-origin website tool routes, legacy redirects,
+  and request handling that needs runtime logic.
 - Do not add D1, KV, R2, queues, auth, or billing bindings without a clear new requirement.
 - Keep canonical URLs, sitemap coverage, metadata, legacy redirects, and markdown negotiation working.
-- Public tool routes live under `apps/web/src/api/routes/tools`.
+- Website tool routes live under `apps/web/src/api/routes/tools`. They are
+  implementation details, not a documented public API. Keep the same-origin
+  browser guard in place.
 - Use `@/...` for cross-folder imports inside `apps/web/src`.
 - Landing copy leads with the user's job and outcome. Do not turn the homepage
   into a list of product surfaces or internal architecture.

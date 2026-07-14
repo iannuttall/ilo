@@ -9,6 +9,8 @@ import {
 import { xReportDocPath, xReportDocs } from '../../lib/x-report-docs'
 import { ASTRO_TOOLS } from '../data/tools'
 
+export const prerender = true
+
 const staticPaths: SitemapEntry[] = [
   '/',
   '/tools',

@@ -32,23 +32,23 @@ The awkward part is the data source. X's own [API follower endpoint](https://doc
 
 ## ilo can support widgets when the data already exists
 
-ilo already tracks follower history for connected accounts, so it is a more reasonable data source than making every user become an X API developer. A widget can ask ilo for the latest stored follower count and recent growth, then let iOS decide when to refresh it.
+ilo's public profile tool can help you check the current count and recent public activity without logging in. It is useful for a manual check, but it is not a hosted data API for a Scriptable widget. A live widget still needs a data source you control.
 
 That is what ilo can reasonably support.
 
 - Current follower count from the latest stored snapshot.
 - Recent follower growth.
 - A small trend chart.
-- API output that a Scriptable widget can consume.
+- A small JSON endpoint that a Scriptable widget can consume.
 
 ilo cannot make iOS refresh on demand from the Home Screen. It also should not pretend that a cached analytics snapshot is the same thing as a real-time websocket. For a widget, cached is usually better anyway. Your battery gets a vote.
 
-The main product surfaces are the widget side, the X-specific setup, the live count view, and [ilo's API](/api) for the data side.
+The main pieces are the widget, the X-specific setup, the live count view, and the data source you choose to maintain.
 
 ## Use the X API directly only if you want to own the plumbing
 
 Going straight to X gives you control, but it also means you own auth, rate limits, token storage, and error handling. For a personal widget, that can be fine. For a team or client workflow, it becomes support work.
 
-Use the direct API route when you are already building developer tooling around X. Use ilo when you want the follower count and history without maintaining a separate API integration. Use the X app when you only need to check the number once.
+Use the direct API route when you are already building developer tooling around X. Use [ilo's profile tool](/twitter-profile-analytics) when you only need to inspect the current public account, and use the X app when you only need to check the number once.
 
 That sounds obvious, but it is the line that keeps this from becoming a weekend project in disguise.

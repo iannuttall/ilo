@@ -1,7 +1,6 @@
 import { createApiRouter } from '@/api/router'
 import { ASTRO_TOOLS } from '@/astro/data/tools'
 import type { Env } from '@/env'
-import { maybeServeMarkdownResponse } from '@/lib/markdown-negotiation'
 import { getRobotsDirectiveForPathname } from '@/lib/seo'
 
 export type PageRenderer = (
@@ -35,7 +34,8 @@ export const isPublicPagePathname = (pathname: string) => {
 }
 
 const LEGACY_PATH_REDIRECTS = new Map<string, string>([
-  ['/api', '/docs/api'],
+  ['/api', '/'],
+  ['/docs/api', '/'],
   ['/account', '/docs/start'],
   ['/authorize', '/docs/start'],
   ['/billing', '/docs/start'],
@@ -65,6 +65,7 @@ const LEGACY_PATH_REDIRECTS = new Map<string, string>([
   ['/x-thread-unroller', '/twitter-thread-reader'],
   ['/x-video-downloader', '/twitter-video-downloader'],
 ])
+const MOVED_PERMANENTLY_PATHS = new Set(['/api', '/docs/api'])
 const LEGACY_BLOG_RENAMES = new Map<string, string>([
   [
     'how-to-create-a-metrics-dashboard-for-your-brand',
@@ -175,9 +176,7 @@ export const handleIloAppRequest = async (
 ) => {
   const url = new URL(request.url)
   if (url.pathname.startsWith('/api/')) return api.fetch(request, env, ctx)
-  const rendered = await renderPage(request, env, ctx)
-  if (!isPublicPagePathname(url.pathname)) return rendered
-  return maybeServeMarkdownResponse(request, rendered)
+  return renderPage(request, env, ctx)
 }
 
 export const createIloWorker = (renderPage: PageRenderer) =>
@@ -193,7 +192,15 @@ export const createIloWorker = (renderPage: PageRenderer) =>
       }
       const redirect = legacyRedirect(request)
       if (redirect)
-        return withResponseHeaders(Response.redirect(redirect, 308), pathname)
+        return withResponseHeaders(
+          Response.redirect(
+            redirect,
+            MOVED_PERMANENTLY_PATHS.has(normalizePathname(pathname))
+              ? 301
+              : 308,
+          ),
+          pathname,
+        )
       const response = await handleIloAppRequest(request, env, ctx, renderPage)
       return withResponseHeaders(response, pathname)
     },

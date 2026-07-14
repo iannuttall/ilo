@@ -42,5 +42,40 @@ const loadClickyAnalytics = shouldLoadClickyAnalytics(Astro.url.hostname)
       {!minimal ? <Footer /> : null}
     </div>
     <OgTemplate />
+    <script>
+      const copyText = async (value: string) => {
+        try {
+          await navigator.clipboard.writeText(value)
+        } catch {
+          const textarea = document.createElement('textarea')
+          textarea.value = value
+          textarea.style.position = 'fixed'
+          textarea.style.opacity = '0'
+          document.body.appendChild(textarea)
+          textarea.select()
+          document.execCommand('copy')
+          textarea.remove()
+        }
+      }
+
+      document.querySelectorAll('[data-code-copy]').forEach((button) => {
+        if (!(button instanceof HTMLButtonElement)) return
+        const code = button.closest('.code-frame')?.querySelector('pre code')
+        const copyIcon = button.querySelector('[data-copy-icon]')
+        const checkIcon = button.querySelector('[data-copy-check-icon]')
+
+        button.addEventListener('click', async () => {
+          await copyText(code?.textContent ?? '')
+          copyIcon?.classList.add('hidden')
+          checkIcon?.classList.remove('hidden')
+          button.setAttribute('aria-label', 'Copied')
+          window.setTimeout(() => {
+            copyIcon?.classList.remove('hidden')
+            checkIcon?.classList.add('hidden')
+            button.setAttribute('aria-label', 'Copy code')
+          }, 1500)
+        })
+      })
+    </script>
   </body>
 </html>

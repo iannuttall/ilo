@@ -300,12 +300,9 @@ const main = async () => {
   const candidateSitemapSet = new Set(candidateSitemap)
   const issues = []
   const redirects = []
-
-  for (const path of baselineSitemap) {
-    if (!candidateSitemapSet.has(path)) {
-      issues.push({ level: 'error', path, check: 'missing-from-sitemap' })
-    }
-  }
+  const missingSitemapPaths = baselineSitemap.filter(
+    (path) => !candidateSitemapSet.has(path),
+  )
 
   const indexablePaths = [...baselinePages.values()]
     .filter(
@@ -402,6 +399,13 @@ const main = async () => {
         path,
         check: 'structured-data-changed',
       })
+    }
+  }
+
+  const redirectedPaths = new Set(redirects.map((redirect) => redirect.path))
+  for (const path of missingSitemapPaths) {
+    if (!redirectedPaths.has(path)) {
+      issues.push({ level: 'error', path, check: 'missing-from-sitemap' })
     }
   }
 

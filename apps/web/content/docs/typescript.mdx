@@ -1,0 +1,81 @@
+---
+title: "TypeScript"
+description: "Use ilo's drafting, scheduling, publishing, and MCP code inside your own Node project."
+category: "reference"
+order: 1
+status: published
+h1: "Use ilo as a TypeScript package."
+seoTitle: "ilo TypeScript Package: X Drafts and Publishing"
+seoDescription: "Import the ilo npm package in a Node project to create drafts, schedule posts, publish to X, or embed the local MCP server."
+---
+
+The `iloso` npm package is the CLI, local MCP server, and TypeScript library. Install it in a Node 22 or newer project when your own tool or agent needs the same drafting, scheduling, and publishing functions.
+
+```sh
+npm install iloso
+```
+
+The package is ESM-only and includes TypeScript declarations. There is no separate `@ilo/core` package to install.
+
+## Create and schedule a draft
+
+Import from the package root when your application already knows which action it needs.
+
+```ts
+import { createDraft, listDrafts, scheduleDraft } from 'iloso'
+
+const draft = createDraft('A post to review before publishing')
+await scheduleDraft(draft.id, 'tomorrow at 9am')
+
+console.log(listDrafts())
+```
+
+Drafts and schedules use the same local SQLite database as the CLI and MCP server. A draft created in code appears in `ilo drafts list` straight away.
+
+## Validate X post text
+
+Use the exported text helpers before saving content from another editor or agent.
+
+```ts
+import { countXPostText, validateXPostText } from 'iloso'
+
+const result = validateXPostText('Post text')
+
+console.log({
+  weightedLength: countXPostText('Post text'),
+  valid: result.ok,
+})
+```
+
+## Publish only after approval
+
+The library exposes `publishPost()` and `publishDraft()`, but a function call cannot show ilo's interactive confirmation prompt. Put the approval step in your application and pass only the exact text or draft id the user approved.
+
+```ts
+import { getDraft, publishDraft } from 'iloso'
+
+const draft = getDraft('approved-draft-id')
+
+console.log(`Ready to publish: ${draft.body}`)
+// Call publishDraft(draft.id) only after your application records approval.
+```
+
+Run `ilo start` once on the machine before publishing. The library reads the same X connection from the operating system keychain.
+
+## Embed the MCP server
+
+Use the MCP subpath when another Node process needs to construct the server itself.
+
+```ts
+import { createServer, registerIloTools } from 'iloso/mcp'
+
+const server = createServer()
+```
+
+Most applications should call the root functions directly. `createServer()` and `registerIloTools()` are for MCP hosts that attach their own transport or combine ilo with another local tool server.
+
+## Public exports
+
+The root package exports draft actions, schedule parsing, X text validation, X OAuth helpers, local configuration, and storage paths. These exports are covered by the packed-package tests, but ilo is still pre-1.0. Pin the package version when another application depends on the exact function signatures.
+
+Use the [CLI reference](/docs/cli) for interactive commands or the [local MCP guide](/docs/mcp) to connect an agent without writing integration code.

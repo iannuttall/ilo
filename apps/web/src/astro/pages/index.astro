@@ -11,6 +11,8 @@ import {
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { reportGroups } from '../../lib/x-report-catalog'
 
+export const prerender = true
+
 const buttonBase =
   'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent px-6 text-sm font-medium transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20'
 const secondaryButton = `${buttonBase} bg-secondary text-secondary-foreground hover:bg-secondary-hover`
@@ -75,8 +77,8 @@ const faqs = [
 ---
 
 <BaseLayout
-  title="Twitter Analytics for Agents: Open Source X Tools"
-  description="Use X performance evidence to plan better posts, save drafts, schedule them, and publish with an open source workflow built for agents."
+  title="Twitter Analytics for Agents: 𝕏 Performance Reports"
+  description="Agent-first 𝕏 performance monitoring that tells your agent exactly what content and topics to focus on to grow your audience."
 >
   <main data-agent-content="true">
     <section class="flex flex-col border-b border-border bg-background pt-4 text-foreground">
@@ -87,9 +89,9 @@ const faqs = [
               Turn your agents into social media marketers that grow your 𝕏 audience.
             </h1>
             <p class="text-pretty text-2xl/8 font-medium -tracking-[0.2px] text-foreground-muted xl:text-3xl/10 xl:-tracking-[0.4px]">
-              Use performance evidence to plan better posts, turn the strongest
-              ideas into drafts, and publish them with an agent that knows the
-              workflow.
+              Agent-first 𝕏 performance monitoring that tells your agent
+              exactly what content and topics to focus on to grow your
+              audience.
             </p>
           </div>
           <InstallPicker />

@@ -284,7 +284,7 @@ function defaultSeo(report: XReportWithGroup) {
   const keyword = titleToKeyword(report.title)
   return {
     seoTitle: `${report.title}: Twitter Analytics Report for Agents`,
-    seoDescription: `${report.description} Use it as 𝕏 performance context for AI agents, CLI workflows, and API reports.`,
+    seoDescription: `${report.description} Use it as 𝕏 performance context for AI agents, CLI workflows, and TypeScript tools.`,
     seoHeading: `${report.title} report for 𝕏 performance analysis.`,
     primaryKeyword: keyword,
   }

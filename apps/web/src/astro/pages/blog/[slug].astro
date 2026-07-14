@@ -4,8 +4,13 @@ import {
   getBlogComponent,
   getBlogEntry,
   getBlogNavigation,
+  listBlogEntries,
 } from '../../../lib/content/blog-manifest'
 import BaseLayout from '../../layouts/BaseLayout.astro'
+
+export const prerender = true
+export const getStaticPaths = () =>
+  listBlogEntries().map((post) => ({ params: { slug: post.slug } }))
 
 const { slug } = Astro.params
 const post = slug ? getBlogEntry(slug) : null

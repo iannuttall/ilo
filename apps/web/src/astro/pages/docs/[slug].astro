@@ -1,9 +1,17 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import PageHeader from '../../components/PageHeader.astro'
-import { getDocMeta, getDocNavigation } from '../../../lib/docs-manifest'
+import {
+  DOCS_MANIFEST,
+  getDocMeta,
+  getDocNavigation,
+} from '../../../lib/docs-manifest'
 
 const modules = import.meta.glob('../../../../content/docs/*.mdx')
+export const prerender = true
+export const getStaticPaths = () =>
+  DOCS_MANIFEST.map((doc) => ({ params: { slug: doc.slug } }))
+
 const { slug } = Astro.params
 const doc = slug ? getDocMeta(slug) : null
 if (!slug || !doc) return Astro.redirect('/docs', 302)

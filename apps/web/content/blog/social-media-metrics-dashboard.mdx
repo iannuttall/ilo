@@ -9,7 +9,7 @@ status: published
 
 Most brand teams pick a metrics dashboard tool by reading a feature list, ticking off the rows that look useful, and then signing up for whichever one had the most ticks. That gets you to a tool. It rarely gets you to the right tool. The category sprawls from $5-a-month single-channel schedulers to enterprise platforms that start in the high triple digits per seat per month, and the gap between "I want a follower chart" and "I run social for a 200-person brand" is everything.
 
-I run [ilo](/), which is a social media metrics dashboard. I am writing this anyway, with ilo placed where it actually fits, because the comparison content currently ranking on Google is mostly written by the bigger vendors about themselves.
+I build [ilo](/), an agent-first X workflow that sits at the lightweight end of this market. I am writing this anyway, with ilo placed where it actually fits, because the comparison content currently ranking on Google is mostly written by the bigger vendors about themselves.
 
 ## What a brand metrics dashboard actually has to do
 
@@ -83,7 +83,7 @@ When it does not:
 
 ## Lightweight agent-first tools: ilo
 
-This is the slot ilo is moving toward, so I want to describe it carefully. The category is tools that keep the data layer clean without trying to become a social media command center. Track public profiles, let your agents inspect the evidence through API, MCP, or CLI, and keep the metrics readable enough to decide what worked.
+This is the slot ilo is moving toward, so I want to describe it carefully. The category is tools that keep the data layer clean without trying to become a social media command center. Track public profiles with the tools you already use, let agents inspect the evidence through TypeScript, MCP, or CLI, and keep the metrics readable enough to decide what worked.
 
 ilo is now a local-first X CLI and MCP server rather than a hosted dashboard. The public report guides remain useful for deciding what to measure, and local analytics imports are on the open source roadmap.
 
@@ -93,7 +93,7 @@ What ilo does not do, plainly:
 - No scheduler or approval workflow. It is not the multi-stage review process Sprout and Hootsuite ship.
 - No social listening for keywords or brand mentions.
 - No paid spend tracking. ilo tracks audience and engagement, not ad campaigns.
-- No bundled AI writer. Bring your own agent through API, MCP, or CLI.
+- No bundled AI writer. Bring your own agent through TypeScript, MCP, or CLI.
 
 So ilo lands somewhere most useful when:
 
@@ -107,7 +107,7 @@ It does not fit if you need broad agency approvals, DMs, listening, ad reporting
 
 If I had to summarise the choice into one decision tree:
 
-- **You want 𝕏-first performance audits that agents can use.** Lightweight tools like ilo. Small surface, reliable backend, API/MCP/CLI first.
+- **You want 𝕏-first performance audits that agents can use.** Lightweight tools like ilo. Bring your monitoring data, then use the local package, MCP server, or CLI.
 - **You want scheduling and analytics in one bill.** Buffer. Per-channel pricing makes it sane for small brands.
 - **You manage social for an agency or a multi-team org with approvals and inbox triage.** Sprout Social or Hootsuite. The price reflects the surface area, but the surface is what you are buying.
 - **Your dashboard has to merge social with revenue, ad spend, and product analytics.** A dashboard builder like Klipfolio or Databox, or a Notion build with Zapier doing the data sync.
@@ -115,4 +115,4 @@ If I had to summarise the choice into one decision tree:
 
 The category is wide because the jobs vary that much. Anyone who tells you their tool is the right answer for every brand is selling, not advising. Including me, which is why this post lists where ilo loses as carefully as where it wins.
 
-If you want to try the lightweight option for your brand, [set up ilo](/settings/setup) and use the API, MCP, or CLI as the main surface.
+If you want to try the lightweight option for your brand, [set up ilo](/docs/start) and use TypeScript, MCP, or the CLI as the main surface.

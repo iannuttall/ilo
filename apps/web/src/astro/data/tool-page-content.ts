@@ -33,7 +33,7 @@ export const TOOL_PAGE_CONTENT: Record<string, ToolPageContent> = {
       },
       {
         heading: 'When you actually want a follower history, not a live count',
-        html: `<p>A live counter is useful for a moment, like a launch or a milestone. For week-on-week growth, daily snapshots, or comparing accounts over time, you want a follower tracker. That is what ilo is for. Add a handle and ilo records the account over time, then gives your agent the context to understand the trend.</p><p>If you want the broader performance picture, <a href="/twitter-profile-analytics">Twitter profile analytics</a> pairs well with this counter.</p>`,
+        html: `<p>A live counter is useful for a moment, like a launch or a milestone. For week-on-week growth, daily snapshots, or comparing accounts over time, connect the monitoring tool you already use and keep the sample dates consistent. Your agent can then use ilo's report guides to understand the trend instead of guessing from one count.</p><p>If you want the broader performance picture right now, <a href="/twitter-profile-analytics">Twitter profile analytics</a> pairs well with this counter.</p>`,
       },
       {
         heading: 'Other Twitter tools that pair with this one',

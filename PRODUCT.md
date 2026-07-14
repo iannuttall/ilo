@@ -17,12 +17,14 @@ The interface changes. The product does not.
 
 ## Product surfaces
 
-ilo is one product with three primary surfaces:
+ilo is one product with four primary surfaces:
 
 - `ilo` is the CLI and npm package.
 - The local stdio MCP server exposes ilo tools to compatible agents.
 - The ilo skill teaches agents when to use those tools and how to handle
   publishing safely.
+- The TypeScript export lets Node applications use the same core functions
+  without going through a command or protocol adapter.
 
 These are product surfaces, not separate brands and not the story on every
 page. Public copy should lead with what someone can do. Name the surface when
@@ -36,6 +38,8 @@ it helps them choose or complete the next action.
 - Publish a post or draft after confirmation.
 - Run the scheduler once or as a local watcher.
 - Use the same actions through local stdio MCP.
+- Import the same draft, scheduling, publishing, and MCP functions from the
+  `iloso` TypeScript package.
 - Install the packaged ilo skill for coding agents.
 - Use public X and Bluesky tools on ilo.so.
 - Read the public X report library for research questions, evidence checks,
@@ -60,7 +64,7 @@ history or produces every report automatically.
 - Keep drafts, schedules, settings, and credentials under the user's control.
 - Make the human path calm and the agent path explicit.
 - Require confirmation for the exact content before publishing.
-- Share one implementation across CLI and MCP.
+- Share one implementation across CLI, MCP, and TypeScript.
 - Keep provider boundaries clear so more networks can follow X.
 - Ship the core product as free, MIT-licensed software.
 

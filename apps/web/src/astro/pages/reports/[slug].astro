@@ -2,6 +2,10 @@
 import { getReport, reports } from '../../../lib/x-report-catalog'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 
+export const prerender = true
+export const getStaticPaths = () =>
+  reports.map((report) => ({ params: { slug: report.slug } }))
+
 const { slug } = Astro.params
 const report = slug ? getReport(slug) : null
 if (!slug || !report) return Astro.redirect('/reports', 302)

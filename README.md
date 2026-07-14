@@ -1,8 +1,8 @@
 # ilo
 
-Local-first social publishing for people and AI agents.
+Agent-first X performance monitoring, drafting, scheduling, and publishing.
 
-ilo gives you an X CLI, a local stdio MCP server, a SQLite draft store, and a local scheduler. There is no ilo account, subscription, hosted login, or remote MCP.
+Give your agent the public posts and performance data you care about, find the patterns worth repeating, then draft and publish through ilo's CLI, local MCP server, agent skill, or TypeScript package.
 
 ## Install
 
@@ -55,12 +55,27 @@ The MCP server uses the same local database and keychain credentials as the CLI.
 
 Install the packaged agent skill with `ilo skill install`.
 
+## Use the TypeScript package
+
+Install `iloso` in a Node 22 or newer project to call the same core functions directly:
+
+```sh
+npm install iloso
+```
+
+```ts
+import { createDraft, scheduleDraft } from 'iloso'
+
+const draft = createDraft('A post to review')
+await scheduleDraft(draft.id, 'tomorrow at 9am')
+```
+
 ## Repository
 
 - `packages/core`: local config, keychain, SQLite, scheduling, and provider logic
 - `packages/cli`: the `ilo` and `iloso` commands
 - `packages/mcp`: the local stdio MCP tools
-- `apps/web`: the ilo.so Astro site and public Cloudflare tool API
+- `apps/web`: the statically generated ilo.so site and same-origin tool routes
 
 ## Develop
 
@@ -78,7 +93,7 @@ The website can run locally with `pnpm -C apps/web dev`. See [apps/web/README.md
 
 ## Roadmap
 
-X publishing and scheduling are first. Bluesky and LinkedIn are the next provider targets. The old ilo analytics ideas may return as local imports and reports rather than another hosted dashboard.
+X publishing and scheduling are first. Bluesky and LinkedIn are the next provider targets. Local imports and automated performance reports come next.
 
 ## License and support
 

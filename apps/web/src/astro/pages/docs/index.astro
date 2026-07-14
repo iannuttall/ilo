@@ -4,6 +4,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 import InstallPicker from '../../components/InstallPicker.astro'
 import PageHeader from '../../components/PageHeader.astro'
 
+export const prerender = true
+
 const docsCards = [
   ...DOCS_MANIFEST.map((doc) => ({
     title: doc.title,
@@ -20,13 +22,13 @@ const docsCards = [
 ---
 
 <BaseLayout
-  title="Twitter Analytics Docs: MCP, CLI and API Workflows"
-  description="Use ilo's Twitter analytics guides, local CLI and MCP server, or public social media tool API from your agent, terminal, or app."
+  title="Twitter Analytics Docs: MCP, CLI and TypeScript"
+  description="Use ilo's Twitter analytics guides, CLI, local MCP server, agent skill, and TypeScript package."
 >
   <main class="site-frame py-10">
     <PageHeader
-      title="Use ilo with your agent, terminal, or app."
-      description="Install the CLI, connect your own X app, or add the local MCP server to an agent."
+      title="Use ilo with your agent, terminal, or code."
+      description="Install the CLI, connect your X app, add the local MCP server, or import ilo in a TypeScript project."
       bordered={false}
     />
     <article class="docs-prose">

@@ -9,19 +9,20 @@ seoTitle: "Local MCP for X: Claude, Codex and Cursor"
 seoDescription: "Connect Claude, Codex, Cursor, or another MCP client to the open source ilo CLI over local stdio."
 ---
 
-ilo runs as a local stdio MCP server:
+Install ilo first, then run the guided X setup once:
+
+```sh
+npm i -g iloso
+ilo start
+```
+
+You can now start ilo as a local stdio MCP server:
 
 ```sh
 iloso mcp serve
 ```
 
 The agent process uses the same local SQLite database and operating system keychain credentials as the CLI.
-
-Connect X once before using publishing tools:
-
-```sh
-ilo start
-```
 
 ## Claude Code
 
@@ -34,6 +35,8 @@ claude mcp add ilo -- iloso mcp serve
 ```sh
 codex mcp add ilo -- iloso mcp serve
 ```
+
+Restart the client after adding ilo if it does not appear immediately. Ask the agent to check `ilo_status` before creating a draft; a connected install returns the active X username.
 
 ## Claude Desktop and config-based clients
 
@@ -49,6 +52,16 @@ codex mcp add ilo -- iloso mcp serve
 ```
 
 If the client cannot find `iloso`, use the absolute path returned by `which iloso`.
+
+## Install the ilo skill
+
+The MCP server gives an agent tools. The skill teaches it which tool to use, how to work from performance evidence, and when it must stop for publishing approval.
+
+```sh
+ilo skill install
+```
+
+Install both when your client supports skills. The CLI prints the installed path so you can confirm the client will discover it.
 
 ## Tools
 
