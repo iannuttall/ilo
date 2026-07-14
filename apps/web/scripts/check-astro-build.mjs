@@ -7,6 +7,7 @@ const entryPath = path.join(serverDir, 'entry.mjs')
 const wranglerPath = path.join(serverDir, 'wrangler.json')
 const devVarsPath = path.join(serverDir, '.dev.vars')
 const clientDir = path.join(root, 'dist', 'client')
+const cloudflareGuidePath = path.join(root, 'CLOUDFLARE.md')
 
 const fail = (message) => {
   throw new Error(`Astro build check failed: ${message}`)
@@ -69,6 +70,22 @@ if (sitemapPaths.includes('/docs/api')) {
   fail('/docs/api must stay out of the sitemap')
 }
 
+const cloudflareGuide = await readFile(cloudflareGuidePath, 'utf8')
+for (const pathname of agentPaths) {
+  if (
+    pathname === '/' ||
+    pathname === '/docs' ||
+    pathname.startsWith('/docs/') ||
+    pathname === '/reports' ||
+    pathname.startsWith('/reports/')
+  ) {
+    continue
+  }
+  if (!cloudflareGuide.includes(`"${pathname}"`)) {
+    fail(`Cloudflare Markdown transform is missing route: ${pathname}`)
+  }
+}
+
 const entry = await readFile(entryPath, 'utf8')
 for (const snippet of ['createIloWorker', 'async fetch(request, env, ctx)']) {
   if (!entry.includes(snippet)) fail(`entry.mjs is missing ${snippet}`)
@@ -85,6 +102,9 @@ if (wrangler.assets?.html_handling !== 'drop-trailing-slash') {
 }
 if (wrangler.assets?.run_worker_first) {
   fail('run_worker_first must stay disabled')
+}
+if (wrangler.cache?.enabled) {
+  fail('Workers Caching must stay disabled for static asset traffic')
 }
 
 const forbiddenBindings = [

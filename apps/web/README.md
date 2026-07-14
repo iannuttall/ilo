@@ -39,6 +39,8 @@ The generated Worker must not contain D1, KV, R2, queue, auth, or billing bindin
 
 The template deploys to a `workers.dev` URL. Add a custom domain from your own Cloudflare dashboard if you want one.
 
+See [CLOUDFLARE.md](CLOUDFLARE.md) for the ilo.so Git build settings, canonical-domain redirect, and the Transform Rules which serve prebuilt Markdown when an agent sends `Accept: text/markdown`.
+
 ## SEO parity
 
 Start the site on port 8787, then compare it with the saved pre-open-source ilo.so baseline:
