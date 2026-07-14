@@ -79,4 +79,33 @@ codex mcp add ilo -- iloso mcp serve
 
 The MCP server uses stdio and reads the same local database and keychain credentials as the CLI. Publishing tools require an explicit `confirm: true` argument.
 
+## Check where ilo stores data
+
+Drafts, schedules, publish attempts, and settings stay in a local SQLite database. Account metadata lives in `~/.config/ilo/config.json`; OAuth tokens and an optional client secret are stored in your operating system keychain.
+
+Nothing is synced to ilo.so. The hosted site provides documentation and free public research tools, but the CLI does not need an ilo account or API key.
+
+## Keep the scheduler running
+
+`ilo scheduler watch` only publishes while that process is running. For a machine that sleeps or restarts, run `ilo scheduler run` from cron, launchd, systemd, or another task runner at a regular interval. Running it more than once is safe: only drafts that are due and still scheduled are selected.
+
+Use an explicit timezone when a schedule must be unambiguous. You can inspect drafts before publishing with:
+
+```sh
+ilo drafts list
+ilo scheduler run --json
+```
+
+## Troubleshooting
+
+If browser authorization fails, confirm that the X app callback URL exactly matches `http://127.0.0.1:8976/callback` and that OAuth 2.0 read and write access is enabled. Run `ilo x status` after reconnecting.
+
+If an agent cannot start ilo, use the absolute executable path returned by `which iloso` in the MCP configuration. The server writes protocol messages to stdout, so keep shell banners and debug output away from the MCP process.
+
+Disconnecting removes the saved X connection without deleting local drafts:
+
+```sh
+ilo x disconnect
+```
+
 Read the [CLI reference](/docs/cli) or [local MCP guide](/docs/mcp) for the full surface.

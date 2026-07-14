@@ -64,3 +64,23 @@ curl https://ilo.so/api/tools/twitter-card-validator -H "Content-Type: applicati
 The equivalent endpoints for other networks are `/api/tools/threads-link-preview` and `/api/tools/bluesky-link-preview`.
 
 These endpoints are public utilities and may be rate limited. If you need guaranteed capacity, deploy the Worker from the [GitHub repository](https://github.com/iannuttall/ilo).
+
+## Request and response behaviour
+
+All endpoints return JSON. Successful lookups use a `200` response. Invalid handles, URLs, or missing parameters return a `4xx` response with an error message; upstream network failures use a `5xx` response. Clients should inspect both the HTTP status and response body instead of assuming every request produced data.
+
+Only send public information. Profile handles, post URLs, search queries, and preview URLs may be forwarded to the public provider needed to answer the request. The API does not accept ilo credentials or X OAuth tokens.
+
+## Caching and limits
+
+Read responses may be cached to reduce repeated public-provider requests. Do not use these endpoints for real-time trading, safety, compliance, or other critical decisions. Automated callers should use a descriptive user agent, avoid duplicate requests, and back off after `429` or `5xx` responses.
+
+There is no uptime or compatibility guarantee for the shared ilo.so deployment. Pin the source revision and deploy your own Worker when another application depends on an endpoint.
+
+## Self-hosting the API
+
+The site and API run together as a Cloudflare Worker. A fork can use its own domain, rate limits, analytics, and provider configuration. Keep provider credentials in Cloudflare secrets rather than source control.
+
+The link-preview endpoints fetch user-supplied public URLs. If you extend them, retain URL validation and private-network blocking so the Worker cannot be used to reach internal services. Keep response sizes and timeouts bounded as well.
+
+See each tool page for the fields shown to a person, including [Twitter profile analytics](/twitter-profile-analytics), [Twitter search](/twitter-search-without-account), and the [Bluesky profile lookup](/bluesky-id-finder).

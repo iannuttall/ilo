@@ -73,8 +73,9 @@ function inlineCodeParts(value: string) {
         overreacting to one lucky post.
       </p>
       <p>
-        The old hosted report runner has been removed. These pages remain as
-        open research guides while analytics is rebuilt as a local ilo feature.
+        Work from a representative sample rather than a single post. Record the
+        date range, sample size, and any missing metrics before drawing a
+        conclusion so another person or agent can review the result.
       </p>
 
       <h2>What this report helps you decide</h2>
@@ -106,6 +107,12 @@ function inlineCodeParts(value: string) {
         it to work through the checks below. Keep the examples and sample size
         in the answer so the recommendation can be reviewed.
       </p>
+      <p>
+        Ask for a short evidence table before recommendations. Each row should
+        name the post or profile signal, show the relevant metric, and explain
+        why it matters. If public data is incomplete, the agent should say what
+        is missing instead of estimating it.
+      </p>
 
       <h2>What the report checks</h2>
       <ul>
@@ -117,6 +124,11 @@ function inlineCodeParts(value: string) {
         Treat the examples as evidence, not as a magic formula. A strong report
         should show the pattern, the posts behind it, and the limits of the
         sample. That keeps the agent from overreacting to one lucky post.
+      </p>
+      <p>
+        Compare like with like: similar formats, posting windows, and audience
+        sizes. Re-run the same checks after enough new posts have accumulated,
+        then keep recommendations that still hold across both samples.
       </p>
       <ul>
         {doc.returns.map((item) => <li>{item}</li>)}

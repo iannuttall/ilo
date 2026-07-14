@@ -1,5 +1,10 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": [
+    "SEO_PARITY_BASELINE",
+    "SEO_PARITY_CANDIDATE",
+    "SEO_PARITY_SNAPSHOT"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

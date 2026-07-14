@@ -76,3 +76,26 @@ ilo mcp serve
 ```
 
 This starts the stdio MCP server. It does not open a port or contact an ilo backend.
+
+## Safe automation
+
+Publishing commands are interactive by default. A person sees the final text and confirms before ilo sends it to X. Use `--yes` only in automation that already has an approval step. Draft creation, listing, and status checks do not publish anything.
+
+For scripts, prefer JSON output and check the process exit code. Successful commands exit with code `0`; invalid input, missing credentials, and provider failures return a non-zero code with an actionable message.
+
+```sh
+draft_id=$(ilo drafts create --text "Review this first" --json | jq -r .id)
+ilo drafts schedule "$draft_id" --at "2026-07-15T09:00:00+01:00"
+```
+
+## Scheduling behaviour
+
+A scheduled draft remains local until a scheduler process finds it due. `ilo scheduler run` performs one check and exits, which suits cron and task runners. `ilo scheduler watch` stays open and is better for a laptop or always-on terminal session.
+
+Natural-language times use your configured local timezone. Use an ISO timestamp with an offset when a post must go out at an exact instant, especially on a server or around daylight-saving changes.
+
+## Files and credentials
+
+ilo keeps configuration under `~/.config/ilo`, local working data in SQLite, and secrets in the system keychain. Back up the database if your draft history matters, but do not copy keychain exports into a repository or shell script.
+
+If a command cannot find the connected account, run `ilo x status`. Reconnect with `ilo x connect` after changing X app scopes or rotating the client configuration.

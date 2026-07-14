@@ -36,3 +36,14 @@ The generated Worker must not contain D1, KV, R2, queue, auth, or billing bindin
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/iannuttall/ilo/tree/main/apps/web)
 
 The template deploys to a `workers.dev` URL. Add a custom domain from your own Cloudflare dashboard if you want one.
+
+## SEO parity
+
+Start the site on port 8787, then compare it with the saved pre-open-source ilo.so baseline:
+
+```sh
+pnpm -C apps/web dev
+pnpm seo:parity
+```
+
+Use `pnpm seo:parity -- --live` while the old production site is still available. The check crawls sitemap and internally linked routes, then compares statuses, redirects, canonicals, indexability, metadata, structured data, and material content loss.

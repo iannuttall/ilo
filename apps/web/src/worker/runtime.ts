@@ -36,11 +36,19 @@ export const isPublicPagePathname = (pathname: string) => {
 
 const LEGACY_PATH_REDIRECTS = new Map<string, string>([
   ['/api', '/docs/api'],
+  ['/account', '/docs/start'],
+  ['/authorize', '/docs/start'],
   ['/billing', '/docs/start'],
+  ['/cli', '/docs/cli'],
+  ['/connect/stripe', '/docs/start'],
   ['/dashboard', '/docs/start'],
+  ['/forgot', '/docs/start'],
   ['/forgot-password', '/docs/start'],
   ['/login', '/docs/start'],
   ['/join', '/docs/start'],
+  ['/og-preview', '/?og=preview'],
+  ['/reset', '/docs/start'],
+  ['/reset-password', '/docs/start'],
   ['/signup', '/docs/start'],
   ['/settings', '/docs/start'],
   ['/workspaces', '/docs/start'],
@@ -122,10 +130,24 @@ const legacyRedirect = (request: Request) => {
     (blogSlug && LEGACY_PRUNED_BLOG_SLUGS.has(blogSlug) ? '/blog' : null) ??
     (pathname.startsWith('/settings/') ||
     pathname.startsWith('/accounts/') ||
-    pathname.startsWith('/connect/')
+    pathname.startsWith('/connect/') ||
+    pathname.startsWith('/digest-unsubscribe/') ||
+    pathname.startsWith('/invite/')
       ? '/docs/start'
       : null)
-  return target ? new URL(target, url.origin).toString() : null
+  if (!target) return null
+  const targetUrl = new URL(target, url.origin)
+  url.pathname = targetUrl.pathname
+  if (targetUrl.search) url.search = targetUrl.search
+  return url.toString()
+}
+
+const canonicalHostRedirect = (request: Request) => {
+  if (!['GET', 'HEAD'].includes(request.method)) return null
+  const url = new URL(request.url)
+  if (url.hostname.toLowerCase() !== 'www.ilo.so') return null
+  url.hostname = 'ilo.so'
+  return url.toString()
 }
 
 const withResponseHeaders = (response: Response, pathname: string) => {
@@ -162,6 +184,13 @@ export const createIloWorker = (renderPage: PageRenderer) =>
   ({
     async fetch(request: Request, env: Env, ctx: ExecutionContext) {
       const pathname = new URL(request.url).pathname
+      const canonicalRedirect = canonicalHostRedirect(request)
+      if (canonicalRedirect) {
+        return withResponseHeaders(
+          Response.redirect(canonicalRedirect, 308),
+          pathname,
+        )
+      }
       const redirect = legacyRedirect(request)
       if (redirect)
         return withResponseHeaders(Response.redirect(redirect, 308), pathname)

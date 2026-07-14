@@ -68,6 +68,7 @@
     "pack:check": "pnpm pack --dry-run",
     "prepack": "pnpm run build:package && node --test scripts/package.test.mjs",
     "security:check": "pnpm audit --audit-level low && node scripts/security-secrets.mjs",
+    "seo:parity": "node scripts/seo-parity.mjs",
     "test": "turbo run test && pnpm run build:package && node --test scripts/package.test.mjs",
     "test:package-install": "pnpm run build:package && node --test scripts/package.test.mjs",
     "typecheck": "turbo run typecheck"

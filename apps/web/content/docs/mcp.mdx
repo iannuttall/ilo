@@ -77,3 +77,23 @@ Show me the draft, ask me to confirm it, then publish it to X.
 ```
 
 The repository is MIT licensed, so you can add tools, providers, or your own remote deployment without depending on an ilo service.
+
+## How the local server runs
+
+Your MCP client launches `iloso mcp serve` as a child process and communicates over stdin and stdout. The process ends when the client closes it. It does not listen on a network port, expose an OAuth callback, or require a browser login to ilo.
+
+Because the CLI and MCP server share the same database, a draft created by an agent appears immediately in `ilo drafts list`. You can review, edit, schedule, or publish it from the terminal without transferring it between systems.
+
+## Permission model
+
+The MCP client controls which agents can call ilo tools. ilo adds a second guard at the action boundary: publishing a new post, publishing a draft, and running due scheduled posts all require `confirm: true`. Creating or reading a draft does not.
+
+Use prompts that separate preparation from publication. For example, ask an agent to create three drafts first, review them, and only then approve one exact draft id for publishing. Do not give an unattended agent standing permission to confirm every write.
+
+## Troubleshooting clients
+
+Run `iloso mcp serve` directly to confirm that the command exists. The process will wait silently for protocol input; stop it with Control-C. If a desktop client cannot find the command, replace `iloso` with the absolute path from `which iloso` and restart the client.
+
+Run `ilo x status` in the same user account that launches the MCP client. Keychain credentials are user-specific, so a service, container, or remote shell may not see credentials saved in your desktop session.
+
+If a tool call fails, check the returned error before retrying. Repeated provider writes can be unsafe when a network response is ambiguous; verify the account on X before asking an agent to publish again.
