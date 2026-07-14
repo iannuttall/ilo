@@ -1,0 +1,58 @@
+---
+import { getReport, reports } from '../../../lib/x-report-catalog'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+
+const { slug } = Astro.params
+const report = slug ? getReport(slug) : null
+if (!slug || !report) return Astro.redirect('/reports', 302)
+
+const index = reports.findIndex((item) => item.slug === slug)
+const prev = index > 0 ? reports[index - 1] : null
+const next = index < reports.length - 1 ? reports[index + 1] : null
+---
+
+<BaseLayout
+  title={`${report.title} | ilo`}
+  description={report.description}
+>
+  <main class="site-frame py-16">
+    <article class="content-prose">
+      <p class="text-sm font-medium text-foreground-muted">{report.group}</p>
+      <h1>{report.title}</h1>
+      <p>{report.description}</p>
+
+      <h2>What this report shows</h2>
+      <p>
+        This public guide helps an agent understand the account before it
+        suggests what to write, repeat, avoid, or test next.
+      </p>
+
+      <h2>How agents use it</h2>
+      <p>
+        Agents can use the checks as working context for content planning,
+        weekly reviews, account comparisons, and next-post recommendations.
+      </p>
+
+      <div class="not-prose mt-10 grid gap-3 sm:grid-cols-2">
+        {prev ? (
+          <a
+            class="rounded-lg bg-muted p-4 no-underline hover:bg-secondary-hover"
+            href={`/reports/${prev.slug}`}
+          >
+            Previous: {prev.title}
+          </a>
+        ) : (
+          <span></span>
+        )}
+        {next ? (
+          <a
+            class="rounded-lg bg-muted p-4 text-right no-underline hover:bg-secondary-hover"
+            href={`/reports/${next.slug}`}
+          >
+            Next: {next.title}
+          </a>
+        ) : null}
+      </div>
+    </article>
+  </main>
+</BaseLayout>

@@ -1,0 +1,83 @@
+---
+title: "Does Twitter penalize tweets with links the way it used to?"
+description: "Does Twitter penalize tweets with links? The simple rule never existed, and the case for one is weaker now that X opens links in its own in-app browser."
+date: 2026-04-28
+author: "Ian Nuttall"
+tags: ["twitter-analysis"]
+status: published
+---
+
+Does Twitter penalize links? There is no public X rule that says every post with an external URL gets suppressed. There is also plenty of account-level evidence that link posts often underperform. Both things can be true, which is annoying but much closer to how feeds work.
+
+## X does not publish a simple link penalty
+
+X publishes some high-level information about ranking systems, but it does not publish a stable "links are penalized by X percent" rule. The public [X recommendation algorithm repository](https://github.com/twitter/the-algorithm) describes a system of services, jobs, models, user actions, author signals, and product surfaces. That is a long way from a single switch called `has_link`.
+
+X's [search recommendations page](https://help.x.com/en/resources/recommender-systems/search-recommendations) also describes search ranking as a mix of relevance, popularity, engagement, author signals, media details, trending context, and other scores. Again, no simple link rule.
+
+So I would not claim a universal penalty. X may prefer posts that keep people engaging natively. Link posts may also earn fewer replies, reposts, and dwell time because the good bit happens somewhere else. The feed can react to those weaker signals without needing a hard-coded punishment.
+
+## X keeps users in the app even when they tap a link
+
+Part of the historical case for X penalizing links was practical. If a follower tapped a link and bounced to Safari or Chrome, X lost their session, their next ad impression, and the chance of pulling them back into the timeline. Suppressing link posts had a clean business reason behind it.
+
+That premise has weakened. X opens links in an in-app browser by default on mobile. A tap on a post link now slides into a webview inside X rather than throwing the user out to a separate browser. The reader scrolls the article, swipes back, and they are still in their feed. The session was never lost.
+
+So even if X had a heavier hand back when link penalties were a public talking point, the underlying business reason is much weaker now. If anything, X has more reason to leave link posts alone today, because the in-app browser already plugged the leak that historically motivated the penalty.
+
+That does not mean link posts perform identically to native posts. The format-driven reasons in the next section still apply, and X can still down-rank a link post for reasons that have nothing to do with whether it contains a URL.
+
+## Link posts often underperform for boring reasons
+
+Most link posts are weaker posts. That sounds harsh, but look at the pattern.
+
+- The hook is vague because the writer expects the linked page to do the work.
+- The post gives people a reason to leave before they reply.
+- The preview card competes with the text.
+- The audience is smaller because only part of your following cares about the linked destination.
+- The same post might have done better as a short thread, image, or native video.
+
+None of that proves a penalty. It proves that link posts are a different format with different jobs. A launch post, a newsletter share, and a documentation link should not be expected to behave like a strong native observation.
+
+The practical question is whether links hurt your account, with your audience, on your topics. That is measurable.
+
+## Prove it with your own account data
+
+Do not compare one link post against one non-link post and call it science. Pull a batch of your own posts and compare similar work.
+
+Use these groups.
+
+- Link posts.
+- Posts without links.
+- Replies excluded.
+- Reposts excluded.
+- Similar topic or campaign where possible.
+- Similar time window.
+
+Then compare median impressions, engagement rate, replies, reposts, bookmarks, profile clicks, and URL clicks. Median beats average here because one runaway post can make the whole sample look smarter than it is.
+
+X's [metrics documentation](https://docs.x.com/x-api/fundamentals/metrics) lists public post metrics such as impressions, replies, reposts, likes, quotes, and bookmarks, plus private metrics such as URL clicks and profile clicks for your own posts with user authentication. X's [Post Activity Dashboard](https://business.x.com/en/advertising/analytics) also describes post-level metrics, date ranges, and CSV exports.
+
+If you want the single-post view first, start with [how to view analytics for one post](/blog/tweet-analytics), then move to a table once you have enough examples.
+
+## Test link placement before blaming the feed
+
+If link posts are lagging, change the packaging before you declare the format dead.
+
+Try a few clean tests.
+
+- Put the full idea in the post and use the link as backup.
+- Publish the native version first, then add the link in a reply.
+- Turn the linked asset into an image, chart, or short clip.
+- Compare direct links against posts that mention the destination without a URL.
+- Repeat the same format enough times that one weak hook does not decide the result.
+
+This is also where ilo is useful. Search your posts for domains or `filter:links` style patterns, group the results, and compare performance over time. [Connect X in ilo](/settings/connections) when you want the answer for your account rather than a recycled rule from someone else's timeline.
+
+## Use links when the click is the point
+
+Some posts need a link. Product launches, docs, essays, signup pages, changelogs, videos, podcasts, and support pages all have jobs that happen away from X.
+
+If the business goal is a click, optimize for the click. If the goal is reach, consider a native version. If the goal is discussion, give people enough substance to reply without leaving the timeline.
+
+That is a better rule than "links are punished." Link posts are not automatically doomed. They just have to earn their place in a feed that rewards native engagement very quickly.

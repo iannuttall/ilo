@@ -1,0 +1,202 @@
+---
+import HeroPanel from '../components/HeroPanel.astro'
+import InstallPicker from '../components/InstallPicker.astro'
+import SectionHeading from '../components/SectionHeading.astro'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '../components/ui/accordion'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { reportGroups } from '../../lib/x-report-catalog'
+
+const buttonBase =
+  'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent px-6 text-sm font-medium transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20'
+const secondaryButton = `${buttonBase} bg-secondary text-secondary-foreground hover:bg-secondary-hover`
+
+const faqs = [
+  {
+    question: 'Where does ilo run?',
+    answer:
+      'On your machine. Drafts live in a local SQLite database, credentials stay in your operating system keychain, and MCP uses stdio. ilo does not need a hosted account.',
+  },
+  {
+    question: 'Can ilo publish and schedule posts?',
+    answer:
+      'Yes. Connect your own X app, publish after confirmation, or save a draft for the local scheduler. Nothing is sent to an ilo backend.',
+  },
+  {
+    question: 'Why do I need my own X app?',
+    answer:
+      'Publishing uses the official X API under your own developer account. You control the credentials, scopes, limits, and any X API bill.',
+  },
+  {
+    question: 'Does ilo include an AI model?',
+    answer:
+      'No. Use Claude, Codex, Cursor, or another agent you already have. ilo gives it local tools for drafts, scheduling, and publishing.',
+  },
+  {
+    question: 'How does local MCP work?',
+    answer:
+      'Your MCP client starts iloso mcp serve as a child process. The server talks over stdin and stdout and uses the same local data as the CLI.',
+  },
+  {
+    question: 'Is there a hosted dashboard?',
+    answer:
+      'No. ilo.so is a static site with free social media tools and documentation. The product is the open source CLI and local MCP server.',
+  },
+  {
+    question: 'What is stored locally?',
+    answer:
+      'Drafts, schedules, publish attempts, timezone settings, and basic connected-account metadata. OAuth tokens and client secrets use the system keychain.',
+  },
+  {
+    question: 'Can I self-host the site and API?',
+    answer:
+      'Yes. The repository includes the Astro site and Cloudflare Worker API. Fork it and deploy it to your own Cloudflare account.',
+  },
+  {
+    question: 'Will Bluesky and LinkedIn be supported?',
+    answer:
+      'X is first. The provider boundary is designed for more networks, with Bluesky and LinkedIn the next obvious additions.',
+  },
+  {
+    question: 'How much does ilo cost?',
+    answer:
+      'ilo is free and MIT licensed. You pay X for any API access you use and Cloudflare only if you deploy the website or API yourself.',
+  },
+  {
+    question: 'How can I support the project?',
+    answer:
+      'Star the repository, contribute a fix or provider, or sponsor Ian on GitHub if ilo saves you time.',
+  },
+]
+---
+
+<BaseLayout
+  title="Open Source X CLI and Local MCP"
+  description="Draft, schedule, and publish to X from a local-first CLI and MCP server. Free, open source, and built for agents."
+>
+  <main data-agent-content="true">
+    <section class="flex flex-col border-b border-border bg-background pt-4 text-foreground">
+      <div class="site-frame">
+        <div class="flex flex-col gap-8 pt-16 sm:pt-24">
+          <div class="flex max-w-2xl flex-col gap-4">
+            <h1 class="max-w-xl text-pretty text-3xl font-medium -tracking-[0.5px] xl:text-4xl xl:-tracking-[0.7px]">
+              A local social media toolkit for you and your agents.
+            </h1>
+            <p class="text-pretty text-2xl/8 font-medium -tracking-[0.2px] text-foreground-muted xl:text-3xl/10 xl:-tracking-[0.4px]">
+              Draft, schedule, and publish to X from an open source CLI and
+              local MCP server. Your account, your credentials, your machine.
+            </p>
+          </div>
+          <InstallPicker />
+        </div>
+      </div>
+    </section>
+
+    <div class="space-y-24 py-24">
+      <section class="site-frame grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div class="rounded-lg bg-muted p-8">
+          <h2 class="text-lg font-semibold">
+            Connect your own X account.
+          </h2>
+          <p class="mt-2 text-base leading-7 text-foreground-muted">
+            Use your own X developer app. OAuth tokens stay in the operating
+            system keychain and never pass through ilo.so.
+          </p>
+        </div>
+        <div class="rounded-lg bg-muted p-8">
+          <h2 class="text-lg font-semibold">
+            Draft and schedule locally.
+          </h2>
+          <p class="mt-2 text-base leading-7 text-foreground-muted">
+            Keep posts in a local SQLite database, schedule them with plain
+            language, and run the scheduler however you like.
+          </p>
+        </div>
+        <div class="rounded-lg bg-muted p-8">
+          <h2 class="text-lg font-semibold">
+            Give agents real tools.
+          </h2>
+          <p class="mt-2 text-base leading-7 text-foreground-muted">
+            Connect Claude, Codex, Cursor, or any stdio MCP client. Creating
+            drafts is safe by default and publishing requires confirmation.
+          </p>
+        </div>
+        <div class="rounded-lg bg-muted p-8">
+          <h2 class="text-lg font-semibold">
+            Fork the whole thing.
+          </h2>
+          <p class="mt-2 text-base leading-7 text-foreground-muted">
+            The CLI, MCP server, public site, and Cloudflare tool API are MIT
+            licensed. Deploy or change any part of it.
+          </p>
+        </div>
+      </section>
+
+      <section class="site-frame">
+        <SectionHeading
+          eyebrow="Agents in the loop"
+          text="Ask an agent to prepare a draft, review it yourself, then explicitly approve publishing. ilo handles the local plumbing."
+        />
+        <HeroPanel />
+      </section>
+
+      <section class="site-frame">
+        <SectionHeading
+          eyebrow="Free X research guides"
+          text="The existing report library stays public while the old ilo analytics engine is rebuilt for the local CLI."
+        />
+        <div class="grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          {reportGroups.map((group) => (
+            <section>
+              <h3 class="text-lg font-medium text-foreground">{group.title}</h3>
+              <ul class="mt-3 flex flex-col gap-1.5 text-base text-foreground-muted">
+                {group.reports.map((report) => (
+                  <li>
+                    <a
+                      class="text-primary underline decoration-2 underline-offset-4 hover:text-primary-hover"
+                      href={`/reports/${report.slug}`}
+                    >
+                      {report.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      </section>
+
+      <section class="site-frame">
+        <div>
+          <div class="max-w-2xl">
+            <h2 class="text-pretty text-2xl font-medium -tracking-[0.4px] text-foreground xl:text-3xl xl:-tracking-[0.6px]">
+              Questions before installing ilo
+            </h2>
+            <p class="mt-4 text-pretty text-xl/7 font-medium -tracking-[0.15px] text-foreground-muted xl:text-2xl/8 xl:-tracking-[0.3px]">
+              ilo is local software, not another account, subscription, or
+              dashboard to maintain.
+            </p>
+          </div>
+
+          <Accordion class="mt-10 overflow-hidden rounded-lg bg-muted">
+            {faqs.map((item) => (
+              <AccordionItem
+                class="rounded-none border-b border-border bg-transparent last:border-b-0"
+                value={item.question}
+              >
+                <AccordionTrigger>{item.question}</AccordionTrigger>
+                <AccordionContent>
+                  <p class="text-base leading-7 text-foreground-muted">{item.answer}</p>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+    </div>
+  </main>
+</BaseLayout>

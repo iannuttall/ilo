@@ -1,0 +1,16 @@
+packages:
+  - apps/*
+  - packages/*
+
+allowBuilds:
+  better-sqlite3@12.11.1: true
+  esbuild@0.28.1: true
+  msw@2.12.10: false
+  sharp@0.34.5: true
+  workerd@1.20260708.1: true
+
+overrides:
+  rollup: 4.59.0
+
+minimumReleaseAgeExclude:
+  - '@cloudflare/workers-types@5.20260714.1'

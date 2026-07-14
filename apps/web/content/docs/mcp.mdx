@@ -1,0 +1,79 @@
+---
+title: "Local MCP"
+description: "Give Claude, Codex, Cursor, or another agent local ilo tools over stdio."
+category: "agent"
+order: 1
+status: published
+h1: "Connect an agent to your local ilo install."
+seoTitle: "Local MCP for X: Claude, Codex and Cursor"
+seoDescription: "Connect Claude, Codex, Cursor, or another MCP client to the open source ilo CLI over local stdio."
+---
+
+ilo runs as a local stdio MCP server:
+
+```sh
+iloso mcp serve
+```
+
+There is no remote ilo MCP URL and no browser login to ilo. The agent process uses the same local SQLite database and operating system keychain credentials as the CLI.
+
+Connect X once before using publishing tools:
+
+```sh
+ilo start
+```
+
+## Claude Code
+
+```sh
+claude mcp add ilo -- iloso mcp serve
+```
+
+## Codex
+
+```sh
+codex mcp add ilo -- iloso mcp serve
+```
+
+## Claude Desktop and config-based clients
+
+```json
+{
+  "mcpServers": {
+    "ilo": {
+      "command": "iloso",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
+```
+
+If the client cannot find `iloso`, use the absolute path returned by `which iloso`.
+
+## Tools
+
+| Tool | What it does |
+| --- | --- |
+| `ilo_status` | Checks the local install and connected X account. |
+| `ilo_create_draft` | Saves a draft to the local database. |
+| `ilo_list_drafts` | Lists local drafts and their state. |
+| `ilo_schedule_draft` | Schedules a draft using an ISO time or plain language. |
+| `ilo_publish_draft` | Publishes one draft after explicit confirmation. |
+| `ilo_publish_post` | Publishes a new post after explicit confirmation. |
+| `ilo_run_scheduler` | Publishes due drafts after explicit confirmation. |
+
+Publishing tools require `confirm: true`. Read-only and draft-creation tools do not.
+
+## Example prompt
+
+```txt
+Create a local draft from this idea. Do not publish it.
+```
+
+When you are ready:
+
+```txt
+Show me the draft, ask me to confirm it, then publish it to X.
+```
+
+The repository is MIT licensed, so you can add tools, providers, or your own remote deployment without depending on an ilo service.

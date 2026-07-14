@@ -1,0 +1,152 @@
+---
+import { Checkbox } from '@/astro/components/ui/checkbox'
+import { Input } from '@/astro/components/ui/input'
+---
+
+<div class="space-y-6" data-twitter-advanced-search="twitter-advanced-search">
+  <div class="tool-form-panel">
+    <div class="mb-6 max-w-2xl">
+      <h2 class="text-xl/7 font-medium tracking-normal">
+        Build the exact 𝕏 search you need
+      </h2>
+      <p class="mt-2 text-base/7 text-foreground-muted">
+        Add accounts, dates, links, media, replies, and engagement filters. The
+        tool turns them into a reusable search URL you can open on 𝕏.
+      </p>
+    </div>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <Input
+        data-search-field="query"
+        placeholder="Search terms"
+        aria-label="Search terms"
+        class="h-11 sm:col-span-2"
+      />
+      <Input
+        data-search-field="from"
+        placeholder="from username"
+        aria-label="From username"
+        class="h-11"
+      />
+      <Input
+        data-search-field="to"
+        placeholder="to username"
+        aria-label="To username"
+        class="h-11"
+      />
+      <Input
+        data-search-field="since"
+        type="date"
+        aria-label="Since date"
+        class="h-11"
+      />
+      <Input
+        data-search-field="until"
+        type="date"
+        aria-label="Until date"
+        class="h-11"
+      />
+      <Input
+        data-search-field="minFaves"
+        type="number"
+        min="0"
+        placeholder="minimum likes"
+        aria-label="Minimum likes"
+        class="h-11"
+      />
+      <div class="flex h-11 flex-wrap items-center gap-4 text-sm text-foreground">
+        <label class="inline-flex items-center gap-2">
+          <Checkbox data-search-field="links" />
+          Links
+        </label>
+        <label class="inline-flex items-center gap-2">
+          <Checkbox data-search-field="media" />
+          Media
+        </label>
+      </div>
+    </div>
+  </div>
+  <dl class="hidden" data-advanced-search-result="twitter-advanced-search">
+    <div class="grid gap-1 border-t border-border py-3 first:border-t-0 sm:grid-cols-[11rem_1fr]">
+      <dt class="text-sm text-muted-foreground">Query</dt>
+      <dd class="min-w-0 text-sm text-foreground" data-search-query>
+        Add filters above
+      </dd>
+    </div>
+    <div class="grid gap-1 border-t border-border py-3 first:border-t-0 sm:grid-cols-[11rem_1fr]">
+      <dt class="text-sm text-muted-foreground">Search URL</dt>
+      <dd class="min-w-0 text-sm text-foreground">
+        <span data-search-url-empty>Add filters above</span>
+        <a
+          data-search-url
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="break-all underline underline-offset-2"
+          hidden
+        ></a>
+      </dd>
+    </div>
+  </dl>
+</div>
+
+<script>
+  const buildSearchQuery = (root) => {
+    const field = (name) => root.querySelector(`[data-search-field="${name}"]`)
+    const value = (name) => field(name)?.value?.trim() ?? ''
+    const handle = (name) => value(name).replace(/^@+/, '')
+    const links = field('links')?.checked
+    const media = field('media')?.checked
+    return [
+      value('query'),
+      handle('from') ? `from:${handle('from')}` : null,
+      handle('to') ? `to:${handle('to')}` : null,
+      value('since') ? `since:${value('since')}` : null,
+      value('until') ? `until:${value('until')}` : null,
+      value('minFaves') ? `min_faves:${value('minFaves')}` : null,
+      links ? 'filter:links' : null,
+      media ? 'filter:media' : null,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  }
+
+  const updateAdvancedSearch = (root) => {
+    const query = buildSearchQuery(root)
+    const resultId = root.getAttribute('data-twitter-advanced-search')
+    const result = document.querySelector(
+      `[data-advanced-search-result="${resultId}"]`,
+    )
+    const queryOutput = result?.querySelector('[data-search-query]')
+    const empty = result?.querySelector('[data-search-url-empty]')
+    const link = result?.querySelector('[data-search-url]')
+    if (queryOutput) queryOutput.textContent = query || 'Add filters above'
+    if (!empty || !link) return
+    if (!query) {
+      empty.hidden = false
+      link.hidden = true
+      link.removeAttribute('href')
+      link.textContent = ''
+      return
+    }
+    const url = `https://x.com/search?q=${encodeURIComponent(query)}&src=typed_query&f=live`
+    empty.hidden = true
+    link.hidden = false
+    link.setAttribute('href', url)
+    link.textContent = url
+  }
+
+  for (const root of document.querySelectorAll('[data-twitter-advanced-search]')) {
+    const resultId = root.getAttribute('data-twitter-advanced-search')
+    const result = document.querySelector(
+      `[data-advanced-search-result="${resultId}"]`,
+    )
+    const portal = document.getElementById('tool-result-root')
+    if (portal && result) {
+      result.classList.remove('hidden')
+      portal.append(result)
+    }
+    root.addEventListener('input', () => updateAdvancedSearch(root))
+    root.addEventListener('change', () => updateAdvancedSearch(root))
+    updateAdvancedSearch(root)
+  }
+</script>

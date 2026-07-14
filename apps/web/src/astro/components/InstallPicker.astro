@@ -1,0 +1,6 @@
+---
+import { InstallPicker } from '../islands/InstallPicker'
+const { standalone = false } = Astro.props as { standalone?: boolean }
+---
+
+<InstallPicker client:load standalone={standalone} />

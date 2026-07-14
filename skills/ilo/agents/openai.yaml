@@ -1,0 +1,4 @@
+interface:
+  display_name: "ilo"
+  short_description: "Use local ilo tools to draft, schedule, and publish social posts safely"
+  default_prompt: "Use $ilo to create or manage local social drafts. Require explicit confirmation before publishing."

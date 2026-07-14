@@ -1,0 +1,177 @@
+---
+import PageHeader from '../../../components/PageHeader.astro'
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import {
+  getXReportDoc,
+  getXReportDocNavigation,
+  xReportDocPath,
+} from '../../../../lib/x-report-docs'
+
+const slug = Astro.params.slug ?? ''
+const doc = getXReportDoc(slug)
+if (!doc) return Astro.rewrite('/404')
+
+const nav = getXReportDocNavigation(doc.slug)
+const relatedDocs = doc.related.map((item) => getXReportDoc(item)).filter(Boolean)
+
+const detailRows = [
+  ['Report id', `\`${doc.slug}\``],
+  ['Category', doc.group],
+  ['Source', 'Public profile and post data'],
+  ['Status', 'Research guide'],
+]
+
+function inlineCodeParts(value: string) {
+  return value.split(/(`[^`]+`)/g).map((part) => ({
+    code: part.startsWith('`') && part.endsWith('`'),
+    text: part.startsWith('`') && part.endsWith('`') ? part.slice(1, -1) : part,
+  }))
+}
+---
+
+<BaseLayout title={doc.seoTitle} description={doc.seoDescription}>
+  <main class="site-frame py-10">
+    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-foreground-muted">
+      <ol class="flex flex-wrap items-center gap-1.5">
+        <li>
+          <a
+            class="underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+            href="/"
+          >
+            Home
+          </a>
+        </li>
+        <li aria-hidden="true" class="text-border">/</li>
+        <li>
+          <a
+            class="underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+            href="/docs"
+          >
+            Docs
+          </a>
+        </li>
+        <li aria-hidden="true" class="text-border">/</li>
+        <li>
+          <a
+            class="underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+            href="/docs/reports"
+          >
+            Reports
+          </a>
+        </li>
+        <li aria-hidden="true" class="text-border">/</li>
+        <li class="text-foreground">{doc.title}</li>
+      </ol>
+    </nav>
+
+    <PageHeader title={doc.seoHeading} description={doc.lead} bordered={false} />
+
+    <div class="docs-prose">
+      <p>
+        This guide is for people and agents that need useful 𝕏 context before
+        they suggest content. It explains what to inspect and how to avoid
+        overreacting to one lucky post.
+      </p>
+      <p>
+        The old hosted report runner has been removed. These pages remain as
+        open research guides while analytics is rebuilt as a local ilo feature.
+      </p>
+
+      <h2>What this report helps you decide</h2>
+      <p>
+        Use {doc.title.toLowerCase()} when the account needs a focused answer
+        about {doc.description.charAt(0).toLowerCase() + doc.description.slice(1)}
+      </p>
+      <ul>
+        {doc.bestFor.map((item) => <li>{item}</li>)}
+      </ul>
+
+      <h2>Report facts</h2>
+      <dl class="mt-4 grid gap-3 rounded-lg bg-muted p-6 sm:grid-cols-2">
+        {detailRows.map(([label, value]) => (
+          <div>
+            <dt class="text-sm font-medium text-foreground">{label}</dt>
+            <dd class="mt-1 text-sm leading-6 text-foreground-muted">
+              {inlineCodeParts(value).map((part) =>
+                part.code ? <code>{part.text}</code> : part.text,
+              )}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      <h2>How to use it with an agent</h2>
+      <p>
+        Give the agent a public profile and representative post data, then ask
+        it to work through the checks below. Keep the examples and sample size
+        in the answer so the recommendation can be reviewed.
+      </p>
+
+      <h2>What the report checks</h2>
+      <ul>
+        {doc.checks.map((item) => <li>{item}</li>)}
+      </ul>
+
+      <h2>How to read the result</h2>
+      <p>
+        Treat the examples as evidence, not as a magic formula. A strong report
+        should show the pattern, the posts behind it, and the limits of the
+        sample. That keeps the agent from overreacting to one lucky post.
+      </p>
+      <ul>
+        {doc.returns.map((item) => <li>{item}</li>)}
+      </ul>
+
+      <h2>Data sources</h2>
+      <p>
+        Use public account and post data for this research. Publishing through
+        the local ilo CLI is a separate, explicitly confirmed action.
+      </p>
+      <ul>
+        {doc.dataSources.map((item) => <li>{item}</li>)}
+      </ul>
+
+      <h2>Best follow-up reports</h2>
+      <p>
+        Most 𝕏 performance work starts broad and then narrows. These reports
+        are the natural next places to look after {doc.title.toLowerCase()}.
+      </p>
+      <ul>
+        {relatedDocs.map((related) => (
+          <li>
+            <a href={xReportDocPath(related)}>{related.title}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <nav
+      aria-label="Report docs"
+      class="mt-16 flex items-stretch justify-between gap-4 pt-6"
+    >
+      {nav.prev ? (
+        <a href={xReportDocPath(nav.prev)} class="group flex flex-col gap-1 no-underline">
+          <span class="text-sm text-foreground-muted">Previous</span>
+          <span class="font-medium text-foreground underline decoration-border underline-offset-4 transition-colors group-hover:decoration-foreground">
+            {nav.prev.title}
+          </span>
+        </a>
+      ) : (
+        <span />
+      )}
+      {nav.next ? (
+        <a
+          href={xReportDocPath(nav.next)}
+          class="group flex flex-col items-end gap-1 text-right no-underline"
+        >
+          <span class="text-sm text-foreground-muted">Next</span>
+          <span class="font-medium text-foreground underline decoration-border underline-offset-4 transition-colors group-hover:decoration-foreground">
+            {nav.next.title}
+          </span>
+        </a>
+      ) : (
+        <span />
+      )}
+    </nav>
+  </main>
+</BaseLayout>

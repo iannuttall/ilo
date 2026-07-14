@@ -1,0 +1,50 @@
+---
+import { DOCS_MANIFEST } from '../../../lib/docs-manifest'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import InstallPicker from '../../components/InstallPicker.astro'
+import PageHeader from '../../components/PageHeader.astro'
+
+const docsCards = [
+  ...DOCS_MANIFEST.map((doc) => ({
+    title: doc.title,
+    description: doc.description,
+    href: `/docs/${doc.slug}`,
+  })),
+  {
+    title: 'Reports',
+    description:
+      'Choose the right 𝕏 report and see how agents should run, read, and follow it up.',
+    href: '/docs/reports',
+  },
+]
+---
+
+<BaseLayout
+  title="ilo Docs: Local CLI, MCP and Tool API"
+  description="Install the local-first ilo CLI, connect your X app, schedule posts, and give agents local MCP tools."
+>
+  <main class="site-frame py-10">
+    <PageHeader
+      title="Run ilo locally from your terminal or agent."
+      description="Install the CLI, connect your own X app, or add the local MCP server to an agent."
+      bordered={false}
+    />
+    <article class="docs-prose">
+      <p>
+        Start with the CLI to connect X. Then use the same local drafts and
+        scheduler from your terminal or any stdio MCP client.
+      </p>
+      <div class="not-prose mt-8">
+        <InstallPicker standalone />
+      </div>
+      <div class="not-prose mt-10 grid gap-3 sm:grid-cols-2">
+        {docsCards.map((doc) => (
+          <a class="rounded-lg bg-muted p-5 no-underline hover:bg-secondary-hover" href={doc.href}>
+            <h2 class="text-base font-semibold">{doc.title}</h2>
+            <p class="mt-2 text-sm text-foreground-muted">{doc.description}</p>
+          </a>
+        ))}
+      </div>
+    </article>
+  </main>
+</BaseLayout>

@@ -1,0 +1,46 @@
+---
+import '@/styles/globals.css'
+import Footer from '../components/Footer.astro'
+import Header from '../components/Header.astro'
+import OgTemplate from '../components/OgTemplate.astro'
+import { CLICKY_SITE_ID, shouldLoadClickyAnalytics } from '@/lib/analytics/clicky'
+import { buildMetaTags } from '@/lib/seo'
+
+type Props = { title: string; description: string; canonical?: string; minimal?: boolean; wide?: boolean }
+const { title, description, canonical = Astro.url.pathname, minimal = false, wide = false } = Astro.props
+const pageTitle = title === 'ilo' ? title : `${title} | ilo`
+const canonicalUrl = new URL(canonical, Astro.site ?? Astro.url.origin).toString()
+const metaTags = buildMetaTags({
+  title: pageTitle, description, canonical: canonicalUrl,
+  ogType: Astro.url.pathname === '/' ? 'website' : 'article',
+})
+const FAVICON_VERSION = '20260602'
+const loadClickyAnalytics = shouldLoadClickyAnalytics(Astro.url.hostname)
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="theme-color" content="#000000" />
+    {metaTags.meta.map((tag) => {
+      if ('title' in tag) return <title>{tag.title}</title>
+      if ('name' in tag) return <meta name={tag.name} content={tag.content} />
+      return <meta property={tag.property} content={tag.content} />
+    })}
+    <link rel="preload" href="/fonts/InterVF.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    {metaTags.links.map((link) => <link rel={link.rel} href={link.href} />)}
+    <link rel="icon" type="image/png" href={`/favicon.png?v=${FAVICON_VERSION}`} />
+    <link rel="apple-touch-icon" href={`/logo192.png?v=${FAVICON_VERSION}`} />
+    {loadClickyAnalytics ? <script async data-id={CLICKY_SITE_ID} src="//static.getclicky.com/js"></script> : null}
+  </head>
+  <body class="min-h-screen bg-background text-foreground antialiased">
+    <div class="flex min-h-screen flex-col">
+      {!minimal ? <Header compact={!wide} /> : null}
+      <slot />
+      {!minimal ? <Footer /> : null}
+    </div>
+    <OgTemplate />
+  </body>
+</html>

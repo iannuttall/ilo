@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import PageHeader from '../../components/PageHeader.astro'
+import { getDocMeta, getDocNavigation } from '../../../lib/docs-manifest'
+
+const modules = import.meta.glob('../../../../content/docs/*.mdx')
+const { slug } = Astro.params
+const doc = slug ? getDocMeta(slug) : null
+if (!slug || !doc) return Astro.redirect('/docs', 302)
+
+const load = modules[`../../../../content/docs/${slug}.mdx`]
+if (!load) return Astro.redirect('/docs', 302)
+
+const mod = (await load()) as { default: unknown }
+const Content = mod.default as any
+const nav = getDocNavigation(slug)
+---
+
+<BaseLayout title={doc.seoTitle || doc.title} description={doc.seoDescription || doc.description}>
+  <main class="site-frame py-10">
+    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-foreground-muted">
+      <ol class="flex flex-wrap items-center gap-1.5">
+        <li>
+          <a
+            class="underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+            href="/"
+          >
+            Home
+          </a>
+        </li>
+        <li aria-hidden="true" class="text-border">/</li>
+        <li>
+          <a
+            class="underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+            href="/docs"
+          >
+            Docs
+          </a>
+        </li>
+        <li aria-hidden="true" class="text-border">/</li>
+        <li class="text-foreground">{doc.title}</li>
+      </ol>
+    </nav>
+
+    <PageHeader title={doc.h1 || doc.title} description={doc.description} bordered={false} />
+
+    <article class="docs-prose min-w-0">
+      <Content />
+    </article>
+
+    {(nav.prev || nav.next) ? (
+      <nav
+        aria-label="Docs pages"
+        class="mt-16 flex items-stretch justify-between gap-4 pt-6"
+      >
+        {nav.prev ? (
+          <a href={`/docs/${nav.prev.slug}`} class="group flex flex-col gap-1 no-underline">
+            <span class="text-sm text-foreground-muted">Previous</span>
+            <span class="font-medium text-foreground underline decoration-border underline-offset-4 transition-colors group-hover:decoration-foreground">
+              {nav.prev.title}
+            </span>
+          </a>
+        ) : (
+          <span />
+        )}
+        {nav.next ? (
+          <a href={`/docs/${nav.next.slug}`} class="group flex flex-col items-end gap-1 text-right no-underline">
+            <span class="text-sm text-foreground-muted">Next</span>
+            <span class="font-medium text-foreground underline decoration-border underline-offset-4 transition-colors group-hover:decoration-foreground">
+              {nav.next.title}
+            </span>
+          </a>
+        ) : (
+          <span />
+        )}
+      </nav>
+    ) : null}
+  </main>
+</BaseLayout>

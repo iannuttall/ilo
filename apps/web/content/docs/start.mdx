@@ -1,0 +1,82 @@
+---
+title: "Start"
+description: "Install ilo, connect your own X app, and publish your first local draft."
+category: "start"
+order: 1
+status: published
+h1: "Set up ilo on your machine."
+seoTitle: "Set Up ilo: Local X CLI and MCP"
+seoDescription: "Install the open source ilo CLI, connect your own X developer app, and use local drafts, scheduling, publishing, and MCP tools."
+---
+
+ilo is a local-first CLI and MCP server for drafting, scheduling, and publishing to X. There is no ilo account, hosted login, subscription, or remote MCP server.
+
+## Install the CLI
+
+```sh
+npm i -g iloso
+```
+
+Both `ilo` and `iloso` run the same command.
+
+## Create an X app
+
+Create an app in the X developer portal and enable OAuth 2.0 with read and write access.
+
+Add this callback URL:
+
+```txt
+http://127.0.0.1:8976/callback
+```
+
+The X API may have its own usage charges. Those go directly to X, not ilo.
+
+## Connect your account
+
+```sh
+ilo start
+```
+
+Paste your OAuth 2.0 client ID when prompted. ilo opens X in your browser, waits for the local callback, and saves the tokens in your operating system keychain.
+
+You can also pass the client ID directly:
+
+```sh
+ilo x connect --client-id YOUR_CLIENT_ID
+```
+
+Check the connection:
+
+```sh
+ilo x status
+```
+
+## Publish your first post
+
+```sh
+ilo post --text "Hello from ilo"
+```
+
+ilo asks for confirmation before publishing. For non-interactive scripts, pass `--yes`.
+
+## Create and schedule a draft
+
+```sh
+ilo drafts create --text "A post for tomorrow"
+ilo drafts list
+ilo drafts schedule <draft-id> --at "tomorrow at 9am"
+ilo scheduler watch
+```
+
+The scheduler is a local process. Keep `ilo scheduler watch` running, or call `ilo scheduler run` from cron or another task runner.
+
+## Connect an agent
+
+```sh
+claude mcp add ilo -- iloso mcp serve
+codex mcp add ilo -- iloso mcp serve
+```
+
+The MCP server uses stdio and reads the same local database and keychain credentials as the CLI. Publishing tools require an explicit `confirm: true` argument.
+
+Read the [CLI reference](/docs/cli) or [local MCP guide](/docs/mcp) for the full surface.

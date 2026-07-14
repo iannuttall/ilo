@@ -1,0 +1,85 @@
+---
+import {
+  formatBlogDate,
+  getBlogComponent,
+  getBlogEntry,
+  getBlogNavigation,
+} from '../../../lib/content/blog-manifest'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+
+const { slug } = Astro.params
+const post = slug ? getBlogEntry(slug) : null
+if (!slug || !post) return Astro.redirect('/blog', 302)
+
+const Content = getBlogComponent(slug)
+if (!Content) return Astro.redirect('/blog', 302)
+const nav = getBlogNavigation(slug)
+---
+
+<BaseLayout title={post.title} description={post.description}>
+  <main class="site-frame py-10" data-agent-content>
+    <nav aria-label="Breadcrumb" class="mb-6 text-sm text-foreground-muted">
+      <ol class="flex flex-wrap items-center gap-1.5">
+        <li>
+          <a
+            class="underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+            href="/"
+          >
+            Home
+          </a>
+        </li>
+        <li aria-hidden="true" class="text-border">/</li>
+        <li>
+          <a
+            class="underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+            href="/blog"
+          >
+            Blog
+          </a>
+        </li>
+        <li aria-hidden="true" class="text-border">/</li>
+        <li class="text-foreground">{post.title}</li>
+      </ol>
+    </nav>
+
+    <article class="content-prose">
+      <p class="text-sm text-foreground-muted">{formatBlogDate(post.date)}</p>
+      <h1>{post.title}</h1>
+      <Content />
+    </article>
+
+    {(nav.prev || nav.next) ? (
+      <nav
+        aria-label="Blog posts"
+        class="mt-16 flex items-stretch justify-between gap-4 pt-6"
+      >
+        {nav.prev ? (
+          <a
+            href={`/blog/${nav.prev.slug}`}
+            class="group flex max-w-[min(38vw,12rem)] flex-col gap-1 no-underline"
+          >
+            <span class="text-sm text-foreground-muted">Previous</span>
+            <span class="line-clamp-2 font-medium text-foreground underline decoration-border underline-offset-4 transition-colors group-hover:decoration-foreground">
+              {nav.prev.title}
+            </span>
+          </a>
+        ) : (
+          <span />
+        )}
+        {nav.next ? (
+          <a
+            href={`/blog/${nav.next.slug}`}
+            class="group flex max-w-[min(38vw,12rem)] flex-col items-end gap-1 text-right no-underline"
+          >
+            <span class="text-sm text-foreground-muted">Next</span>
+            <span class="line-clamp-2 font-medium text-foreground underline decoration-border underline-offset-4 transition-colors group-hover:decoration-foreground">
+              {nav.next.title}
+            </span>
+          </a>
+        ) : (
+          <span />
+        )}
+      </nav>
+    ) : null}
+  </main>
+</BaseLayout>

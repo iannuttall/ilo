@@ -1,0 +1,76 @@
+---
+title: "How to search your tweets without losing an afternoon"
+description: "Search your tweets with X operators, your downloaded archive, analytics exports, and ilo tables, with a clear path for each kind of job today."
+date: 2026-04-28
+author: "Ian Nuttall"
+tags: ["twitter-search"]
+status: published
+---
+
+X calls them posts now, but most people still search for "tweets" when they are trying to find something they wrote years ago. The fastest way to search your tweets depends on the job. A one-off lookup belongs in X search. A cleanup job belongs in your archive. Performance analysis belongs in a table.
+
+## X search is fastest when you remember the words
+
+Use X search when you remember a phrase, a rough date, or the account that posted it. X's own [advanced search help](https://help.x.com/en/using-x/x-advanced-search) says the web form can filter by words, accounts, places, and dates, and it is still the quickest route for a single post.
+
+For your own posts start with `from:yourusername` and add the thing you remember.
+
+```text
+from:yourusername "launch notes"
+from:yourusername coffee since:YYYY-MM-DD until:YYYY-MM-DD
+from:yourusername filter:links
+from:yourusername -filter:replies
+```
+
+That gets you most of the way there. The annoying bit is that X search can feel inconsistent when the post is very old, deleted, protected, or caught behind search ranking quirks. If the search result matters, check the exact URL or ID before you trust it.
+
+For more operators use the fuller [guide to X advanced search](/blog/advanced-twitter-search).
+
+## Your X archive is better for old or deleted posts
+
+If you need a complete pass through your own history request your archive instead of fighting the search box. X's [archive download instructions](https://help.x.com/en/managing-your-account/how-to-download-your-x-archive) say the export includes your posts in HTML and JSON files, along with profile information, media, followers, following, Lists, and other account data.
+
+The archive is slower to get because X has to prepare it. Once you have it, though, it is much easier to search with your browser, a code editor, or a tiny script. This is the right path when you want to find every post that mentions a client name, audit old links, or clean up a phrase you no longer want attached to your account.
+
+One practical habit helps here. Keep the archive zip somewhere boring and labelled by download date. Future you will otherwise create a folder called `twitter stuff final final`, and nobody deserves that.
+
+## Analytics tables are better when performance matters
+
+X search finds text. Analytics tables find patterns.
+
+X's [analytics page](https://business.x.com/en/advertising/analytics) still describes a Post Activity Dashboard where you can see impressions, reposts, likes, replies, date ranges, and CSV exports for posts. The [X API metrics docs](https://docs.x.com/x-api/fundamentals/metrics) also list public post metrics such as impressions, likes, reposts, replies, quotes, and bookmarks, plus private metrics for your own content with user authentication.
+
+That matters when the question is not "where is that post?" but "which posts about this topic actually worked?" In a table, you can search a keyword, sort by impressions, compare link posts against non-link posts, or filter out replies before you decide what to reuse.
+
+ilo fits this part of the job once your account is connected. It keeps post metrics available to the same API, CLI, and MCP surfaces your agents use, so you can search a phrase and compare the posts by the metrics you care about. [Connect X in ilo](/settings/connections) when the query is about performance rather than memory.
+
+## Pick the search path by the job
+
+Use X search for quick retrieval.
+
+- You remember a phrase.
+- You need one public post.
+- You want date or account filters.
+- You do not need a spreadsheet.
+
+Use your X archive for completeness.
+
+- You are searching years of account history.
+- You want deleted or hard-to-find account data that still exists in your export.
+- You need JSON files you can process yourself.
+- You are doing cleanup, compliance, or migration work.
+
+Use analytics or product tables for decisions.
+
+- You need impressions, engagement, clicks, or follower context.
+- You want to sort matching posts by performance.
+- You are comparing formats, topics, or link behavior.
+- You want to repeat the same search later.
+
+That is the whole decision tree. Search is for finding the post. Archive is for finding everything. Analytics is for understanding whether any of it worked.
+
+## A post ID helps when usernames changed
+
+X usernames change. Numeric account IDs and post IDs are more stable.
+
+Older exports, API data, and saved URLs often work better when you have the numeric ID. [ilo's Twitter ID Finder](/twitter-id) can look up the numeric ID for an X account without requiring a login.

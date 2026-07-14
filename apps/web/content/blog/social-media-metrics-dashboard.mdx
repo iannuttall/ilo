@@ -1,0 +1,118 @@
+---
+title: "How to pick a social media metrics dashboard for your brand"
+description: "Compare social media metrics dashboard options for brands, from enterprise SaaS like Hootsuite to lightweight tools like ilo, picked by what they actually do."
+date: 2026-04-28
+author: "Ian Nuttall"
+tags: ["analytics", "brand"]
+status: published
+---
+
+Most brand teams pick a metrics dashboard tool by reading a feature list, ticking off the rows that look useful, and then signing up for whichever one had the most ticks. That gets you to a tool. It rarely gets you to the right tool. The category sprawls from $5-a-month single-channel schedulers to enterprise platforms that start in the high triple digits per seat per month, and the gap between "I want a follower chart" and "I run social for a 200-person brand" is everything.
+
+I run [ilo](/), which is a social media metrics dashboard. I am writing this anyway, with ilo placed where it actually fits, because the comparison content currently ranking on Google is mostly written by the bigger vendors about themselves.
+
+## What a brand metrics dashboard actually has to do
+
+Strip away the marketing copy and a brand dashboard exists to do four jobs:
+
+- **Track follower and audience growth** across every platform you care about, in one place, with history that goes back further than the platform's own analytics.
+- **Show post and content performance** so you know which posts drove the audience growth.
+- **Get the numbers in front of stakeholders** weekly, monthly, or whenever the boss asks.
+- **Optionally**, hook into adjacent data (paid spend, conversions, MRR) so you can attribute social to revenue.
+
+Anything beyond those four is scope creep. Scheduling, inbox, approvals, listening, ad management, AI content generation, brand voice tuning are all real and useful, but they are different tools wearing dashboard clothing. If a vendor tells you their dashboard does all of it, what they mean is they bundle a dashboard inside a larger platform, and you are paying for the larger platform.
+
+The right dashboard for a brand depends on which of those four jobs matter, and how many of the other tools that vendor offers you actually need.
+
+## Enterprise SaaS: Hootsuite and Sprout Social
+
+These are the heavyweights. Both ship a dashboard, but the dashboard is one panel among many on a platform that also handles scheduling, inbox, approvals, listening, and reporting at agency scale.
+
+[Sprout Social pricing](https://sproutsocial.com/pricing/) starts at $79 per seat per month on annual billing for the Essentials plan, $99 if you pay monthly. Standard is $199 per seat. Professional is $299 per seat. Advanced is $399 per seat. Premium Analytics, the part most people associate with the word "dashboard", is sold as a separate add-on on top of Standard or higher. So a single seat with Premium Analytics is $199-plus the add-on. A team of four is $800-plus per month before the analytics module.
+
+[Hootsuite](https://www.hootsuite.com/plans) does not list dollar amounts on its public plans page. The tiers are Standard, Advanced, and Enterprise. Standard caps at 10 social accounts and includes the analytics dashboard. Advanced unlocks unlimited accounts. Enterprise needs five seats minimum and is quote-only. The opacity is itself a signal: Hootsuite's price is something they want to qualify you for, not put on the homepage.
+
+When this category fits:
+
+- You manage social for multiple brands or clients and need approvals and inbox routing baked in.
+- You have an actual team and the dashboard has to be one feature among several they share.
+- Your annual social tooling budget has more than three figures in it and the org expects an enterprise vendor on the receipts.
+
+When it does not:
+
+- You are a solo creator or a small brand and you just want to know your numbers.
+- You already have a scheduler you like and you do not want to swap.
+- The four-figure annual contract is more than your dashboard problem is worth.
+
+## Mid-weight schedulers with built-in analytics: Buffer
+
+Buffer is the obvious sibling to the heavyweights. It does scheduling first and analytics second, but the analytics are real, not a stub. [Buffer's pricing](https://buffer.com/pricing) is per-channel rather than per-seat: the Essentials plan is $5 per channel per month and includes the advanced analytics module. The Team plan is $10 per channel per month and adds branded reports. Free is capped at three channels with a 30-day analytics history.
+
+This pricing model is unusually founder-friendly for a small brand. Two X accounts and a YouTube channel comes to $15 per month all-in, with analytics included from the cheapest paid tier. The trade-off is that you are paying for a scheduler whether you use it or not. If you already have a scheduling tool and just want a dashboard, you are double-paying for the scheduling half.
+
+When Buffer fits:
+
+- You want scheduling and analytics in one bill.
+- You have a small to medium number of channels.
+- The brand reports feature on the Team plan is something you would actually use.
+
+When it does not:
+
+- You only need analytics. The scheduler tax is fine if you use it, wasted spend if you do not.
+- You need post-level performance with depth beyond what Buffer surfaces.
+- You manage 20-plus channels and the per-channel pricing stops being friendly.
+
+## Build-your-own: Klipfolio, Databox, Improvado, Notion, spreadsheets
+
+This is the category for teams who want full control. Klipfolio, Databox, and Improvado are dashboard builders that connect to platform APIs and let you wire up exactly the charts you want. Notion templates and spreadsheets are the same idea with more manual data entry, less polish, and effectively no monthly fee.
+
+These tools are powerful and they own the SERP for "social media dashboard examples" because they ship template galleries by the hundred. The honest cost is setup time. Connecting an API, picking which fields to track, building a layout, and keeping it healthy when an API rate-limits or a platform deprecates an endpoint takes hours per source. If you have an analyst who likes that kind of work, this path gives you the most flexibility for the lowest dollar cost. If you do not, the dashboard you build week one stops getting maintained by week six.
+
+Where this approach genuinely beats everything else is when social is one of several data streams. If your dashboard also has to show Stripe MRR, ad spend, and Google Analytics conversion data alongside follower counts, a dashboard builder is the only realistic path. None of the social-first tools surface Stripe.
+
+When the build-your-own path fits:
+
+- You want social metrics next to non-social metrics in one view.
+- You have someone on the team who maintains data integrations as part of their job.
+- You want to own the data layer rather than rent it.
+
+When it does not:
+
+- All you actually need is follower charts and post stats. The setup time is wildly out of proportion.
+- Nobody on the team is going to maintain it. Pretty dashboards die fast without an owner.
+
+## Lightweight agent-first tools: ilo
+
+This is the slot ilo is moving toward, so I want to describe it carefully. The category is tools that keep the data layer clean without trying to become a social media command center. Track public profiles, let your agents inspect the evidence through API, MCP, or CLI, and keep the metrics readable enough to decide what worked.
+
+ilo is now a local-first X CLI and MCP server rather than a hosted dashboard. The public report guides remain useful for deciding what to measure, and local analytics imports are on the open source roadmap.
+
+What ilo does not do, plainly:
+
+- No inbox or DMs.
+- No scheduler or approval workflow. It is not the multi-stage review process Sprout and Hootsuite ship.
+- No social listening for keywords or brand mentions.
+- No paid spend tracking. ilo tracks audience and engagement, not ad campaigns.
+- No bundled AI writer. Bring your own agent through API, MCP, or CLI.
+
+So ilo lands somewhere most useful when:
+
+- You are a solo founder, developer, creator, or small team that wants a clean read-only audit layer.
+- You want your agents to inspect results without browser automation.
+- You want public post history and metrics available through clean programmatic surfaces.
+
+It does not fit if you need broad agency approvals, DMs, listening, ad reporting, or a large human dashboard workflow.
+
+## Picking by the job you actually have
+
+If I had to summarise the choice into one decision tree:
+
+- **You want 𝕏-first performance audits that agents can use.** Lightweight tools like ilo. Small surface, reliable backend, API/MCP/CLI first.
+- **You want scheduling and analytics in one bill.** Buffer. Per-channel pricing makes it sane for small brands.
+- **You manage social for an agency or a multi-team org with approvals and inbox triage.** Sprout Social or Hootsuite. The price reflects the surface area, but the surface is what you are buying.
+- **Your dashboard has to merge social with revenue, ad spend, and product analytics.** A dashboard builder like Klipfolio or Databox, or a Notion build with Zapier doing the data sync.
+- **You have engineers and want to own the data layer.** Pull the platform APIs into your own warehouse and build with whatever BI tool you already use. Same answer as the dashboard builders, lower per-month cost, higher engineering cost.
+
+The category is wide because the jobs vary that much. Anyone who tells you their tool is the right answer for every brand is selling, not advising. Including me, which is why this post lists where ilo loses as carefully as where it wins.
+
+If you want to try the lightweight option for your brand, [set up ilo](/settings/setup) and use the API, MCP, or CLI as the main surface.

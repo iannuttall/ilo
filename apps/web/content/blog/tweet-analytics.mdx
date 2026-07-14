@@ -1,0 +1,59 @@
+---
+title: "How tweet analytics work for a single post on X"
+description: "Use tweet analytics to check one X post, understand which metrics require account access, and decide when saved history tells you more than one panel."
+date: 2026-04-28
+author: "Ian Nuttall"
+tags: ["twitter-analytics"]
+status: published
+---
+
+Tweet analytics are easiest to understand at the single-post level. Open one post, check what X shows you, then decide whether the number answers the question you actually had.
+
+Some metrics are public. Some require account access. Some disappear from the official API after a short window, which is exactly why saving history matters if you care about old posts.
+
+## X shows basic post analytics from the post itself
+
+For a post you own, X still points users to the post activity icon. [X's help docs for post activity](https://help.x.com/en/managing-your-account/increase-x-reach) describe the flow for promoted posts as opening the post detail, clicking or tapping the post activity icon, then viewing results such as link clicks, impressions, and total engagements.
+
+The shape is similar for normal organic posts. Open your post, use the analytics or activity icon where X shows it, and read the post-level panel. The exact placement can move between web and mobile, so I would avoid memorising screenshots. They go stale faster than the article does.
+
+[X's broader analytics page](https://business.x.com/en/advertising/analytics) also links to the Post Activity Dashboard, which it describes as showing metrics for every single post, including how many times people saw, reposted, liked, and replied to each post. It also mentions date filtering and CSV export.
+
+## Public metrics and private metrics are different buckets
+
+[X's API docs on metrics](https://docs.x.com/x-api/fundamentals/metrics) are clearer than the UI here. Public post metrics include reposts, quotes, likes, replies, impressions, and bookmarks. Those can be requested with normal bearer-token authentication.
+
+Private metrics need user-context access and only work for posts you own. That bucket includes URL clicks, profile clicks, and engagements. The same docs also say non-public, organic, and promoted metrics are only available for posts created within the last 30 days.
+
+That means there are two separate questions hiding inside "can I see tweet analytics?"
+
+- Can you see public engagement counts for a post?
+- Can you see the private click and engagement data for a post you own?
+
+If the post is yours and recent, you have the best chance of seeing the full picture. If it is someone else's post, or an old post where private metrics were never stored elsewhere, expect a thinner view.
+
+## Impressions do not equal engaged readers
+
+[X defines impressions](https://docs.x.com/x-api/fundamentals/metrics) as the count of times a post appeared on a user's screen, and says the count is not unique. The same person viewing twice can count twice.
+
+That makes impressions useful for distribution, but weak as proof of attention. A post can rack up impressions because it was shown widely, reopened in replies, quoted, or promoted. You still need likes, replies, reposts, bookmarks, profile clicks, and link clicks to understand what happened next.
+
+This is where single-post analytics can get addictive in a bad way. Refreshing one big number tells you less than comparing a few posts with similar format and audience. [What an impression on X actually means](/blog/twitter-impressions) goes deeper on why that one number flatters you more than it should.
+
+## A history view beats the native panel when you compare posts
+
+The native post panel is useful when you want to inspect one post right now. A history view is better when you want to answer the questions creators actually ask later.
+
+- Which posts drove profile clicks?
+- Which topics got impressions without follows?
+- Which replies outperformed original posts?
+- Which posts had a slow second wave?
+- Which links got attention but no clicks?
+
+ilo is built for that longer view. It keeps account history from the day you connect, so you can compare posts and counters without digging through one X panel at a time. [Connect X in ilo](/settings/connections) when the question has moved from "how did this post do?" to "what pattern keeps repeating?"
+
+## Do not wait until after a post takes off
+
+Single-post tweet analytics are good for immediate diagnosis. They are weaker as a long-term archive, especially where private metrics and API windows are involved.
+
+Use X when you only care about today's post. Start collecting history before the next post surprises you when you care about patterns across months. Future you will be less annoyed. Present you has to do one small setup step, which feels unfair but is how tracking works.

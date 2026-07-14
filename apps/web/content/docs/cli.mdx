@@ -1,0 +1,78 @@
+---
+title: "CLI"
+description: "Create local drafts, schedule them, and publish to X from the terminal."
+category: "agent"
+order: 2
+status: published
+h1: "Draft, schedule, and publish from the terminal."
+seoTitle: "ilo CLI: Local X Drafts, Scheduling and Publishing"
+seoDescription: "Use the open source ilo CLI to connect X, manage local drafts, schedule posts, and publish from your terminal."
+---
+
+Install ilo from npm:
+
+```sh
+npm i -g iloso
+```
+
+Run `ilo --help` to see the current command tree.
+
+## X account
+
+```sh
+ilo x connect
+ilo x status
+ilo x disconnect
+```
+
+`ilo start` is the guided shortcut for `ilo x connect`.
+
+Your X client configuration and account metadata live in `~/.config/ilo/config.json`. OAuth tokens and the optional client secret are stored in the operating system keychain.
+
+## Publish one post
+
+```sh
+ilo post --text "Post text"
+ilo post --file ./post.txt
+printf "Post from stdin" | ilo post
+```
+
+Interactive publishing asks for confirmation. Use `--yes` only when the caller has already confirmed the post.
+
+## Drafts
+
+```sh
+ilo drafts create --text "Draft text"
+ilo drafts list
+ilo drafts schedule <draft-id> --at "Friday at 2pm"
+ilo drafts publish <draft-id>
+```
+
+Schedule values can be ISO timestamps or plain phrases such as `in 30 minutes`, `tomorrow at 9am`, and `Monday at 14:00`.
+
+## Local scheduler
+
+```sh
+ilo scheduler run
+ilo scheduler watch --interval 60
+```
+
+`run` checks once. `watch` keeps running and checks on an interval. Drafts stay in the local SQLite database until they are published or removed.
+
+## JSON output
+
+Commands intended for scripts support `--json`.
+
+```sh
+ilo x status --json
+ilo drafts list --json
+ilo scheduler run --json
+```
+
+## Local MCP
+
+```sh
+ilo mcp serve
+```
+
+This starts the stdio MCP server. It does not open a port or contact an ilo backend.

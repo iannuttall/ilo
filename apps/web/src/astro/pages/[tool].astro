@@ -1,0 +1,35 @@
+---
+import { ASTRO_TOOLS, getAstroToolBySlug } from '../data/tools'
+import TwitterAdvancedSearchTool from '../components/tools/TwitterAdvancedSearchTool.astro'
+import ToolPageShell from '../components/ToolPageShell.astro'
+import { getToolPageContent } from '../data/tool-page-content'
+import { ToolWidget } from '../islands/ToolWidget'
+import BaseLayout from '../layouts/BaseLayout.astro'
+
+const { tool: slug } = Astro.params
+const page = slug ? getAstroToolBySlug(slug) : null
+if (!slug || !page) return new Response('Not found', { status: 404 })
+
+const otherTools = ASTRO_TOOLS.filter((tool) => tool.href !== page.href).slice(0, 4)
+const content = getToolPageContent(slug)
+---
+
+<BaseLayout
+  title={content?.seoTitle ?? page.title}
+  description={content?.description ?? page.description}
+>
+  <ToolPageShell
+    toolTitle={page.title}
+    heading={content?.heading ?? page.title}
+    description={content?.description ?? page.description}
+    sections={content?.sections ?? []}
+    faqs={content?.faqs ?? []}
+    otherTools={otherTools}
+  >
+    {slug === 'twitter-advanced-search' ? (
+      <TwitterAdvancedSearchTool />
+    ) : (
+      <ToolWidget slug={slug} client:load />
+    )}
+  </ToolPageShell>
+</BaseLayout>

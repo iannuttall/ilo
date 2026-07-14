@@ -1,0 +1,69 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.3/schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!!**/node_modules",
+      "!!**/dist",
+      "!!**/.astro",
+      "!!apps/web/**/*.astro",
+      "!!**/public/assets",
+      "!!**/.turbo",
+      "!!**/.wrangler",
+      "!!**/pnpm-lock.yaml",
+      "!!**/biome.json",
+      "!!**/*.md",
+      "!!**/*.mdx",
+      "!!**/tsconfig*.json",
+      "!!**/*.config.ts",
+      "!!**/*.config.cts",
+      "!!**/*.config.mts",
+      "!!**/*.config.js",
+      "!!**/*.config.cjs",
+      "!!**/*.config.mjs",
+      "!!**/*.config.json",
+      "!!**/.vscode",
+      "!!**/tmp",
+      "!!**/styles.css"
+    ]
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "style": {
+        "noExcessiveLinesPerFile": {
+          "level": "error",
+          "options": {
+            "maxLines": 1200,
+            "skipBlankLines": true
+          }
+        }
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2
+  },
+  "css": {
+    "parser": {
+      "cssModules": false,
+      "tailwindDirectives": true
+    },
+    "linter": {
+      "enabled": false
+    },
+    "formatter": {
+      "enabled": false
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "semicolons": "asNeeded"
+    }
+  }
+}

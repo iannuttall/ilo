@@ -1,0 +1,19 @@
+---
+import Logo from './Logo.astro'
+type Props = { compact?: boolean }
+const { compact = false } = Astro.props
+const navClass = 'text-sm text-foreground-muted underline-offset-4 hover:text-foreground hover:underline'
+---
+
+<header class:list={['flex items-center justify-between gap-6 py-4', compact ? 'site-frame' : 'mx-auto w-full max-w-6xl px-6 md:px-8']}>
+  <a href="/" class="flex items-center gap-2 text-foreground no-underline">
+    <Logo class="size-9" />
+    <span class="sr-only">ilo</span>
+  </a>
+  <nav class="flex items-center gap-5">
+    <a class={navClass} href="/tools">Tools</a>
+    <a class={navClass} href="/docs">Docs</a>
+    <a class={navClass} href="/blog">Blog</a>
+    <a class={navClass} href="https://github.com/iannuttall/ilo" target="_blank" rel="noreferrer">GitHub</a>
+  </nav>
+</header>

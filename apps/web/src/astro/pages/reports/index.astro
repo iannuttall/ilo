@@ -1,0 +1,38 @@
+---
+import { reportGroups } from '../../../lib/x-report-catalog'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+---
+
+<BaseLayout
+  title="Twitter Analytics Reports: 𝕏 Performance Audits"
+  description="Choose 𝕏 reports that help agents understand what works, what changed, and what to try next."
+>
+  <main class="site-frame py-16">
+    <article class="content-prose">
+      <h1>𝕏 performance reports</h1>
+      <p>
+        Use these public research guides to turn an account's post history into
+        better context before an agent writes the next post.
+      </p>
+      <div class="not-prose mt-12 grid grid-cols-1 gap-x-12 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+        {reportGroups.map((group) => (
+          <section>
+            <h2 class="mb-5 text-xl font-semibold">{group.title}</h2>
+            <ul class="space-y-3 text-xl/7">
+              {group.reports.map((report) => (
+                <li>
+                  <a
+                    class="text-primary underline decoration-2 underline-offset-4 hover:text-primary-hover"
+                    href={`/reports/${report.slug}`}
+                  >
+                    {report.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </article>
+  </main>
+</BaseLayout>

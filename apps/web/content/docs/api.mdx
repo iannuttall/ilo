@@ -1,0 +1,66 @@
+---
+title: "Tool API"
+description: "Use the public ilo.so endpoints that power the free social media tools."
+category: "reference"
+order: 1
+status: published
+h1: "Use the public tool API."
+seoTitle: "Free Social Media Tool API: X and Bluesky"
+seoDescription: "Use the public ilo.so API endpoints behind the free X, Bluesky, and social card preview tools."
+---
+
+The hosted API only powers the free tools on ilo.so. It has no accounts, billing, drafts, publishing, or remote MCP.
+
+The CLI does not need this API for local drafts or X publishing.
+
+## Health
+
+```sh
+curl https://ilo.so/api/health
+```
+
+## X profile lookup
+
+```sh
+curl https://ilo.so/api/tools/x/profile/ilo_so
+```
+
+You can also look up a numeric profile id:
+
+```sh
+curl https://ilo.so/api/tools/x/profile-id/123456
+```
+
+## X search
+
+```sh
+curl "https://ilo.so/api/tools/x/search?q=cloudflare&count=20"
+```
+
+## X thread and video lookup
+
+```sh
+curl https://ilo.so/api/tools/x/thread -H "Content-Type: application/json" -d '{"url":"https://x.com/example/status/123"}'
+```
+
+```sh
+curl https://ilo.so/api/tools/x/video -H "Content-Type: application/json" -d '{"url":"https://x.com/example/status/123"}'
+```
+
+## Bluesky
+
+```sh
+curl https://ilo.so/api/tools/bluesky/profile/example.bsky.social
+```
+
+## Link previews
+
+The card preview tools accept a public absolute URL:
+
+```sh
+curl https://ilo.so/api/tools/twitter-card-validator -H "Content-Type: application/json" -d '{"url":"https://example.com"}'
+```
+
+The equivalent endpoints for other networks are `/api/tools/threads-link-preview` and `/api/tools/bluesky-link-preview`.
+
+These endpoints are public utilities and may be rate limited. If you need guaranteed capacity, deploy the Worker from the [GitHub repository](https://github.com/iannuttall/ilo).

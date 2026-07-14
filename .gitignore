@@ -1,0 +1,19 @@
+node_modules/
+.pnpm-debug.log
+.DS_Store
+
+# build artifacts
+dist/
+dist-firefox/
+.astro/
+.turbo/
+.vite/
+.wrangler/
+
+# env files
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+# local temp/debug output
+tmp/

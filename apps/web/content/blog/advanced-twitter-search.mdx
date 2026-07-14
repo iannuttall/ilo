@@ -1,0 +1,147 @@
+---
+title: "How X advanced search works and what quietly changed"
+description: "Find posts by date, account, language, hashtag, and more with X advanced search. The form, the operators, and the bits that quietly stopped working."
+date: 2026-04-28
+author: "Ian Nuttall"
+tags: ["twitter-search"]
+status: published
+---
+
+X (formerly Twitter) still has an advanced search form. The form has moved twice since the rebrand, dropped two whole sections, and most of the guides ranking on Google still describe the old Twitter UI. Here is what the form looks like today, which operators still work in the search bar, and which ones are documented in the wild but behave unpredictably.
+
+Use the [Twitter advanced search builder](/twitter-advanced-search) if you want to build the URL without typing every operator by hand.
+
+## Where the form lives
+
+The form is at [x.com/search-advanced](https://x.com/search-advanced), and you have to be logged in to load it. Older links to `twitter.com/search-advanced` redirect to the same place.
+
+X also surfaces it in two other ways. From any search results page on the desktop web, you will find an "Advanced search" link under the search filters in the top right. On mobile, the form is still hidden. There is no native UI for it on the iOS or Android app, so on phone you have to type the operators by hand.
+
+## What the form covers today
+
+The current advanced search form is grouped into four sections: Words, People, Places, and Dates. That is a meaningful change from the previous layout, which also had Filters and Engagement. Both sections have been removed.
+
+What you can do in the form today, straight from [X's help docs](https://help.x.com/en/using-x/x-advanced-search):
+
+- **Words**: all-of, any-of, exact phrase, exclude, hashtag, language
+- **People**: posted by an account, in reply to an account, mentioning an account
+- **Places**: from a geographic location via a place dropdown
+- **Dates**: before, after, or a range
+
+Notice what is missing. There is no UI for `min_faves`, `min_retweets`, or `min_replies` anywhere in the form. There is no UI for `filter:links`, `filter:replies`, or `filter:media`. If you only ever use the form, those queries are simply not available to you.
+
+The good news is that almost all of those operators still work. They just live in the regular search bar now.
+
+## Operators that still work in the search bar
+
+These are the operators that have been stable since the early 2010s and are still the bread-and-butter of any real search. You type them into the search bar at the top of the timeline.
+
+```
+from:username
+```
+Posts from a specific account.
+
+```
+to:username
+```
+Replies sent to a specific account.
+
+```
+"exact phrase"
+```
+Posts containing the exact phrase, in that order.
+
+```
+keyword OR keyword
+```
+Posts containing either keyword. The `OR` has to be uppercase.
+
+```
+keyword -word
+```
+Posts containing one keyword and not the other.
+
+```
+since:2020-01-01
+until:2020-12-31
+```
+Posts from a date range. ISO format. The `since` is inclusive, the `until` is exclusive.
+
+```
+min_faves:100
+min_retweets:25
+min_replies:10
+```
+Engagement filters. These have no UI but still work as typed queries.
+
+```
+filter:replies
+-filter:replies
+filter:media
+filter:links
+-filter:links
+```
+The remaining filters that work reliably.
+
+```
+lang:en
+```
+Posts in a specific language. Two-letter ISO code.
+
+```
+url:domain.com
+```
+Posts containing a link to a specific domain. Useful for finding everyone who shared a particular site.
+
+That set of operators covers most of what people actually use advanced search for. Combine them and you get something powerful in one line.
+
+## A handful of queries worth memorising
+
+```
+from:elonmusk min_faves:10000 since:2024-01-01
+```
+Elon's posts since 2024 with at least 10,000 likes. Swap the date for any cutoff that matters to you.
+
+```
+"link in bio" filter:replies -filter:links
+```
+Replies that mention "link in bio" but contain no link, useful for finding people promoting things in conversations.
+
+```
+to:yourusername min_faves:50
+```
+Replies to you that got at least 50 likes. The closest thing X has to a "best mentions" view.
+
+```
+"AI agents" min_retweets:100 lang:en since:2024-01-01
+```
+Highly-retweeted posts about AI agents in English from a chosen date forward. Move the date to narrow or widen the window.
+
+```
+url:yourdomain.com -from:yourusername
+```
+Every post sharing your domain that wasn't sent by you. Better than X's native referral tracking.
+
+## Operators with murky status
+
+Several documented operators have either become flaky or partially broken since the rebrand. I cannot guarantee any of these work for you on a given day, but they have all been seen working at some point post-rebrand. Treat as folklore until you have tested them on the account you actually use.
+
+- `near:city` and `within:10km` for geographic radius search. The form's Places picker is what X now wants you to use, and the bare operators are inconsistent.
+- `geocode:lat,lng,radius` for coordinate-based search. Historically used by researchers and journalists. Behaviour is uneven.
+- `source:client_name` for filtering by the app a post was sent from. Most third-party clients no longer exist, which has narrowed what this can return.
+- `card_name:animated_gif` and similar card type filters. Documented as only working for the last week or so of posts.
+- `filter:nativeretweets` versus `filter:retweets`. Different historical meanings; current behaviour ambiguous enough that I would not build a workflow on either.
+- `list:listid` for searching across the members of a List. Works for some accounts and lists, returns empty for others.
+- `conversation_id:tweet_id` for grabbing every reply in a thread. Powerful when it works. Inconsistent.
+
+The most thoroughly maintained community reference for these is [igorbrigadir's twitter-advanced-search repo on GitHub](https://github.com/igorbrigadir/twitter-advanced-search). It documents every operator known to have ever worked, with notes on which are limited to which surfaces. Last meaningful update was late 2022, so caveats apply, but it is still the most complete inventory I have found.
+
+## When the form beats typing operators
+
+The form is genuinely useful in two cases. The first is date range, where the calendar picker is faster than typing two ISO dates. The second is when you are searching multiple accounts at once and want autocomplete on the username field, which the bare `from:` operator does not give you.
+
+For everything else the search bar is faster. Once you have memorised six or seven operators, you will find yourself typing the query while you are still walking from the home tab.
+
+## A note on Twitter IDs
+
+A few of these operators want a username. A few of them, particularly older API-style operators, want a numerical user ID instead. If you have a username and need the ID, [ilo's Twitter ID Finder](/twitter-id) handles the lookup without making you log in. It is the same numerical ID that survives username changes, so it is also useful for tracking accounts that rebrand.

@@ -1,0 +1,54 @@
+---
+title: "Twitter follower widget iOS options that still work"
+description: "Build a Twitter follower widget iOS setup with Scriptable, the X API, or ilo, plus the refresh limits that stop follower counts being truly live."
+date: 2026-04-28
+author: "Ian Nuttall"
+tags: ["twitter-widgets"]
+status: published
+---
+
+A Twitter follower widget iOS setup is still possible, but "live" needs a bit of tempering. iOS widgets refresh on Apple's schedule, X follower data has to come from an API or a service that already stores it, and the old copy-paste widget era is much less forgiving than it used to be.
+
+## iOS widgets can show follower counts, but they are not live counters
+
+Apple's WidgetKit model is built around timelines. Apple's [widget update documentation](https://developer.apple.com/documentation/widgetkit/timeline) says a widget provides entries and a refresh policy, and WidgetKit may update later than the requested time. That is fine for follower counts. It is a bad fit for a second-by-second counter.
+
+Scriptable has the same practical constraint. Its [ListWidget docs](https://docs.scriptable.app/listwidget/) say widgets refresh periodically and that the rate is largely determined by iOS or iPadOS. You can ask for a refresh after a date, but Scriptable also says that exact timing is not guaranteed.
+
+So the honest target is an at-a-glance follower widget. If you want a number that updates while you stare at it, open a dashboard.
+
+## Scriptable is the practical custom-widget route
+
+[Scriptable on the App Store](https://apps.apple.com/us/app/scriptable/id1405459188) still describes JavaScript-powered widgets that can run on the Home Screen and Lock Screen. That makes it a good route if you are comfortable pasting a script, storing a token, and accepting a little maintenance when APIs change.
+
+A typical setup looks like this.
+
+- Create a Scriptable widget.
+- Fetch a follower count from an API endpoint.
+- Render the count, a label, and maybe a small growth value.
+- Set a refresh-after date so iOS knows when the widget can ask again.
+
+The awkward part is the data source. X's own [API follower endpoint](https://docs.x.com/x-api/users/get-followers) is designed around user IDs and authenticated requests, and user objects expose `public_metrics` fields that include follower data. That is workable for a developer. It is a lot for someone who only wanted a tidy square on their Home Screen.
+
+## ilo can support widgets when the data already exists
+
+ilo already tracks follower history for connected accounts, so it is a more reasonable data source than making every user become an X API developer. A widget can ask ilo for the latest stored follower count and recent growth, then let iOS decide when to refresh it.
+
+That is what ilo can reasonably support.
+
+- Current follower count from the latest stored snapshot.
+- Recent follower growth.
+- A small trend chart.
+- API output that a Scriptable widget can consume.
+
+ilo cannot make iOS refresh on demand from the Home Screen. It also should not pretend that a cached analytics snapshot is the same thing as a real-time websocket. For a widget, cached is usually better anyway. Your battery gets a vote.
+
+The main product surfaces are the widget side, the X-specific setup, the live count view, and [ilo's API](/api) for the data side.
+
+## Use the X API directly only if you want to own the plumbing
+
+Going straight to X gives you control, but it also means you own auth, rate limits, token storage, and error handling. For a personal widget, that can be fine. For a team or client workflow, it becomes support work.
+
+Use the direct API route when you are already building developer tooling around X. Use ilo when you want the follower count and history without maintaining a separate API integration. Use the X app when you only need to check the number once.
+
+That sounds obvious, but it is the line that keeps this from becoming a weekend project in disguise.

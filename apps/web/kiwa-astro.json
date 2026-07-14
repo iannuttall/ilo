@@ -1,0 +1,9 @@
+{
+  "componentsDir": "src/astro/components/ui",
+  "blocksDir": "src/astro/components/blocks",
+  "utilsImport": "@/lib/utils",
+  "componentsImportBase": "@/astro/components/ui",
+  "blocksImportBase": "@/astro/components/blocks",
+  "libDir": "src/lib",
+  "installed": ["button", "checkbox", "input", "icon", "accordion", "card"]
+}

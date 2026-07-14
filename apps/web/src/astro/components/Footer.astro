@@ -1,0 +1,58 @@
+---
+import Logo from './Logo.astro'
+
+const linkRows = [
+  [
+    { label: 'Docs', href: '/docs' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'Tools', href: '/tools' },
+    { label: 'Changelog', href: '/changelog' },
+  ],
+  [
+    { label: 'Local MCP', href: '/docs/mcp' },
+    { label: 'CLI', href: '/docs/cli' },
+    { label: 'Tool API', href: '/docs/api' },
+    { label: 'GitHub', href: 'https://github.com/iannuttall/ilo' },
+  ],
+  [
+    { label: 'Terms', href: '/terms' },
+    { label: 'Privacy', href: '/privacy' },
+  ],
+]
+
+const linkClass =
+  'text-sm/6 text-foreground-muted underline-offset-4 transition-colors hover:text-foreground hover:underline'
+---
+
+<footer class="mt-20 py-14">
+  <div class="site-frame flex flex-col items-center gap-8 text-center">
+    <a href="/" class="text-foreground no-underline" aria-label="ilo home">
+      <Logo class="size-10" />
+    </a>
+
+    <nav class="flex flex-col items-center gap-4" aria-label="Footer">
+      {
+        linkRows.map((row) => (
+          <ul class="flex flex-wrap items-center justify-center gap-x-7 gap-y-3">
+            {row.map((link) => (
+              <li>
+                <a class={linkClass} href={link.href}>
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        ))
+      }
+      <a
+        class="text-2xl/none text-foreground underline-offset-4 transition-colors hover:text-foreground-muted hover:underline"
+        href="https://github.com/sponsors/iannuttall"
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Sponsor ilo on GitHub"
+      >
+        Sponsor
+      </a>
+    </nav>
+  </div>
+</footer>
