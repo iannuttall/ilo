@@ -100,11 +100,14 @@ if (wrangler.assets?.directory !== '../client') {
 if (wrangler.assets?.html_handling !== 'drop-trailing-slash') {
   fail('static HTML must keep extensionless canonical URLs')
 }
-if (wrangler.assets?.run_worker_first) {
-  fail('run_worker_first must stay disabled')
+if (Object.hasOwn(wrangler.assets ?? {}, 'run_worker_first')) {
+  fail("run_worker_first must use Cloudflare's false default")
 }
 if (wrangler.cache?.enabled) {
   fail('Workers Caching must stay disabled for static asset traffic')
+}
+if (wrangler.observability?.enabled !== false) {
+  fail('Worker observability must stay disabled')
 }
 
 const forbiddenBindings = [

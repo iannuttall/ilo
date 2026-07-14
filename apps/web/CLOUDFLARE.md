@@ -5,9 +5,10 @@ static Astro build. The build writes HTML pages, matching Markdown files,
 discovery files, and response headers into `apps/web/dist/client`.
 
 Cloudflare serves matching files as Workers Static Assets before considering
-the Worker. `assets.run_worker_first` is explicitly `false`, so normal page and
-asset requests do not invoke Worker code. Workers Caching is also disabled;
-the static asset service provides its own free global cache.
+the Worker. `assets.run_worker_first` is omitted and therefore defaults to
+`false`, so normal page and asset requests do not invoke Worker code. Workers
+Caching is disabled, and `observability.enabled` is explicitly `false`. The
+static asset service provides its own free global cache.
 
 The Worker is only used for:
 
