@@ -5,8 +5,11 @@ import { cn } from '@/lib/utils'
 const MCP_NOTE =
   'The MCP server runs on your machine and uses the same local database as the CLI.'
 const CLI_NOTE =
-  'Run `ilo start` once to connect your own X developer app and account.'
+  'Use the CLI to create drafts, manage schedules, and publish from your terminal.'
+const SKILL_NOTE =
+  'The skill teaches coding agents the ilo commands and publishing confirmation rules.'
 const CLI_COMMAND = 'npm i -g iloso && ilo start'
+const SKILL_COMMAND = 'ilo skill install'
 const buildStdioConfig = () =>
   JSON.stringify(
     { mcpServers: { ilo: { command: 'iloso', args: ['mcp', 'serve'] } } },
@@ -47,7 +50,7 @@ const clients = [
   },
 ] as const
 
-type Mode = 'cli' | 'mcp'
+type Mode = 'cli' | 'mcp' | 'skill'
 type ClientId = (typeof clients)[number]['id']
 type InstallPickerProps = { standalone?: boolean }
 
@@ -57,7 +60,12 @@ export function InstallPicker({ standalone = false }: InstallPickerProps) {
   const [copied, setCopied] = useState(false)
   const selectedClient =
     clients.find((item) => item.id === client) ?? clients[0]
-  const command = mode === 'cli' ? CLI_COMMAND : selectedClient.command
+  const command =
+    mode === 'cli'
+      ? CLI_COMMAND
+      : mode === 'skill'
+        ? SKILL_COMMAND
+        : selectedClient.command
 
   const copy = async () => {
     try {
@@ -93,6 +101,7 @@ export function InstallPicker({ standalone = false }: InstallPickerProps) {
               [
                 ['cli', 'Install CLI'],
                 ['mcp', 'Add MCP'],
+                ['skill', 'Add skill'],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -112,9 +121,19 @@ export function InstallPicker({ standalone = false }: InstallPickerProps) {
           </fieldset>
           <a
             className="text-sm text-foreground-muted underline decoration-border underline-offset-4 hover:text-foreground"
-            href={mode === 'cli' ? '/docs/cli' : '/docs/mcp'}
+            href={
+              mode === 'cli'
+                ? '/docs/cli'
+                : mode === 'mcp'
+                  ? '/docs/mcp'
+                  : '/docs/cli#agent-skill'
+            }
           >
-            {mode === 'cli' ? 'CLI docs' : 'MCP docs'}
+            {mode === 'cli'
+              ? 'CLI docs'
+              : mode === 'mcp'
+                ? 'MCP docs'
+                : 'Skill docs'}
           </a>
         </div>
 
@@ -152,10 +171,15 @@ export function InstallPicker({ standalone = false }: InstallPickerProps) {
             </div>
             <p className="text-foreground-muted">{selectedClient.helper}</p>
           </div>
+        ) : mode === 'skill' ? (
+          <p className="leading-7 text-foreground-muted">
+            Install the packaged ilo skill so your coding agent knows when and
+            how to use the CLI and MCP tools.
+          </p>
         ) : (
           <p className="leading-7 text-foreground-muted">
-            Install the CLI, then connect your X account through a local browser
-            callback. Your tokens stay in the system keychain.
+            Install the CLI, run the guided setup, then draft, schedule, and
+            publish from your terminal.
           </p>
         )}
 
@@ -182,7 +206,7 @@ export function InstallPicker({ standalone = false }: InstallPickerProps) {
             </button>
           </div>
           <p className="text-sm leading-6 text-foreground-muted">
-            {mode === 'cli' ? CLI_NOTE : MCP_NOTE}
+            {mode === 'cli' ? CLI_NOTE : mode === 'mcp' ? MCP_NOTE : SKILL_NOTE}
           </p>
         </div>
       </div>

@@ -17,54 +17,54 @@ const secondaryButton = `${buttonBase} bg-secondary text-secondary-foreground ho
 
 const faqs = [
   {
-    question: 'Where does ilo run?',
+    question: 'What does ilo help me do?',
     answer:
-      'On your machine. Drafts live in a local SQLite database, credentials stay in your operating system keychain, and MCP uses stdio. ilo does not need a hosted account.',
+      'Use public X performance evidence to plan stronger posts, save the ideas worth keeping, schedule them, and publish after you approve the final text.',
   },
   {
-    question: 'Can ilo publish and schedule posts?',
+    question: 'What does ilo help me analyze?',
     answer:
-      'Yes. Connect your own X app, publish after confirmation, or save a draft for the local scheduler. Nothing is sent to an ilo backend.',
+      'The report library covers top posts, weak posts, topics, hooks, formats, media, links, timing, replies, reposts, reach signals, and repeated patterns. Each guide explains what evidence to inspect and how to read it.',
   },
   {
-    question: 'Why do I need my own X app?',
+    question: 'Can I research competitors or clients?',
     answer:
-      'Publishing uses the official X API under your own developer account. You control the credentials, scopes, limits, and any X API bill.',
+      'Yes. The public research tools and report guides work with public handles and post data, which makes them useful for client work, market research, and competitor reviews.',
   },
   {
-    question: 'Does ilo include an AI model?',
+    question: 'What makes this different from generic content advice?',
     answer:
-      'No. Use Claude, Codex, Cursor, or another agent you already have. ilo gives it local tools for drafts, scheduling, and publishing.',
+      'Generic advice starts with averages. ilo gives your agent a process for working from the profile and posts you care about, recording the evidence, and keeping recommendations tied to that sample.',
   },
   {
-    question: 'How does local MCP work?',
+    question: 'What does my agent get back?',
     answer:
-      'Your MCP client starts iloso mcp serve as a child process. The server talks over stdin and stdout and uses the same local data as the CLI.',
+      'A useful answer includes the posts or profile signals behind each finding, the pattern they support, the limits of the sample, and a short list of next actions. That is much more useful than being told to post more often.',
   },
   {
-    question: 'Is there a hosted dashboard?',
+    question: 'Can ilo draft and publish posts?',
     answer:
-      'No. ilo.so is a static site with free social media tools and documentation. The product is the open source CLI and local MCP server.',
+      'Yes. Create a draft from the terminal or an agent, review the exact text, then publish it to X. Publishing always requires explicit confirmation.',
   },
   {
-    question: 'What is stored locally?',
+    question: 'Can ilo schedule posts?',
     answer:
-      'Drafts, schedules, publish attempts, timezone settings, and basic connected-account metadata. OAuth tokens and client secrets use the system keychain.',
+      'Yes. Schedule a draft with an exact timestamp or a phrase such as `tomorrow at 9am`. Run the scheduler as a watcher or call it from your normal task runner.',
   },
   {
-    question: 'Can I self-host the site and API?',
+    question: 'How does an agent use ilo?',
     answer:
-      'Yes. The repository includes the Astro site and Cloudflare Worker API. Fork it and deploy it to your own Cloudflare account.',
+      'Add the local MCP server to Claude, Codex, Cursor, or another compatible client. The ilo skill teaches the agent how to research, draft, schedule, and ask for confirmation before publishing.',
   },
   {
-    question: 'Will Bluesky and LinkedIn be supported?',
+    question: 'Do I need to use an agent?',
     answer:
-      'X is first. The provider boundary is designed for more networks, with Bluesky and LinkedIn the next obvious additions.',
+      'No. Every drafting, scheduling, and publishing action is available from the CLI. The MCP server and skill give an agent access to the same workflow.',
   },
   {
-    question: 'How much does ilo cost?',
+    question: 'Which social networks does ilo support?',
     answer:
-      'ilo is free and MIT licensed. You pay X for any API access you use and Cloudflare only if you deploy the website or API yourself.',
+      'X publishing comes first. The public tools also cover Bluesky profiles and link previews. Bluesky and LinkedIn publishing are planned next.',
   },
   {
     question: 'How can I support the project?',
@@ -76,7 +76,7 @@ const faqs = [
 
 <BaseLayout
   title="Twitter Analytics for Agents: Open Source X Tools"
-  description="Research, draft, schedule, and publish on X with free Twitter analytics guides, an open source CLI, and a local MCP server for agents."
+  description="Use X performance evidence to plan better posts, save drafts, schedule them, and publish with an open source workflow built for agents."
 >
   <main data-agent-content="true">
     <section class="flex flex-col border-b border-border bg-background pt-4 text-foreground">
@@ -87,8 +87,9 @@ const faqs = [
               Turn your agents into social media marketers that grow your 𝕏 audience.
             </h1>
             <p class="text-pretty text-2xl/8 font-medium -tracking-[0.2px] text-foreground-muted xl:text-3xl/10 xl:-tracking-[0.4px]">
-              Draft, schedule, and publish to X from an open source CLI and
-              local MCP server. Your account, your credentials, your machine.
+              Use performance evidence to plan better posts, turn the strongest
+              ideas into drafts, and publish them with an agent that knows the
+              workflow.
             </p>
           </div>
           <InstallPicker />
@@ -99,39 +100,31 @@ const faqs = [
     <div class="space-y-24 py-24">
       <section class="site-frame grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div class="rounded-lg bg-muted p-8">
-          <h2 class="text-lg font-semibold">
-            Connect your own X account.
-          </h2>
+          <h2 class="text-lg font-semibold">Find what keeps working.</h2>
           <p class="mt-2 text-base leading-7 text-foreground-muted">
-            Use your own X developer app. OAuth tokens stay in the operating
-            system keychain and never pass through ilo.so.
+            Compare strong and weak posts, then inspect the topics, hooks,
+            formats, timing, and audience response behind them.
           </p>
         </div>
         <div class="rounded-lg bg-muted p-8">
-          <h2 class="text-lg font-semibold">
-            Draft and schedule locally.
-          </h2>
+          <h2 class="text-lg font-semibold">Turn evidence into a draft.</h2>
           <p class="mt-2 text-base leading-7 text-foreground-muted">
-            Keep posts in a local SQLite database, schedule them with plain
-            language, and run the scheduler however you like.
+            Give your agent the account context, keep its recommendations tied
+            to real examples, and save the ideas worth publishing.
           </p>
         </div>
         <div class="rounded-lg bg-muted p-8">
-          <h2 class="text-lg font-semibold">
-            Give agents real tools.
-          </h2>
+          <h2 class="text-lg font-semibold">Schedule without date maths.</h2>
           <p class="mt-2 text-base leading-7 text-foreground-muted">
-            Connect Claude, Codex, Cursor, or any stdio MCP client. Creating
-            drafts is safe by default and publishing requires confirmation.
+            Queue a post for tomorrow morning or Friday at 2pm. ilo turns the
+            phrase into the right local time and keeps the draft ready.
           </p>
         </div>
         <div class="rounded-lg bg-muted p-8">
-          <h2 class="text-lg font-semibold">
-            Fork the whole thing.
-          </h2>
+          <h2 class="text-lg font-semibold">Keep approval in the loop.</h2>
           <p class="mt-2 text-base leading-7 text-foreground-muted">
-            The CLI, MCP server, public site, and Cloudflare tool API are MIT
-            licensed. Deploy or change any part of it.
+            Review the exact text and destination before anything is published.
+            The CLI and agent tools use the same confirmation rule.
           </p>
         </div>
       </section>
@@ -147,7 +140,7 @@ const faqs = [
       <section class="site-frame">
         <SectionHeading
           eyebrow="Free X research guides"
-          text="The existing report library stays public while the old ilo analytics engine is rebuilt for the local CLI."
+          text="Turn public X profile and post data into evidence your agent can use when it plans what to publish next."
         />
         <div class="grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {reportGroups.map((group) => (
@@ -174,11 +167,12 @@ const faqs = [
         <div>
           <div class="max-w-2xl">
             <h2 class="text-pretty text-2xl font-medium -tracking-[0.4px] text-foreground xl:text-3xl xl:-tracking-[0.6px]">
-              Questions before installing ilo
+              Questions about using ilo for X
             </h2>
             <p class="mt-4 text-pretty text-xl/7 font-medium -tracking-[0.15px] text-foreground-muted xl:text-2xl/8 xl:-tracking-[0.3px]">
-              ilo is local software, not another account, subscription, or
-              dashboard to maintain.
+              Start with the account and posts you care about. ilo helps your
+              agent research what worked, prepare the next post, and publish it
+              when you are ready.
             </p>
           </div>
 

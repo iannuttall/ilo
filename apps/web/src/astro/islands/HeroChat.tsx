@@ -27,7 +27,7 @@ const SCRIPT: Msg[] = [
   },
   {
     role: 'agent',
-    tools: ['checking the connected X account', 'creating a local draft'],
+    tools: ['checking the X connection', 'creating a local draft'],
     text: 'Saved locally. Nothing was sent to X.',
     bullets: [
       'We shipped v2 today.',
@@ -47,7 +47,7 @@ const SCRIPT: Msg[] = [
     text: 'The draft is queued for tomorrow at 09:00 in your local timezone. The scheduler can publish it when it becomes due.',
     insight: {
       title: 'Scheduled locally',
-      body: 'The queue lives in your local SQLite database. No ilo account or hosted service is involved.',
+      body: 'The queue lives in your local SQLite database and the scheduler picks up the draft when it becomes due.',
     },
     action: 'Added to the local queue',
   },
@@ -73,7 +73,7 @@ const SCRIPT: Msg[] = [
     role: 'agent',
     tools: ['listing local drafts'],
     text: 'There are two drafts left: one unscheduled idea and one post due Friday afternoon.',
-    bullets: ['Launch notes — draft', 'What v2 taught us — Friday at 16:30'],
+    bullets: ['Launch notes (draft)', 'What v2 taught us (Friday at 16:30)'],
   },
   {
     role: 'user',
@@ -89,7 +89,7 @@ const SCRIPT: Msg[] = [
   {
     role: 'agent',
     tools: ['checking the local MCP command'],
-    text: 'Run ilo as a local stdio MCP server. Your agent talks to the process on this machine, so there is no remote login or ilo API key.',
+    text: 'Run ilo as a local stdio MCP server, then install the ilo skill so the agent knows the commands and publishing rules.',
     insight: {
       title: 'Codex',
       body: 'codex mcp add ilo -- iloso mcp serve',

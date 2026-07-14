@@ -9,7 +9,7 @@ seoTitle: "Set Up ilo: Local X CLI and MCP"
 seoDescription: "Install the open source ilo CLI, connect your own X developer app, and use local drafts, scheduling, publishing, and MCP tools."
 ---
 
-ilo is a local-first CLI and MCP server for drafting, scheduling, and publishing to X. There is no ilo account, hosted login, subscription, or remote MCP server.
+ilo is an open source CLI, local MCP server, and agent skill for drafting, scheduling, and publishing to X.
 
 ## Install the CLI
 
@@ -83,7 +83,7 @@ The MCP server uses stdio and reads the same local database and keychain credent
 
 Drafts, schedules, publish attempts, and settings stay in a local SQLite database. Account metadata lives in `~/.config/ilo/config.json`; OAuth tokens and an optional client secret are stored in your operating system keychain.
 
-Nothing is synced to ilo.so. The hosted site provides documentation and free public research tools, but the CLI does not need an ilo account or API key.
+The CLI, MCP server, and agent skill use the same drafts, schedules, and publishing workflow.
 
 ## Keep the scheduler running
 

@@ -75,7 +75,15 @@ ilo scheduler run --json
 ilo mcp serve
 ```
 
-This starts the stdio MCP server. It does not open a port or contact an ilo backend.
+This starts the local stdio MCP server for compatible agents.
+
+## Agent skill
+
+```sh
+ilo skill install
+```
+
+The packaged ilo skill teaches coding agents when to use ilo, which CLI commands and MCP tools match the task, and which publishing actions require confirmation. Install it alongside the MCP server so an agent has both the tools and the instructions for using them safely.
 
 ## Safe automation
 

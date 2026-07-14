@@ -1,5 +1,15 @@
 # Agent rules
 
+`PRODUCT.md` defines what ilo is, who it helps, what it can do today, and what
+is still planned. Read it before making product decisions or writing claims.
+
+`CONTENT.md` is the writing contract for the website, documentation, command
+help, onboarding, metadata, README, and agent-facing instructions. Reading it
+is mandatory in the same task before editing user-facing copy.
+
+`CLAUDE.md` must remain a symlink to this file. Do not maintain separate agent
+instructions.
+
 ## Communication
 
 - Keep it informal, direct, and simple.
@@ -30,7 +40,10 @@ ilo is local-first open source software.
 - Keep canonical URLs, sitemap coverage, metadata, legacy redirects, and markdown negotiation working.
 - Public tool routes live under `apps/web/src/api/routes/tools`.
 - Use `@/...` for cross-folder imports inside `apps/web/src`.
-- Landing copy is marketing-focused. Docs copy is task-focused.
+- Landing copy leads with the user's job and outcome. Do not turn the homepage
+  into a list of product surfaces or internal architecture.
+- Docs copy is task-focused and introduces a surface only when the user needs
+  it for the next action.
 
 ## UI
 

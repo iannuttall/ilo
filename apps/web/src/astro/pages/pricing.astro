@@ -1,43 +1,43 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro'
 
-const costs = [
+const surfaces = [
   {
-    title: 'ilo',
+    title: 'CLI',
     price: '$0',
-    body: 'The CLI, local MCP server, website, and Worker API are open source under the MIT license.',
+    body: 'Draft, schedule, inspect, and publish posts from your terminal.',
   },
   {
-    title: 'X API',
-    price: 'Your plan',
-    body: 'Connect your own X developer app. Any usage limits or charges are between you and X.',
+    title: 'Local MCP server',
+    price: '$0',
+    body: 'Give Claude, Codex, Cursor, and other MCP clients the same ilo tools.',
   },
   {
-    title: 'Cloudflare',
-    price: 'Optional',
-    body: 'You only need Cloudflare if you deploy your own copy of the public site and tool API.',
+    title: 'Agent skill',
+    price: '$0',
+    body: 'Teach coding agents the ilo workflow and publishing confirmation rules.',
   },
 ]
 ---
 
 <BaseLayout
   title="Pricing"
-  description="ilo is free and MIT licensed. Bring your own X developer account and optional Cloudflare deployment."
+  description="ilo is a free and open source CLI, local MCP server, and agent skill for drafting, scheduling, and publishing social posts."
 >
   <main class="site-frame py-16">
     <section class="max-w-2xl">
-      <p class="text-sm font-medium text-primary">No SaaS plans</p>
+      <p class="text-sm font-medium text-primary">MIT licensed</p>
       <h1 class="mt-3 text-pretty text-4xl font-medium -tracking-[0.6px] text-foreground">
-        Free software. Your infrastructure.
+        Use every ilo surface for free.
       </h1>
       <p class="mt-5 text-pretty text-xl/8 text-foreground-muted">
-        ilo has no subscriptions, usage credits, hosted accounts, or paid
-        reports. Install it locally, fork it, or deploy it yourself.
+        Install the CLI, add the local MCP server to your agent, and install the
+        ilo skill. The full project is open source under the MIT license.
       </p>
     </section>
 
     <section class="mt-12 grid gap-3 md:grid-cols-3">
-      {costs.map((item) => (
+      {surfaces.map((item) => (
         <article class="rounded-lg bg-muted p-6">
           <p class="text-sm font-medium text-foreground-muted">{item.title}</p>
           <h2 class="mt-2 text-2xl font-semibold text-foreground">{item.price}</h2>
@@ -47,74 +47,80 @@ const costs = [
     </section>
 
     <section class="mt-14 max-w-2xl border-t border-border pt-10">
-      <h2 class="text-2xl font-medium text-foreground">What free includes</h2>
+      <h2 class="text-2xl font-medium text-foreground">Start with the CLI</h2>
       <div class="mt-4 space-y-4 text-base leading-7 text-foreground-muted">
         <p>
-          The MIT-licensed repository includes the CLI, local MCP server,
-          scheduling and publishing code, documentation site, report guides,
-          and public tool API. You can use it commercially, modify it, or ship
-          your own version under the terms of the license.
+          The CLI is the quickest way to set up ilo and see how it works. Run
+          <code>ilo start</code> to configure X publishing, then create a draft
+          with <code>ilo drafts create</code>. Drafts and schedules are stored in
+          a local SQLite database.
         </p>
         <p>
-          There is no ilo account to create and no usage meter in the local
-          software. Drafts and schedules stay on your machine. Your MCP client
-          starts ilo locally and publishing goes directly through the X app you
-          connect.
+          Scheduling accepts ISO timestamps and phrases such as
+          <code>tomorrow at 9am</code> or <code>Friday at 2pm</code>. Run the
+          scheduler once from a task runner or leave it watching for due posts.
         </p>
       </div>
 
-      <h2 class="mt-10 text-2xl font-medium text-foreground">Costs you may still have</h2>
+      <h2 class="mt-10 text-2xl font-medium text-foreground">Add ilo to an agent</h2>
       <div class="mt-4 space-y-4 text-base leading-7 text-foreground-muted">
         <p>
-          X decides which developer plan and limits are required for publishing.
-          Check its current pricing before connecting an app. ilo does not add a
-          fee or resell that access.
+          The local MCP server exposes ilo's draft, schedule, status, and
+          publishing tools to compatible agents. The CLI and MCP server use the
+          same drafts and settings, so you can move between them without copying
+          work around.
         </p>
         <p>
-          Running the CLI and local MCP server does not require Cloudflare. A
-          Cloudflare account is only needed when you want your own hosted copy
-          of the website and tool API. Your bill then depends on your traffic,
-          bindings, and Cloudflare plan.
+          Install the packaged skill with <code>ilo skill install</code>. The
+          skill tells an agent which ilo tool to use and makes the confirmation
+          rule explicit. Creating and scheduling drafts is safe to do directly.
+          Publishing still requires approval for the exact post.
         </p>
       </div>
 
-      <h2 class="mt-10 text-2xl font-medium text-foreground">Public ilo.so tools</h2>
+      <h2 class="mt-10 text-2xl font-medium text-foreground">Bring X API access</h2>
       <p class="mt-4 text-base leading-7 text-foreground-muted">
-        The tools on ilo.so are available without an account, but they may be
-        cached, rate limited, changed, or unavailable. Self-host the Worker if
-        another application needs controlled capacity or a stable deployment.
+        Publishing uses an X developer app that you configure during setup. X
+        controls its developer plans, usage limits, and charges. ilo does not
+        add a fee to those provider costs.
       </p>
 
-      <h2 class="mt-10 text-2xl font-medium text-foreground">Common questions</h2>
+      <h2 class="mt-10 text-2xl font-medium text-foreground">
+        Use ilo for your own posts or client work
+      </h2>
       <div class="mt-4 space-y-4 text-base leading-7 text-foreground-muted">
         <p>
-          <strong class="font-medium text-foreground">Can I use ilo for client work?</strong>
-          Yes. The MIT license permits commercial use. You remain responsible
-          for provider terms, connected accounts, published content, and any
-          infrastructure you operate.
+          Start with the public profile and posts you want to understand. The
+          research tools and report guides help an agent inspect strong posts,
+          weak posts, topics, hooks, formats, timing, and audience response. Ask
+          it to show the evidence behind each recommendation before you turn a
+          finding into a draft.
         </p>
         <p>
-          <strong class="font-medium text-foreground">Can I pay for a hosted ilo plan?</strong>
-          No. There are no hosted accounts, analytics subscriptions, credits,
-          or one-off paid reports. The public report library is free to read.
-        </p>
-        <p>
-          <strong class="font-medium text-foreground">Do I need an X API plan to read the site?</strong>
-          No. It is only needed for CLI actions that use your own X developer
-          app, such as publishing a post.
+          The same process works for a client review or competitor research.
+          Record the handle, date range, sample size, and posts behind the
+          findings so the result can be checked later. Keep each profile's
+          evidence separate. Comparing two tidy samples beats mixing a dozen
+          accounts into one vague content brief.
         </p>
       </div>
 
-      <h2 class="mt-10 text-2xl font-medium text-foreground">Support the project</h2>
-      <p class="mt-4 text-base leading-7 text-foreground-muted">
-        If ilo saves you time, star the repository, contribute a fix, or sponsor
-        Ian. Sponsorship supports maintenance without turning the tool back into
-        a subscription product. It does not unlock a private tier or priority
-        API access; the same source and features remain available to everyone.
-        Bug reports, documentation fixes, and tested provider contributions are
-        useful ways to help even if you do not sponsor the project.
-      </p>
-      <div class="mt-6 flex flex-wrap gap-3">
+      <h2 class="mt-10 text-2xl font-medium text-foreground">Use and change the source</h2>
+      <div class="mt-4 space-y-4 text-base leading-7 text-foreground-muted">
+        <p>
+          The MIT license allows personal and commercial use, modification, and
+          redistribution. The repository contains the CLI, MCP server, skill,
+          documentation, and tests. You can add another provider, change the
+          workflow, or use the core packages in your own project.
+        </p>
+        <p>
+          Contributions are welcome. Bug reports, documentation fixes, and
+          tested provider work all help. If ilo saves you time, you can also
+          sponsor Ian to support ongoing maintenance.
+        </p>
+      </div>
+
+      <div class="mt-7 flex flex-wrap gap-3">
         <a
           class="inline-flex h-10 items-center rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
           href="https://github.com/iannuttall/ilo"
