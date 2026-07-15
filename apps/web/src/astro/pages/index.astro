@@ -2,6 +2,7 @@
 import HeroPanel from '../components/HeroPanel.astro'
 import InstallPicker from '../components/InstallPicker.astro'
 import SectionHeading from '../components/SectionHeading.astro'
+import { getButtonClasses } from '../components/ui/button'
 import {
   Accordion,
   AccordionContent,
@@ -12,10 +13,6 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 import { reportGroups } from '../../lib/x-report-catalog'
 
 export const prerender = true
-
-const buttonBase =
-  'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent px-6 text-sm font-medium transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20'
-const secondaryButton = `${buttonBase} bg-secondary text-secondary-foreground hover:bg-secondary-hover`
 
 const faqs = [
   {
@@ -71,7 +68,7 @@ const faqs = [
   {
     question: 'How can I support the project?',
     answer:
-      'Star the repository, contribute a fix or provider, or sponsor Ian on GitHub if ilo saves you time.',
+      'Star the repository, contribute a fix or provider, or sponsor the project if ilo saves you time.',
   },
 ]
 ---
@@ -93,6 +90,19 @@ const faqs = [
               exactly what content and topics to focus on to grow your
               audience.
             </p>
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <a
+              class={getButtonClasses('default', 'lg')}
+              href="https://github.com/iannuttall/ilo"
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub
+            </a>
+            <a class={getButtonClasses('secondary', 'lg')} href="/docs">
+              Read docs
+            </a>
           </div>
           <InstallPicker />
         </div>

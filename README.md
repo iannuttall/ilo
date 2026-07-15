@@ -75,7 +75,6 @@ await scheduleDraft(draft.id, 'tomorrow at 9am')
 - `packages/core`: local config, keychain, SQLite, scheduling, and provider logic
 - `packages/cli`: the `ilo` and `iloso` commands
 - `packages/mcp`: the local stdio MCP tools
-- `apps/web`: the statically generated ilo.so site and same-origin tool routes
 
 ## Develop
 
@@ -87,14 +86,10 @@ pnpm test
 pnpm build
 ```
 
-The website can run locally with `pnpm -C apps/web dev`. See [apps/web/README.md](apps/web/README.md) for its optional environment variables and Cloudflare deployment.
-
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/iannuttall/ilo/tree/main/apps/web)
-
 ## Roadmap
 
 X publishing and scheduling are first. Bluesky and LinkedIn are the next provider targets. Local imports and automated performance reports come next.
 
 ## License and support
 
-MIT licensed. If ilo saves you time, [sponsor Ian](https://github.com/sponsors/iannuttall).
+MIT licensed. If ilo saves you time, [sponsor the project](https://github.com/sponsors/iannuttall).
