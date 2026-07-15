@@ -2,8 +2,10 @@ name: publish-npm
 
 on:
   push:
-    tags:
-      - "iloso-v*"
+    branches:
+      - main
+    paths:
+      - "package.json"
   workflow_dispatch:
     inputs:
       dryRun:
@@ -15,8 +17,12 @@ on:
           - "true"
           - "false"
 
+concurrency:
+  group: publish-npm
+  cancel-in-progress: false
+
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -30,28 +36,75 @@ jobs:
         with:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+
+      - name: Use an OIDC-compatible npm version
+        run: npm install --global npm@11
+
+      - name: Inspect package version
+        id: package
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          if npm view "iloso@$VERSION" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "iloso@$VERSION is already published"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            echo "iloso@$VERSION is ready to publish"
+          fi
 
       - name: Install dependencies
+        if: steps.package.outputs.published == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dryRun == 'true')
         run: pnpm install --frozen-lockfile
 
       - name: Verify package
+        if: steps.package.outputs.published == 'false' || (github.event_name == 'workflow_dispatch' && inputs.dryRun == 'true')
         run: |
           pnpm lint
           pnpm typecheck
           pnpm test
           pnpm pack --dry-run
 
-      - name: Verify tag version
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          TAG="${GITHUB_REF_NAME#iloso-v}"
-          test "$VERSION" = "$TAG"
-
       - name: Publish dry run
         if: github.event_name == 'workflow_dispatch' && inputs.dryRun == 'true'
         run: npm publish --access public --dry-run
 
       - name: Publish iloso
-        if: github.event_name == 'push' || inputs.dryRun == 'false'
+        id: publish
+        if: steps.package.outputs.published == 'false' && (github.event_name == 'push' || inputs.dryRun == 'false')
         run: npm publish --access public --provenance
+
+      - name: Tag release
+        id: tag
+        if: steps.publish.outcome == 'success'
+        env:
+          VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          TAG="iloso-v$VERSION"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            git fetch origin "refs/tags/$TAG:refs/tags/$TAG"
+            test "$(git rev-list -n 1 "$TAG")" = "$GITHUB_SHA"
+            echo "$TAG already points at this commit"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag --annotate "$TAG" --message "iloso $VERSION" "$GITHUB_SHA"
+            git push origin "$TAG"
+          fi
+
+      - name: Create GitHub release
+        if: steps.publish.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "iloso $VERSION" \
+            --generate-notes \
+            --verify-tag
