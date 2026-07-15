@@ -71,18 +71,15 @@ if (sitemapPaths.includes('/docs/api')) {
 }
 
 const cloudflareGuide = await readFile(cloudflareGuidePath, 'utf8')
-for (const pathname of agentPaths) {
-  if (
-    pathname === '/' ||
-    pathname === '/docs' ||
-    pathname.startsWith('/docs/') ||
-    pathname === '/reports' ||
-    pathname.startsWith('/reports/')
-  ) {
-    continue
-  }
-  if (!cloudflareGuide.includes(`"${pathname}"`)) {
-    fail(`Cloudflare Markdown transform is missing route: ${pathname}`)
+for (const snippet of [
+  'http.request.uri.path.extension eq ""',
+  'http.request.uri.path ne "/api"',
+  'not starts_with(http.request.uri.path, "/api/")',
+  'http.request.uri.path ne "/docs/api"',
+  'concat(http.request.uri.path, ".md")',
+]) {
+  if (!cloudflareGuide.includes(snippet)) {
+    fail(`Cloudflare Markdown transform is missing: ${snippet}`)
   }
 }
 

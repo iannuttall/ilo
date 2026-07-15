@@ -86,7 +86,7 @@ Leave the query string unchanged.
 Use this rule expression:
 
 ```txt
-(http.host eq "ilo.so" and http.request.uri.path ne "/" and not ends_with(http.request.uri.path, "/") and not ends_with(http.request.uri.path, ".md") and (http.request.uri.path eq "/docs" or (starts_with(http.request.uri.path, "/docs/") and http.request.uri.path ne "/docs/api") or http.request.uri.path eq "/reports" or starts_with(http.request.uri.path, "/reports/") or http.request.uri.path in {"/blog" "/blog/advanced-twitter-search" "/blog/pin-twitter-list" "/blog/remove-twitter-follower" "/blog/search-your-tweets" "/blog/social-media-metrics-dashboard" "/blog/track-twitter-followers" "/blog/tweet-analytics" "/blog/twitter-bio-ideas" "/blog/twitter-engagement-metrics" "/blog/twitter-follower-widget-ios" "/blog/twitter-impressions" "/blog/twitter-link-penalty" "/blog/twitter-spaces-analytics" "/bluesky-did" "/bluesky-id" "/bluesky-link-preview" "/changelog" "/pricing" "/privacy" "/terms" "/threads-link-preview" "/tools" "/twitter-advanced-search" "/twitter-card-validator" "/twitter-follower-count" "/twitter-id" "/twitter-id-to-username" "/twitter-profile-analytics" "/twitter-profile-picture-downloader" "/twitter-search-without-account" "/twitter-thread-reader" "/twitter-video-downloader"}) and (lower(http.request.headers["accept"][0]) eq "text/markdown" or starts_with(lower(http.request.headers["accept"][0]), "text/markdown,")))
+(http.host eq "ilo.so" and http.request.method in {"GET" "HEAD"} and http.request.uri.path ne "/" and not ends_with(http.request.uri.path, "/") and http.request.uri.path.extension eq "" and http.request.uri.path ne "/api" and not starts_with(http.request.uri.path, "/api/") and http.request.uri.path ne "/docs/api" and (lower(http.request.headers["accept"][0]) eq "text/markdown" or starts_with(lower(http.request.headers["accept"][0]), "text/markdown,")))
 ```
 
 Set **Path** to **Rewrite to Dynamic**:
@@ -97,13 +97,14 @@ concat(http.request.uri.path, ".md")
 
 Leave the query string unchanged.
 
-The allowlist keeps legacy redirects working, including `/docs/api`. When a
-new top-level page or blog post is published, add its path to this rule. New
-`/docs/*` and `/reports/*` pages are covered automatically.
+The extension check covers every extensionless page automatically, including
+new tools, docs, reports, and blog posts. The API and `/docs/api` exclusions
+leave those requests to the Worker so their tool handling and permanent
+redirects still work.
 
-The `.md` exclusion prevents `/docs/mcp.md` becoming `/docs/mcp.md.md`. The
-strict `Accept` check supports a normal Markdown request and a Markdown-first
-media list while leaving `Accept: text/markdown;q=0` on the HTML page.
+The strict `Accept` check supports a normal Markdown request and a
+Markdown-first media list while leaving `Accept: text/markdown;q=0` on the HTML
+page.
 
 ## Generated response metadata
 
