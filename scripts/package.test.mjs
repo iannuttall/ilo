@@ -139,6 +139,18 @@ test('CLI exposes research, article, inbox, reply, and image commands', () => {
   assert.match(articles.stdout, /search/)
   assert.match(articles.stdout, /show/)
 
+  const articleRefresh = spawnSync(
+    process.execPath,
+    ['dist/cli.js', 'x', 'articles', 'refresh', '--help'],
+    {
+      cwd: new URL('..', import.meta.url),
+      encoding: 'utf8',
+    },
+  )
+  assert.equal(articleRefresh.status, 0, articleRefresh.stderr)
+  assert.match(articleRefresh.stdout, /\[MONITOR\]/)
+  assert.doesNotMatch(articleRefresh.stdout, /MONITOR.*\(Required\)/)
+
   const post = spawnSync(process.execPath, ['dist/cli.js', 'post', '--help'], {
     cwd: new URL('..', import.meta.url),
     encoding: 'utf8',

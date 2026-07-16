@@ -160,6 +160,7 @@ export const articlesCommand = defineCommand({
       args: {
         monitor: {
           type: 'positional',
+          required: false,
           description: 'Only refresh this source handle, UUID, or UUID prefix.',
         },
         pages: {
