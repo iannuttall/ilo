@@ -1,0 +1,293 @@
+---
+title: "Audience research"
+description: "Import public X follower profiles, search the local index, inspect bio evidence, and measure how complete the result is."
+category: "reference"
+order: 1
+status: published
+h1: "Search a public X audience from the terminal."
+seoTitle: "X Audience Research: Search Public Follower Profiles Locally"
+seoDescription: "Import public X follower profiles, search names, bios and locations locally, inspect coverage, and run the same research through CLI, MCP, or TypeScript."
+---
+
+ilo can answer questions such as "how many of @adamwathan's followers appear to work at Cursor, Vercel, or Sentry?" It imports public follower profiles into local SQLite, searches names, handles, bios, and locations with FTS5, then returns the public bio behind each match.
+
+You must import the follower profiles before you search them. The search command only reads the saved local index. It does not quietly start a large network job, which matters when the account has hundreds of thousands of followers.
+
+Public follower research does not require X OAuth or a connected X account. Install ilo and start with a bounded import:
+
+```sh
+npm i -g iloso
+ilo x followers sync adamwathan --pages 20
+ilo x followers status adamwathan
+```
+
+Each fetched page is committed immediately. You can search the profiles already saved while a larger import is unfinished, as long as you describe the result as partial.
+
+## Choose how much of the audience to import
+
+The default sync reads 20 pages and returns. Rerunning the same command resumes from the saved cursor instead of starting over:
+
+```sh
+ilo x followers sync adamwathan --pages 20
+```
+
+Use one of the full import modes when the question needs the broadest available coverage.
+
+| Import mode | Command | When it fits |
+| --- | --- | --- |
+| Bounded foreground import | `ilo x followers sync adamwathan --pages 20` | You want a sample now and may continue later. |
+| Full foreground import | `ilo x followers sync adamwathan --all` | The terminal can stay open until the provider reports the end. |
+| Full background import | `ilo x followers sync adamwathan --background` | The account is large and you want a detached local process. |
+
+`--pages` accepts 1 to 10,000 pages. A page request asks for up to 100 profiles, but the provider can return fewer or repeat profiles, so page count is not the same thing as unique profile count.
+
+The background command prints its process ID and log path. Check it without opening the log:
+
+```sh
+ilo x followers status adamwathan
+ilo x followers status adamwathan --json
+```
+
+The normal status explains how many profiles are searchable, whether the import reached a confirmed end, and how to resume it. JSON includes the saved cursor, pages fetched, timestamps, latest error, X's reported follower total, and background job details.
+
+A complete import means the public provider returned no next cursor. ilo calls this the full available follower list. It may still contain fewer profiles than X's headline follower count because profiles unavailable through the public response may not appear. Treat `expectedFollowers` as an approximate comparison, not a promised row count.
+
+## Search the local follower index
+
+Once at least one page has been saved, run the search:
+
+```sh
+ilo x followers search adamwathan \
+  --query "works at cursor|vercel|sentry"
+```
+
+The pipe separates the question into three result groups. ilo removes the leading employment wording from the first group, then searches for each company in the imported profile fields. A query without pipes can also separate terms with commas or the word `and`.
+
+Search uses SQLite FTS5 rather than an embedding model. The words in a multi-word term must all appear as matching word prefixes somewhere in the indexed name, handle, bio, location, or generated handle aliases. Concrete company names, account handles, roles, places, and product names work well. A broad query such as "people interested in developer experience" will not infer synonyms or understand intent like a language model would.
+
+General profile searches still pass through the employer classifier. Include unclear matches when you are looking for a topic, place, or interest rather than an explicit job:
+
+```sh
+ilo x followers search adamwathan \
+  --query "building browser tools" \
+  --include-unclear
+```
+
+That command finds profiles containing the concrete search words. The `unclear` label means the bio matched the words but did not state a current or former employment relationship.
+
+## Read current, former, and unclear matches separately
+
+Employer search classifies every candidate from the wording around the company name in its public bio.
+
+| Classification | What ilo found | Listed by default |
+| --- | --- | --- |
+| `current` | The bio contains a role or employment phrase tied to the company. | Yes |
+| `former` | The bio uses wording such as former, previously, alum, or worked at. | No |
+| `unclear` | The company appears, but the wording does not support a current or former job claim. | No |
+
+All three counts stay visible in the summary. Only current profiles are listed by default, which keeps a company mention, investor relationship, customer reference, or fan bio out of the conservative answer.
+
+Add the other classifications when you need to inspect their evidence:
+
+```sh
+ilo x followers search adamwathan \
+  --query "works at cursor|vercel|sentry" \
+  --include-former \
+  --include-unclear
+```
+
+Every listed match includes its name, handle, follower count, X link, classification, and the bio text used as evidence. The classifier is deliberately conservative, but it can still be wrong. Bios are self-written, can be stale, and do not verify employment.
+
+Search lists every profile allowed by the classification flags unless you pass `--limit`. The limit applies per query term:
+
+```sh
+ilo x followers search adamwathan \
+  --query "works at cursor|vercel|sentry" \
+  --limit 10
+```
+
+ilo classifies up to 10,000 matching candidates per term by default. The terminal warns when a term reaches that cap because its counts may be truncated. Raise or lower the cap with `--candidates`, up to 10,000:
+
+```sh
+ilo x followers search adamwathan \
+  --query "designer" \
+  --include-unclear \
+  --candidates 10000
+```
+
+## Export results to JSON or CSV
+
+Use JSON when a script or agent needs the counts, coverage, and profile fields in one result:
+
+```sh
+ilo x followers search adamwathan \
+  --query "works at cursor|vercel|sentry" \
+  --json > ./adam-company-followers.json
+```
+
+The JSON result includes `engine`, `resultLimit`, `includedMatchKinds`, `coverage`, and one group per search term. Each group has `current`, `former`, `unclear`, `candidates`, `truncated`, and `results` fields.
+
+CSV is useful for a spreadsheet, a chart, or a manual review:
+
+```sh
+ilo x followers search adamwathan \
+  --query "works at cursor|vercel|sentry" \
+  --csv ./adam-company-followers.csv
+```
+
+The CSV has one row for each selected profile match. It contains the company term, classification, bio evidence, name, handle, location, website, public account counts, verification details, profile images, join date, fetch time, and source import coverage. Current profiles are exported by default. Add `--include-former` or `--include-unclear` when those rows belong in the file.
+
+## Inspect the complete stored profile
+
+Search returns the useful comparison fields. Read one profile when you need its complete structured record and raw public provider object:
+
+```sh
+ilo x followers profile adamwathan leerob
+ilo x followers profile adamwathan leerob --json
+```
+
+This is a local lookup. It does not make a fresh request to X. JSON includes the saved bio, location, website, join date, account counts, avatar, banner, verification details, protected state, fetch time, and `providerData` object.
+
+## Refresh a completed audience snapshot
+
+ilo stores follower data in `~/.config/ilo/ilo.sqlite` by default. The CLI, local MCP server, and TypeScript package use that same database, so a sync from one surface is immediately searchable from the others.
+
+An unfinished sync resumes from its cursor when you run it again. A completed sync remains a snapshot. Running the normal sync against a completed snapshot does not rebuild the list, so use `--restart` when you want fresh membership and refreshed profile fields:
+
+```sh
+ilo x followers sync adamwathan --all --restart
+```
+
+For a large account, restart it in the background:
+
+```sh
+ilo x followers sync adamwathan --background --restart
+```
+
+A restart creates a new sync and searches only profiles seen in that new run as its pages arrive. Once the restarted import reaches a confirmed end, relationships not seen in the new list are removed. This prevents old and new membership snapshots from being mixed into one count.
+
+ilo does not impose an automatic freshness deadline. Use `ilo x followers status adamwathan --json` to inspect `completedAt` and the sync state. Each complete profile also has its own `fetchedAt` value. A one-off company count may tolerate an older import. Work such as identifying recent followers or comparing membership over time needs a deliberate refresh and an external record of the earlier result because ilo currently keeps the latest membership snapshot, not an unfollower history.
+
+## Run the same research through local MCP
+
+Complete the [local MCP setup](/docs/mcp) once. Follower research itself still needs no connected X account. Your MCP client launches ilo over local stdio and uses the same SQLite file as the terminal.
+
+The agent should call these tools in order:
+
+| MCP tool | Job |
+| --- | --- |
+| `ilo_sync_x_followers` | Imports a bounded number of pages and saves progress. |
+| `ilo_x_follower_sync_status` | Checks searchable profile count, completion, cursor, and errors. |
+| `ilo_search_x_followers` | Searches the saved FTS5 index and returns counts plus profile evidence. |
+| `ilo_get_x_follower_profile` | Reads one complete stored public profile. |
+
+An initial tool call can use these arguments:
+
+```json
+{
+  "handle": "adamwathan",
+  "maxPages": 20,
+  "restart": false
+}
+```
+
+MCP limits one sync call to 200 pages. There is no detached background mode through MCP, so an agent should repeat bounded calls until `sync.complete` is `true` or stop at the sample size you requested. It should use the status tool before claiming full coverage.
+
+Search without a hidden result limit by omitting `resultLimit`:
+
+```json
+{
+  "handle": "adamwathan",
+  "query": "works at cursor|vercel|sentry",
+  "includeFormer": false,
+  "includeUnclear": false,
+  "candidateLimit": 10000
+}
+```
+
+A useful agent prompt names the coverage and evidence requirements:
+
+```txt
+Import 20 pages of @adamwathan's public followers. Search for people who
+appear to work at Cursor, Vercel, or Sentry. Separate current, former, and
+unclear counts, list the current matches with their bio evidence, and say
+whether the import is complete. Do not draft or publish anything.
+```
+
+The sync writes public data to the local database. Search, status, and profile lookup are local reads. None of these tools publish or modify anything on X.
+
+## Use audience research from TypeScript
+
+Install `iloso` in a Node 22.19 or newer ESM project:
+
+```sh
+npm install iloso
+```
+
+The public functions call the same implementation used by the CLI and MCP server:
+
+```ts
+import {
+  getXFollowerProfile,
+  getXFollowersStatus,
+  searchXFollowers,
+  syncXFollowers,
+} from 'iloso'
+
+await syncXFollowers({
+  handle: 'adamwathan',
+  maxPages: 20,
+})
+
+const status = getXFollowersStatus({ handle: 'adamwathan' })
+const search = searchXFollowers({
+  handle: 'adamwathan',
+  query: 'works at cursor|vercel|sentry',
+  candidateLimit: 10_000,
+})
+
+console.log({
+  coverage: search.coverage,
+  counts: search.groups.map(({ term, current, former, unclear }) => ({
+    term,
+    current,
+    former,
+    unclear,
+  })),
+  currentMatches: search.groups.flatMap(({ results }) => results),
+})
+
+if (search.groups[0]?.results[0]) {
+  const profile = getXFollowerProfile({
+    handle: 'adamwathan',
+    followerHandle: search.groups[0].results[0].handle,
+  })
+  console.log(profile.profile.providerData)
+}
+
+console.log({ syncComplete: status?.complete ?? false })
+```
+
+Use `syncAllXFollowers({ handle: 'adamwathan' })` when a foreground Node process should continue until the provider returns a confirmed end. That call can run for a long time on a large account and checkpoints every page. `syncXFollowers()` is the calmer choice for a request handler or agent loop because you control its page budget.
+
+Every function accepts `databasePath` when your application needs an isolated SQLite file. The root [TypeScript package guide](/docs/typescript) covers installation, versioning, and the other public exports.
+
+## State what the result can prove
+
+Strong audience research keeps the observed data separate from the interpretation. Report how many profiles were indexed, whether the provider returned a confirmed end, which classifications were included, and whether any term hit the candidate cap.
+
+For example, "15 indexed profiles contain bio wording that ilo classified as current Cursor employment" is supportable when the result shows that count and evidence. "Cursor employs 15 of this person's followers" is too strong. The follower list may be partial, the bio may be stale, and a follower profile is not an employment record.
+
+A missing match means only that the imported, searchable fields did not contain the concrete query words. It does not prove the person lacks that job, interest, location, or relationship. Check the raw profiles behind important findings, keep former and unclear counts visible, and include the coverage object when another person needs to audit the work.
+
+## Fix common follower search problems
+
+If search reports `follower_data_not_synced`, run at least one follower sync first. Search never imports automatically.
+
+If status says the import is unfinished, continue with `--all`, start a background full import, or state that the current result is a sample. Do not convert the possible gap into zero.
+
+If a term returns no listed profiles but has unclear matches, rerun with `--include-unclear`. This is common for interests and places because the current/former classifier is designed for employer wording.
+
+If the terminal reports that the candidate limit was reached, the displayed classification counts are not exhaustive. Narrow the query or raise `--candidates` up to 10,000.
+
+If an import stops after repeated duplicate pages or a cursor that does not move, the saved profiles remain searchable. Check `ilo x followers status <handle> --json` for `lastError`. Retry the saved cursor first; use `--restart` only when you intend to rebuild the snapshot from page one.

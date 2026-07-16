@@ -93,6 +93,8 @@ Use `ilo scheduler run --json` to inspect the result of a due-post pass. Treat i
 
 Follower imports use public FxTwitter data and resume from the last saved page. A full import can take many calls for a large account. Check the returned coverage before reporting a count.
 
+The [audience research guide](https://ilo.so/docs/audience-research) documents the shared CLI, MCP, and TypeScript workflow, including snapshot freshness, classification flags, and result limits.
+
 Use the CLI `--background` mode for an unattended full import. Use `ilo_get_x_follower_profile` or the CLI `profile` command when the task needs all stored public fields for one match. The raw provider object may contain fields beyond ilo's structured columns; treat it as public source data, not verified identity or employment evidence.
 
 Search uses the local SQLite FTS5 index. For employer questions, report `current` as the conservative count and keep `former` and `unclear` separate. Include the returned public bio evidence. Do not present a partial import or an ambiguous bio as a complete employment record.

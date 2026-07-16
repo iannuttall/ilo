@@ -16,6 +16,8 @@
   ·
   <a href="https://ilo.so/docs">Documentation</a>
   ·
+  <a href="https://ilo.so/docs/audience-research">Audience research</a>
+  ·
   <a href="https://ilo.so/docs/articles">Article monitoring</a>
   ·
   <a href="https://www.npmjs.com/package/iloso">npm</a>
@@ -151,8 +153,9 @@ profiles and import coverage to CSV with `--csv ./matches.csv`. Check the
 coverage first because an unfinished public import cannot support a complete
 count.
 
-The [CLI guide](https://ilo.so/docs/cli) covers background progress, complete
-profile records, classification limits, terminal output, and CSV fields.
+The [audience research guide](https://ilo.so/docs/audience-research) covers
+background progress, complete profile records, classification limits, local
+MCP tools, TypeScript functions, terminal output, and CSV fields.
 
 ## Keep native X Articles searchable
 

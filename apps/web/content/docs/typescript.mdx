@@ -2,7 +2,7 @@
 title: "TypeScript"
 description: "Use ilo's local X article search, reply inbox, follower research, drafting, scheduling, publishing, and MCP code inside your Node project."
 category: "reference"
-order: 2
+order: 3
 status: published
 h1: "Use ilo as a TypeScript package."
 seoTitle: "ilo TypeScript Package: X Drafts and Publishing"
@@ -53,6 +53,8 @@ const reply = createDraft('The result from three companies:', {
 ilo normalizes the reply URL to its post id and stores absolute image paths. Keep those files available until a scheduled draft publishes. X applies its own API access and conversation rules when the reply is sent.
 
 ## Import and search public followers
+
+The [audience research guide](/docs/audience-research) explains the same workflow across TypeScript, the CLI, and local MCP, including partial coverage, completed snapshots, and refreshes.
 
 Syncs use public FxTwitter data and save their cursor in local SQLite. Limit each call when the account is large, then call it again to resume:
 
