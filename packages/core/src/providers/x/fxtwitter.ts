@@ -56,6 +56,48 @@ export type FxTwitterFollowersPage = {
   nextCursor: string | null
 }
 
+export type FxTwitterReplyingTo = {
+  screen_name?: string
+  status?: string
+  url?: string
+  profile_url?: string
+  display_name?: string
+}
+
+export type FxTwitterStatus = {
+  type: 'status'
+  id: string
+  url: string
+  text?: string
+  created_at: string
+  created_timestamp?: number
+  likes: number
+  reposts: number
+  quotes: number
+  replies: number
+  views?: number | null
+  bookmarks?: number | null
+  lang?: string | null
+  author: FxTwitterUser
+  replying_to?: FxTwitterReplyingTo | null
+  media?: Record<string, unknown>
+  quote?: FxTwitterStatus | Record<string, unknown> | null
+}
+
+export type FxTwitterSearchFeed = 'latest' | 'top' | 'media'
+
+export type FxTwitterSearchPage = {
+  posts: FxTwitterStatus[]
+  nextCursor: string | null
+}
+
+type FxTwitterSearchResponse = {
+  code: number
+  results?: FxTwitterStatus[]
+  cursor?: FxTwitterCursor
+  message?: string
+}
+
 export type FxTwitterClientOptions = {
   baseUrl?: string
   fetch?: typeof fetch
@@ -171,5 +213,59 @@ export const fetchFxTwitterFollowers = async (
   return {
     profiles: response.results ?? [],
     nextCursor: response.cursor?.bottom ?? null,
+  }
+}
+
+export const fetchFxTwitterFollowing = async (
+  handle: string,
+  input: { count?: number; cursor?: string | null } = {},
+  options: FxTwitterClientOptions = {},
+): Promise<FxTwitterFollowersPage> => {
+  const query = new URLSearchParams()
+  query.set('count', String(Math.min(100, Math.max(1, input.count ?? 100))))
+  if (input.cursor) query.set('cursor', input.cursor)
+  const response = await requestFxTwitter<FxTwitterFollowerResponse>(
+    `/2/profile/${encodeURIComponent(handle)}/following?${query}`,
+    options,
+  )
+  return {
+    profiles: response.results ?? [],
+    nextCursor: response.cursor?.bottom ?? null,
+  }
+}
+
+export const fetchFxTwitterSearch = async (
+  input: {
+    query: string
+    feed?: FxTwitterSearchFeed
+    count?: number
+    cursor?: string | null
+    language?: string
+  },
+  options: FxTwitterClientOptions = {},
+): Promise<FxTwitterSearchPage> => {
+  const searchQuery = input.query.trim()
+  if (!searchQuery) throw new Error('fxtwitter_search_query_required')
+  const query = new URLSearchParams({
+    q: searchQuery,
+    feed: input.feed ?? 'latest',
+    count: String(Math.min(100, Math.max(1, input.count ?? 100))),
+  })
+  if (input.cursor) query.set('cursor', input.cursor)
+  if (input.language?.trim()) query.set('lang', input.language.trim())
+  try {
+    const response = await requestFxTwitter<FxTwitterSearchResponse>(
+      `/2/search?${query}`,
+      options,
+    )
+    return {
+      posts: response.results ?? [],
+      nextCursor: response.cursor?.bottom ?? null,
+    }
+  } catch (error) {
+    if (error instanceof FxTwitterError && error.status === 404) {
+      return { posts: [], nextCursor: null }
+    }
+    throw error
   }
 }

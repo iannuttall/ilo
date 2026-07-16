@@ -134,7 +134,7 @@ const mapSyncState = (row: FollowerSourceRow): FollowerSyncState => ({
   lastError: row.last_error,
 })
 
-const ensureFollowerSchema = (db: Database.Database) => {
+export const ensureFollowerSchema = (db: Database.Database) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS x_follower_sources (
       subject_id TEXT PRIMARY KEY,

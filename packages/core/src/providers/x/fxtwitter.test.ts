@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { ILO_VERSION } from '../../version.js'
-import { fetchFxTwitterFollowers, fetchFxTwitterProfile } from './fxtwitter.js'
+import {
+  fetchFxTwitterFollowers,
+  fetchFxTwitterFollowing,
+  fetchFxTwitterProfile,
+  fetchFxTwitterSearch,
+} from './fxtwitter.js'
 
 test('reads FxTwitter profiles and follower cursors', async () => {
   const requests: string[] = []
@@ -51,4 +56,69 @@ test('reads FxTwitter profiles and follower cursors', async () => {
     new Headers(requestHeaders[0]).get('user-agent'),
     `ilo/${ILO_VERSION} (+https://ilo.so)`,
   )
+})
+
+test('reads following pages and latest search results', async () => {
+  const requests: string[] = []
+  const fetcher: typeof fetch = async (input) => {
+    const url = String(input)
+    requests.push(url)
+    if (url.includes('/following')) {
+      return Response.json({
+        code: 200,
+        results: [{ id: '2', name: 'Followed', screen_name: 'followed' }],
+        cursor: { bottom: 'following-next' },
+      })
+    }
+    return Response.json({
+      code: 200,
+      results: [
+        {
+          type: 'status',
+          id: '123',
+          url: 'https://x.com/author/status/123',
+          text: 'Has anyone tried ilo?',
+          created_at: 'Wed Jul 16 07:00:00 +0000 2026',
+          created_timestamp: 1_784_185_200,
+          likes: 3,
+          reposts: 1,
+          quotes: 0,
+          replies: 2,
+          author: { id: '3', name: 'Author', screen_name: 'author' },
+        },
+      ],
+      cursor: { bottom: 'search-next' },
+    })
+  }
+
+  const following = await fetchFxTwitterFollowing(
+    'subject',
+    { cursor: 'following-before' },
+    { fetch: fetcher },
+  )
+  const search = await fetchFxTwitterSearch(
+    { query: '@ilo OR "ilo.so"', count: 30 },
+    { fetch: fetcher },
+  )
+
+  assert.equal(following.profiles[0]?.screen_name, 'followed')
+  assert.equal(following.nextCursor, 'following-next')
+  assert.equal(search.posts[0]?.id, '123')
+  assert.equal(search.nextCursor, 'search-next')
+  assert.match(requests[0] ?? '', /\/following\?count=100/)
+  assert.match(requests[0] ?? '', /cursor=following-before/)
+  assert.match(requests[1] ?? '', /feed=latest/)
+  assert.match(requests[1] ?? '', /q=%40ilo\+OR\+%22ilo.so%22/)
+})
+
+test('treats empty FxTwitter search responses as an empty page', async () => {
+  const fetcher: typeof fetch = async () =>
+    Response.json({ code: 404, results: [], cursor: null }, { status: 404 })
+
+  const result = await fetchFxTwitterSearch(
+    { query: 'nothing here' },
+    { fetch: fetcher, maxRetries: 0 },
+  )
+
+  assert.deepEqual(result, { posts: [], nextCursor: null })
 })
