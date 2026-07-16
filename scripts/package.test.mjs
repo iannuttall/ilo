@@ -4,6 +4,7 @@ import { access, mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { stripVTControlCharacters } from 'node:util'
 
 test('package exports and binaries are built', async () => {
   await Promise.all([
@@ -225,11 +226,12 @@ test('CLI and public library use the same follower search behavior', async () =>
       },
     )
     assert.equal(humanResult.status, 0, humanResult.stderr)
-    assert.match(humanResult.stdout, /Follower search for @subject/)
-    assert.match(humanResult.stdout, /Company\s+│\s+Current/)
-    assert.match(humanResult.stdout, /vercel\s+│\s+1/)
-    assert.match(humanResult.stdout, /Matching profiles/)
-    assert.match(humanResult.stdout, /@follower/)
+    const humanOutput = stripVTControlCharacters(humanResult.stdout)
+    assert.match(humanOutput, /Follower search for @subject/)
+    assert.match(humanOutput, /Company\s+│\s+Current/)
+    assert.match(humanOutput, /vercel\s+│\s+1/)
+    assert.match(humanOutput, /Matching profiles/)
+    assert.match(humanOutput, /@follower/)
 
     const csvPath = join(iloHome, 'exports', 'vercel-followers.csv')
     const csvResult = spawnSync(
