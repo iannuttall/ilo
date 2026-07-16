@@ -1,7 +1,6 @@
 import {
   createXMonitor,
   deleteXMonitor,
-  getXFollowingStatus,
   getXInboxItem,
   listXInbox,
   listXMonitors,
@@ -11,7 +10,6 @@ import {
   refreshXInbox,
   refreshXMonitor,
   setXMonitorEnabled,
-  syncXFollowing,
   updateXInboxItem,
 } from '@ilo/core'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
@@ -299,70 +297,6 @@ export const registerInboxTools = (server: McpServer) => {
           action,
         })
         return success(`Inbox item marked ${action}.`, { item })
-      } catch (error) {
-        return failure(error)
-      }
-    },
-  )
-
-  server.registerTool(
-    'ilo_sync_x_following',
-    {
-      description:
-        'Import public accounts followed by an X account so inbox I-follow filters can be evaluated locally',
-      inputSchema: {
-        accountHandle,
-        maxPages: z.number().int().min(1).max(200).default(20),
-        restart: z.boolean().default(false),
-      },
-      outputSchema: openOutputSchema,
-      annotations: {
-        destructiveHint: false,
-        idempotentHint: false,
-      },
-    },
-    async ({ accountHandle, maxPages, restart }) => {
-      try {
-        const sync = await syncXFollowing({
-          handle: await resolveAccountHandle(accountHandle),
-          maxPages,
-          restart,
-        })
-        return success(
-          sync.complete
-            ? `${sync.importedProfiles} followed accounts are available to inbox filters for @${sync.handle}; the full available list was imported.`
-            : `${sync.importedProfiles} followed accounts are available to inbox filters for @${sync.handle}; the saved import is unfinished.`,
-          { sync },
-        )
-      } catch (error) {
-        return failure(error)
-      }
-    },
-  )
-
-  server.registerTool(
-    'ilo_x_following_sync_status',
-    {
-      description:
-        'Check local following import coverage used by X inbox relationship filters',
-      inputSchema: { accountHandle },
-      outputSchema: openOutputSchema,
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-      },
-    },
-    async ({ accountHandle }) => {
-      try {
-        const resolved = await resolveAccountHandle(accountHandle)
-        const sync = getXFollowingStatus({ handle: resolved })
-        return success(
-          sync
-            ? `${sync.importedProfiles} followed accounts are available to inbox filters for @${sync.handle}; ${sync.complete ? 'the full available list was imported' : 'the saved import is unfinished'}.`
-            : 'No following data has been indexed for this account.',
-          { sync },
-        )
       } catch (error) {
         return failure(error)
       }

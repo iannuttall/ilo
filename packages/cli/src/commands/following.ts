@@ -1,31 +1,90 @@
 import {
   type FollowingSyncState,
+  getXFollowingProfile,
   getXFollowingStatus,
+  searchXFollowing,
   syncAllXFollowing,
   syncXFollowing,
 } from '@ilo/core'
 import { defineCommand } from 'citty'
 import { printJson, printLine } from '../utils.js'
+import {
+  followingCoverageLines,
+  renderFollowingSearch,
+  writeFollowingSearchCsv,
+} from './following-output.js'
 import { resolveXAccountHandle } from './x-account.js'
 
-const pageLimit = (value: unknown) => {
+const integerArg = (
+  value: unknown,
+  input: { name: string; minimum: number; maximum: number },
+) => {
   const parsed = Number(value)
-  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 10_000) {
-    throw new Error('pages_must_be_1_to_10000')
+  if (
+    !Number.isInteger(parsed) ||
+    parsed < input.minimum ||
+    parsed > input.maximum
+  ) {
+    throw new Error(
+      `${input.name}_must_be_${input.minimum}_to_${input.maximum}`,
+    )
   }
   return parsed
+}
+
+const followingError = (error: unknown, handle: string) => {
+  if (!(error instanceof Error)) return error
+  if (error.message === 'following_data_not_synced') {
+    return new Error(
+      `No searchable following data for @${handle}. Run ilo x following sync ${handle} --all first.`,
+    )
+  }
+  if (error.message === 'following_profiles_need_refresh') {
+    return new Error(
+      `The saved @${handle} following cache only contains relationship IDs. Run ilo x following sync ${handle} --all to build the profile index.`,
+    )
+  }
+  if (error.message === 'fxtwitter_following_sync_no_progress') {
+    return new Error(
+      'Following import stopped after 25 pages added no new profiles. Saved progress is still available.',
+    )
+  }
+  return error
+}
+
+const printProfile = (profile: ReturnType<typeof getXFollowingProfile>) => {
+  printLine(`${profile.profile.name} (@${profile.profile.handle})`)
+  if (profile.profile.bio) printLine(profile.profile.bio)
+  if (profile.profile.location) {
+    printLine(`Location: ${profile.profile.location}`)
+  }
+  if (profile.profile.websiteUrl) {
+    printLine(
+      `Website: ${profile.profile.websiteDisplayUrl ?? profile.profile.websiteUrl} (${profile.profile.websiteUrl})`,
+    )
+  }
+  printLine(
+    `Followers: ${profile.profile.followers ?? 'unknown'}  Following: ${profile.profile.following ?? 'unknown'}  Posts: ${profile.profile.posts ?? 'unknown'}  Likes: ${profile.profile.likes ?? 'unknown'}  Media: ${profile.profile.mediaCount ?? 'unknown'}`,
+  )
+  if (profile.profile.joinedAt) {
+    printLine(`Joined: ${profile.profile.joinedAt}`)
+  }
+  printLine(
+    `Verified: ${profile.profile.verified ? (profile.profile.verificationType ?? 'yes') : 'no'}  Protected: ${profile.profile.protected ? 'yes' : 'no'}`,
+  )
+  printLine(`Profile: ${profile.profile.profileUrl}`)
 }
 
 export const followingCommand = defineCommand({
   meta: {
     name: 'following',
-    description: 'Import accounts you follow for inbox filters',
+    description: 'Import and search accounts an X profile follows',
   },
   subCommands: {
     sync: defineCommand({
       meta: {
         name: 'sync',
-        description: 'Import public accounts followed by an X account',
+        description: 'Build or refresh the local following profile index',
       },
       args: {
         handle: {
@@ -45,7 +104,7 @@ export const followingCommand = defineCommand({
         restart: {
           type: 'boolean',
           default: false,
-          description: 'Start a new full sync instead of resuming.',
+          description: 'Discard an unfinished cursor and start a new sync.',
         },
         json: {
           type: 'boolean',
@@ -63,32 +122,42 @@ export const followingCommand = defineCommand({
             : (progress: FollowingSyncState) => {
                 if (progress.complete || progress.pagesFetched % 25 === 0) {
                   printLine(
-                    `Read ${progress.pagesFetched} pages and ${progress.importedProfiles} unique profiles.`,
+                    `Read ${progress.pagesFetched} pages and saved ${progress.searchableProfiles.toLocaleString('en-GB')} unique profiles.`,
                   )
                 }
               },
         }
-        const state = args.all
-          ? await syncAllXFollowing(input)
-          : await syncXFollowing({
-              ...input,
-              maxPages: pageLimit(args.pages),
-            })
-        if (args.json) return printJson(state)
+        let state: FollowingSyncState
+        try {
+          state = args.all
+            ? await syncAllXFollowing(input)
+            : await syncXFollowing({
+                ...input,
+                maxPages: integerArg(args.pages, {
+                  name: 'pages',
+                  minimum: 1,
+                  maximum: 10_000,
+                }),
+              })
+        } catch (error) {
+          throw followingError(error, handle)
+        }
+        const status = getXFollowingStatus({ handle: state.handle })
+        if (args.json) return printJson(status ?? state)
         if (state.complete) {
           return printLine(
-            `Following sync complete for @${state.handle}: ${state.importedProfiles.toLocaleString('en-GB')} followed accounts are available to inbox filters.`,
+            `Following sync complete for @${state.handle}: ${state.searchableProfiles.toLocaleString('en-GB')} complete profiles are searchable and available to inbox filters.`,
           )
         }
         return printLine(
-          `Saved ${state.importedProfiles.toLocaleString('en-GB')} followed accounts for @${state.handle}. Run the same command again to continue.`,
+          `Saved ${state.searchableProfiles.toLocaleString('en-GB')} searchable profiles for @${state.handle}. Run the same command again to continue.`,
         )
       },
     }),
     status: defineCommand({
       meta: {
         name: 'status',
-        description: 'Show local following import coverage',
+        description: 'Show following profile coverage and freshness',
       },
       args: {
         handle: {
@@ -107,26 +176,8 @@ export const followingCommand = defineCommand({
         if (args.json) return printJson({ sync: state })
         if (!state) return printLine(`No following data for @${handle}.`)
         printLine(`Following data for @${state.handle}`)
-        printLine(
-          `${state.importedProfiles.toLocaleString('en-GB')} followed accounts are available to inbox filters${state.complete ? '.' : ' so far.'}`,
-        )
-        if (state.complete) {
-          printLine('The full available following list was imported.')
-        } else if (state.lastError === 'fxtwitter_following_sync_no_progress') {
-          printLine(
-            'Import stopped after repeated pages returned no new accounts.',
-          )
-        } else if (state.lastError === 'fxtwitter_following_cursor_stalled') {
-          printLine('Import stopped because its page cursor did not move.')
-        } else {
-          if (state.expectedFollowing !== null) {
-            printLine(
-              `X reports about ${state.expectedFollowing.toLocaleString('en-GB')} followed accounts.`,
-            )
-          }
-          printLine(
-            `Run ilo x following sync ${state.handle} --all to continue.`,
-          )
+        for (const line of followingCoverageLines(state, state.handle)) {
+          printLine(line)
         }
         if (
           state.lastError &&
@@ -136,6 +187,125 @@ export const followingCommand = defineCommand({
           ].includes(state.lastError)
         ) {
           printLine(`Last import error: ${state.lastError}`)
+        }
+      },
+    }),
+    search: defineCommand({
+      meta: {
+        name: 'search',
+        description: 'Search followed names, handles, bios, and locations',
+      },
+      args: {
+        handle: {
+          type: 'positional',
+          description: 'X handle. Defaults to the connected account.',
+        },
+        query: {
+          type: 'string',
+          required: true,
+          description: 'Concrete words such as "building browser tools".',
+        },
+        limit: {
+          type: 'string',
+          description: 'Maximum profiles to list. Omit to return every match.',
+        },
+        csv: {
+          type: 'string',
+          description:
+            'Write every match and its public profile fields to CSV.',
+        },
+        json: {
+          type: 'boolean',
+          default: false,
+          description: 'Print structured JSON.',
+        },
+      },
+      run: async ({ args }) => {
+        const handle = await resolveXAccountHandle(args.handle)
+        const resultLimit =
+          typeof args.limit === 'string'
+            ? integerArg(args.limit, {
+                name: 'limit',
+                minimum: 1,
+                maximum: 10_000,
+              })
+            : undefined
+        let result: ReturnType<typeof searchXFollowing>
+        try {
+          result = searchXFollowing({
+            handle,
+            query: String(args.query),
+            resultLimit,
+          })
+        } catch (error) {
+          throw followingError(error, handle)
+        }
+
+        const requestedCsv = typeof args.csv === 'string' ? args.csv.trim() : ''
+        let csvExport: Awaited<
+          ReturnType<typeof writeFollowingSearchCsv>
+        > | null = null
+        if (requestedCsv) {
+          const exportResult = searchXFollowing({
+            handle,
+            query: String(args.query),
+          })
+          csvExport = await writeFollowingSearchCsv(exportResult, requestedCsv)
+        }
+        if (args.json) {
+          return printJson(csvExport ? { ...result, csvExport } : result)
+        }
+        printLine(renderFollowingSearch(result))
+        if (csvExport) {
+          printLine()
+          printLine(
+            `Wrote ${csvExport.rows.toLocaleString('en-GB')} matches to ${csvExport.path}`,
+          )
+        }
+      },
+    }),
+    profile: defineCommand({
+      meta: {
+        name: 'profile',
+        description: 'Read one complete profile from the following index',
+      },
+      args: {
+        followed: {
+          type: 'positional',
+          required: true,
+          description: 'Followed X handle to inspect.',
+        },
+        account: {
+          type: 'string',
+          description: 'Source X handle. Defaults to the connected account.',
+        },
+        json: {
+          type: 'boolean',
+          default: false,
+          description: 'Print structured JSON including raw provider data.',
+        },
+      },
+      run: async ({ args }) => {
+        const handle = await resolveXAccountHandle(args.account)
+        let result: ReturnType<typeof getXFollowingProfile>
+        try {
+          result = getXFollowingProfile({
+            handle,
+            followedHandle: String(args.followed),
+          })
+        } catch (error) {
+          throw followingError(error, handle)
+        }
+        if (args.json) return printJson(result)
+        printProfile(result)
+        if (!result.coverage.complete || result.coverage.stale) {
+          printLine()
+          for (const line of followingCoverageLines(
+            result.coverage,
+            result.handle,
+          )) {
+            printLine(line)
+          }
         }
       },
     }),

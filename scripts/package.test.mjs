@@ -35,6 +35,10 @@ test('public API can be imported', async () => {
   assert.equal(typeof module.createXMonitor, 'function')
   assert.equal(typeof module.listXInbox, 'function')
   assert.equal(typeof module.syncXFollowing, 'function')
+  assert.equal(typeof module.syncAllXFollowing, 'function')
+  assert.equal(typeof module.getXFollowingStatus, 'function')
+  assert.equal(typeof module.searchXFollowing, 'function')
+  assert.equal(typeof module.getXFollowingProfile, 'function')
   assert.equal(typeof module.createXArticleMonitor, 'function')
   assert.equal(typeof module.refreshXArticleMonitor, 'function')
   assert.equal(typeof module.searchXArticles, 'function')
@@ -111,6 +115,33 @@ test('CLI exposes research, article, inbox, reply, and image commands', () => {
   )
   assert.equal(followerSync.status, 0, followerSync.stderr)
   assert.match(followerSync.stdout, /--background/)
+
+  const following = spawnSync(
+    process.execPath,
+    ['dist/cli.js', 'x', 'following', '--help'],
+    {
+      cwd: new URL('..', import.meta.url),
+      encoding: 'utf8',
+    },
+  )
+  assert.equal(following.status, 0, following.stderr)
+  assert.match(following.stdout, /sync/)
+  assert.match(following.stdout, /status/)
+  assert.match(following.stdout, /search/)
+  assert.match(following.stdout, /profile/)
+
+  const followingSearch = spawnSync(
+    process.execPath,
+    ['dist/cli.js', 'x', 'following', 'search', '--help'],
+    {
+      cwd: new URL('..', import.meta.url),
+      encoding: 'utf8',
+    },
+  )
+  assert.equal(followingSearch.status, 0, followingSearch.stderr)
+  assert.match(followingSearch.stdout, /--query/)
+  assert.match(followingSearch.stdout, /--limit/)
+  assert.match(followingSearch.stdout, /--csv/)
 
   const inbox = spawnSync(
     process.execPath,
@@ -624,6 +655,129 @@ test('CLI and public library use the same follower search behavior', async () =>
       /stopped after repeated pages returned no new profiles/,
     )
     assert.match(statusResult.stdout, /follower profiles are searchable/)
+  } finally {
+    await rm(iloHome, { recursive: true, force: true })
+  }
+})
+
+test('CLI and public library share complete following profiles', async () => {
+  const iloHome = await mkdtemp(join(tmpdir(), 'ilo-package-following-'))
+  const databasePath = join(iloHome, 'ilo.sqlite')
+  try {
+    const module = await import('../dist/index.js')
+    await module.syncXFollowing(
+      { handle: 'subject', maxPages: 1, databasePath },
+      {
+        profile: async () => ({
+          id: 'subject-id',
+          name: 'Subject',
+          screen_name: 'subject',
+          following: 2,
+        }),
+        following: async () => ({
+          profiles: [
+            {
+              id: 'browser-id',
+              name: 'Browser Builder',
+              screen_name: 'browser_builder',
+              description: 'Building browser tools for designers',
+              location: 'London',
+              followers: 1_200,
+              statuses: 800,
+              website: {
+                url: 'https://browser.tools',
+                display_url: 'browser.tools',
+              },
+            },
+            {
+              id: 'database-id',
+              name: 'Database Builder',
+              screen_name: 'database_builder',
+              description: 'Building database infrastructure',
+            },
+          ],
+          nextCursor: null,
+        }),
+      },
+    )
+
+    const searchResult = spawnSync(
+      process.execPath,
+      [
+        'dist/cli.js',
+        'x',
+        'following',
+        'search',
+        'subject',
+        '--query',
+        'building browser tools',
+        '--json',
+      ],
+      {
+        cwd: new URL('..', import.meta.url),
+        encoding: 'utf8',
+        env: { ...process.env, ILO_HOME: iloHome },
+      },
+    )
+    assert.equal(searchResult.status, 0, searchResult.stderr)
+    const search = JSON.parse(searchResult.stdout)
+    assert.equal(search.totalMatches, 1)
+    assert.equal(search.resultLimit, null)
+    assert.equal(search.results[0].handle, 'browser_builder')
+    assert.equal(search.results[0].location, 'London')
+    assert.equal(search.coverage.complete, true)
+
+    const profileResult = spawnSync(
+      process.execPath,
+      [
+        'dist/cli.js',
+        'x',
+        'following',
+        'profile',
+        'browser_builder',
+        '--account',
+        'subject',
+        '--json',
+      ],
+      {
+        cwd: new URL('..', import.meta.url),
+        encoding: 'utf8',
+        env: { ...process.env, ILO_HOME: iloHome },
+      },
+    )
+    assert.equal(profileResult.status, 0, profileResult.stderr)
+    const profile = JSON.parse(profileResult.stdout)
+    assert.equal(profile.profile.posts, 800)
+    assert.equal(profile.profile.websiteDisplayUrl, 'browser.tools')
+    assert.equal(profile.profile.providerData.id, 'browser-id')
+
+    const csvPath = join(iloHome, 'exports', 'browser-builders.csv')
+    const csvResult = spawnSync(
+      process.execPath,
+      [
+        'dist/cli.js',
+        'x',
+        'following',
+        'search',
+        'subject',
+        '--query',
+        'building browser tools',
+        '--csv',
+        csvPath,
+        '--json',
+      ],
+      {
+        cwd: new URL('..', import.meta.url),
+        encoding: 'utf8',
+        env: { ...process.env, ILO_HOME: iloHome },
+      },
+    )
+    assert.equal(csvResult.status, 0, csvResult.stderr)
+    assert.equal(JSON.parse(csvResult.stdout).csvExport.rows, 1)
+    const csv = await readFile(csvPath, 'utf8')
+    assert.match(csv, /^"query","evidence","id"/)
+    assert.match(csv, /"browser_builder"/)
+    assert.match(csv, /"source_stale"/)
   } finally {
     await rm(iloHome, { recursive: true, force: true })
   }

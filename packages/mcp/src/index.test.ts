@@ -7,6 +7,7 @@ import {
   refreshXArticleMonitor,
   refreshXMonitor,
   syncXFollowers,
+  syncXFollowing,
 } from '@ilo/core'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
@@ -33,6 +34,9 @@ test('exposes follower, article, inbox, and draft tools through MCP', async () =
     assert.equal(names.includes('ilo_refresh_x_inbox'), true)
     assert.equal(names.includes('ilo_list_x_inbox'), true)
     assert.equal(names.includes('ilo_sync_x_following'), true)
+    assert.equal(names.includes('ilo_x_following_sync_status'), true)
+    assert.equal(names.includes('ilo_search_x_following'), true)
+    assert.equal(names.includes('ilo_get_x_following_profile'), true)
     assert.equal(names.includes('ilo_create_x_article_monitor'), true)
     assert.equal(names.includes('ilo_refresh_x_articles'), true)
     assert.equal(names.includes('ilo_search_x_articles'), true)
@@ -135,6 +139,101 @@ test('exposes follower, article, inbox, and draft tools through MCP', async () =
         (match) => match.match,
       ),
       ['current', 'former', 'unclear'],
+    )
+
+    await syncXFollowing(
+      { handle: 'subject', maxPages: 1 },
+      {
+        profile: async () => ({
+          id: 'subject-id',
+          name: 'Subject',
+          screen_name: 'subject',
+          following: 2,
+        }),
+        following: async () => ({
+          profiles: [
+            {
+              id: 'browser-builder-id',
+              name: 'Browser Builder',
+              screen_name: 'browser_builder',
+              description: 'Building browser tools for designers',
+              location: 'London',
+              followers: 1_200,
+              website: {
+                url: 'https://browser.tools',
+                display_url: 'browser.tools',
+              },
+            },
+            {
+              id: 'infra-builder-id',
+              name: 'Infra Builder',
+              screen_name: 'infra_builder',
+              description: 'Building database infrastructure',
+            },
+          ],
+          nextCursor: null,
+        }),
+      },
+    )
+
+    const followingStatus = await client.callTool({
+      name: 'ilo_x_following_sync_status',
+      arguments: { accountHandle: 'subject' },
+    })
+    assert.equal(followingStatus.isError, undefined)
+    const followingStatusContent = followingStatus.structuredContent as {
+      sync: { complete: boolean; searchableProfiles: number; stale: boolean }
+    }
+    assert.equal(followingStatusContent.sync.complete, true)
+    assert.equal(followingStatusContent.sync.searchableProfiles, 2)
+    assert.equal(followingStatusContent.sync.stale, false)
+
+    const followingSearch = await client.callTool({
+      name: 'ilo_search_x_following',
+      arguments: {
+        accountHandle: 'subject',
+        query: 'building browser tools',
+      },
+    })
+    assert.equal(followingSearch.isError, undefined)
+    const followingSearchContent = followingSearch.structuredContent as {
+      search: {
+        totalMatches: number
+        resultLimit: number | null
+        results: Array<{ handle: string; location: string }>
+      }
+    }
+    assert.equal(followingSearchContent.search.totalMatches, 1)
+    assert.equal(followingSearchContent.search.resultLimit, null)
+    assert.equal(
+      followingSearchContent.search.results[0]?.handle,
+      'browser_builder',
+    )
+    assert.equal(followingSearchContent.search.results[0]?.location, 'London')
+
+    const followingProfile = await client.callTool({
+      name: 'ilo_get_x_following_profile',
+      arguments: {
+        accountHandle: 'subject',
+        followedHandle: 'browser_builder',
+      },
+    })
+    assert.equal(followingProfile.isError, undefined)
+    const followingProfileContent = followingProfile.structuredContent as {
+      result: {
+        profile: {
+          websiteUrl: string
+          providerData: { id: string }
+        }
+      }
+    }
+    assert.equal(
+      followingProfileContent.result.profile.websiteUrl,
+      'https://browser.tools',
+    )
+    assert.equal(
+      followingProfileContent.result.profile.providerData.id,
+      'browser-builder-id',
     )
 
     const createdMonitor = await client.callTool({
