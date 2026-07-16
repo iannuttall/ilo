@@ -15,26 +15,9 @@ import {
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import * as z from 'zod/v4'
+import { failure, openOutputSchema, success } from './tool-result.js'
+import { registerInboxTools } from './tools/inbox.js'
 
-type ToolResult = {
-  content: Array<{ type: 'text'; text: string }>
-  structuredContent?: Record<string, unknown>
-  isError?: boolean
-}
-
-const success = (summary: string, data: unknown): ToolResult => ({
-  content: [{ type: 'text', text: summary }],
-  structuredContent: data as Record<string, unknown>,
-})
-const failure = (error: unknown): ToolResult => {
-  const message = error instanceof Error ? error.message : String(error)
-  return {
-    content: [{ type: 'text', text: `Error: ${message}` }],
-    structuredContent: { error: message },
-    isError: true,
-  }
-}
-const openOutputSchema = z.looseObject({})
 const postDestinationInput = {
   replyToPostId: z
     .string()
@@ -56,6 +39,7 @@ const postDestinationInput = {
 }
 
 export const registerIloTools = (server: McpServer) => {
+  registerInboxTools(server)
   server.registerTool(
     'ilo_status',
     {

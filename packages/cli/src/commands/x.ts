@@ -14,6 +14,9 @@ import { defineCommand } from 'citty'
 import open from 'open'
 import { canPrompt, printJson, printLine } from '../utils.js'
 import { followersCommand } from './followers.js'
+import { followingCommand } from './following.js'
+import { inboxCommand } from './inbox.js'
+import { monitorsCommand } from './monitors.js'
 
 const DEFAULT_PORT = 8976
 const X_DEVELOPER_PORTAL = 'https://console.x.com'
@@ -169,6 +172,9 @@ export const xCommand = defineCommand({
   meta: { name: 'x', description: 'Connect and manage your X account' },
   subCommands: {
     followers: followersCommand,
+    following: followingCommand,
+    monitors: monitorsCommand,
+    inbox: inboxCommand,
     connect: defineCommand({
       meta: {
         name: 'connect',

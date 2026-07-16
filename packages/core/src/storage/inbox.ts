@@ -679,3 +679,30 @@ export const updateInboxStateRecord = (input: {
   if (!item) throw new Error('x_inbox_item_not_found')
   return item
 }
+
+export const markInboxItemRepliedRecord = (input: {
+  accountHandle: string
+  postId: string
+  path?: string
+  now?: number
+}) => {
+  const db = openDatabase(input.path)
+  try {
+    ensureInboxSchema(db)
+    return (
+      db
+        .prepare(
+          `UPDATE x_inbox_states SET replied_at = ?, read_at = COALESCE(read_at, ?)
+           WHERE account_handle = ? COLLATE NOCASE AND post_id = ?`,
+        )
+        .run(
+          input.now ?? Date.now(),
+          input.now ?? Date.now(),
+          input.accountHandle,
+          input.postId,
+        ).changes === 1
+    )
+  } finally {
+    db.close()
+  }
+}

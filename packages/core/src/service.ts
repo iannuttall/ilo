@@ -21,6 +21,7 @@ import {
   listDraftRecords,
   scheduleDraftRecord,
 } from './storage/database.js'
+import { markInboxItemRepliedRecord } from './storage/inbox.js'
 
 export type XPostOptions = {
   replyToPostId?: string
@@ -89,6 +90,17 @@ const publishClaimedDraft = async (draft: Draft) => {
       providerPostId: published.providerPostId,
       providerUrl: published.providerUrl,
     })
+    if (draft.replyToPostId) {
+      try {
+        markInboxItemRepliedRecord({
+          accountHandle: credentials.username,
+          postId: draft.replyToPostId,
+        })
+      } catch {
+        // A published reply must not be reported as failed because local inbox
+        // state could not be updated.
+      }
+    }
     return { draftId: draft.id, ...published }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
