@@ -331,7 +331,7 @@ export const registerInboxTools = (server: McpServer) => {
         return success(
           sync.complete
             ? `${sync.importedProfiles} followed accounts are available to inbox filters for @${sync.handle}; the full available list was imported.`
-            : `${sync.importedProfiles} followed accounts are available to inbox filters for @${sync.handle}; the import has not reached a confirmed end.`,
+            : `${sync.importedProfiles} followed accounts are available to inbox filters for @${sync.handle}; the saved import is unfinished.`,
           { sync },
         )
       } catch (error) {
@@ -359,7 +359,7 @@ export const registerInboxTools = (server: McpServer) => {
         const sync = getXFollowingStatus({ handle: resolved })
         return success(
           sync
-            ? `${sync.importedProfiles} followed accounts are available to inbox filters for @${sync.handle}; ${sync.complete ? 'the full available list was imported' : 'the import has not reached a confirmed end'}.`
+            ? `${sync.importedProfiles} followed accounts are available to inbox filters for @${sync.handle}; ${sync.complete ? 'the full available list was imported' : 'the saved import is unfinished'}.`
             : 'No following data has been indexed for this account.',
           { sync },
         )

@@ -410,8 +410,8 @@ export const followersCommand = defineCommand({
         },
         limit: {
           type: 'string',
-          default: '3',
-          description: 'Evidence rows to return for each term.',
+          description:
+            'Maximum profiles to return for each term. Omit to return them all.',
         },
         candidates: {
           type: 'string',
@@ -430,13 +430,16 @@ export const followersCommand = defineCommand({
         },
       },
       run: async ({ args }) => {
-        const resultLimit = integerArg(args.limit, {
-          name: 'limit',
-          minimum: 1,
-          maximum: 100,
-        })
+        const resultLimit =
+          typeof args.limit === 'string'
+            ? integerArg(args.limit, {
+                name: 'limit',
+                minimum: 1,
+                maximum: 10_000,
+              })
+            : undefined
         const candidateLimit = Math.max(
-          resultLimit,
+          resultLimit ?? 1,
           integerArg(args.candidates, {
             name: 'candidates',
             minimum: 1,
@@ -465,7 +468,7 @@ export const followersCommand = defineCommand({
         if (args.json) {
           return printJson(csvExport ? { ...result, csvExport } : result)
         }
-        printLine(renderFollowerSearch(result, resultLimit))
+        printLine(renderFollowerSearch(result))
         if (csvExport) {
           printLine()
           printLine(

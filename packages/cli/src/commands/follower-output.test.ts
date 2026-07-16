@@ -7,50 +7,52 @@ import {
   renderFollowerSearch,
 } from './follower-output.js'
 
-const result = (coverage: FollowerSearchResult['coverage']) =>
-  ({
-    handle: 'adamwathan',
-    query: 'works at cursor',
-    engine: 'sqlite_fts5',
-    coverage,
-    groups: [
-      {
-        term: 'cursor',
-        current: 1,
-        former: 0,
-        unclear: 0,
-        candidates: 1,
-        truncated: false,
-        results: [
-          {
-            id: '123',
-            handle: 'leerob',
-            name: 'Lee Robinson',
-            bio: 'Model behavior @cursorai. Helping train useful models.',
-            location: '',
-            profileUrl: 'https://x.com/leerob',
-            avatarUrl: null,
-            bannerUrl: null,
-            followers: 270_142,
-            following: 1_000,
-            posts: 10_000,
-            likes: 2_000,
-            mediaCount: 500,
-            joinedAt: null,
-            websiteUrl: null,
-            websiteDisplayUrl: null,
-            verified: true,
-            verificationType: 'blue',
-            protected: false,
-            fetchedAt: 1,
-            match: 'current',
-            evidence:
-              'Model behavior @cursorai. Helping train useful models without forcing this biography into a terminal column that is too narrow.',
-          },
-        ],
-      },
-    ],
-  }) satisfies FollowerSearchResult
+const result = (
+  coverage: FollowerSearchResult['coverage'],
+): FollowerSearchResult => ({
+  handle: 'adamwathan',
+  query: 'works at cursor',
+  engine: 'sqlite_fts5',
+  resultLimit: null,
+  coverage,
+  groups: [
+    {
+      term: 'cursor',
+      current: 1,
+      former: 0,
+      unclear: 0,
+      candidates: 1,
+      truncated: false,
+      results: [
+        {
+          id: '123',
+          handle: 'leerob',
+          name: 'Lee Robinson',
+          bio: 'Model behavior @cursorai. Helping train useful models.',
+          location: '',
+          profileUrl: 'https://x.com/leerob',
+          avatarUrl: null,
+          bannerUrl: null,
+          followers: 270_142,
+          following: 1_000,
+          posts: 10_000,
+          likes: 2_000,
+          mediaCount: 500,
+          joinedAt: null,
+          websiteUrl: null,
+          websiteDisplayUrl: null,
+          verified: true,
+          verificationType: 'blue',
+          protected: false,
+          fetchedAt: 1,
+          match: 'current',
+          evidence:
+            'Model behavior @cursorai. Helping train useful models without forcing this biography into a terminal column that is too narrow.',
+        },
+      ],
+    },
+  ],
+})
 
 test('uses stacked matching profiles in a normal-width terminal', () => {
   const output = stripVTControlCharacters(
@@ -62,7 +64,6 @@ test('uses stacked matching profiles in a normal-width terminal', () => {
         updatedAt: 1,
         lastError: 'fxtwitter_follower_sync_no_progress',
       }),
-      3,
       96,
     ),
   )
@@ -88,7 +89,6 @@ test('keeps the wide evidence table inside the terminal width', () => {
         updatedAt: 1,
         lastError: null,
       }),
-      3,
       160,
     ),
   )
@@ -113,8 +113,56 @@ test('explains a stopped near-complete import in plain language', () => {
       'adamwathan',
     ),
     [
-      '292,136 follower profiles are searchable so far.',
-      'Import stopped after repeated duplicate pages. X reports about 294,202 followers, so roughly 2,066 profiles may be missing.',
+      '292,136 follower profiles are searchable.',
+      'The import stopped after repeated pages returned no new profiles. X reports about 294,202 followers, so roughly 2,066 profiles may be missing.',
+    ],
+  )
+})
+
+test('puts complete counts below the profiles and explains an explicit limit', () => {
+  const search = result({
+    complete: false,
+    importedProfiles: 292_136,
+    expectedFollowers: 294_202,
+    updatedAt: 1,
+    lastError: null,
+  })
+  search.resultLimit = 3
+  const group = search.groups[0]
+  assert.ok(group)
+  search.groups[0] = {
+    ...group,
+    current: 15,
+    former: 1,
+    unclear: 151,
+    candidates: 167,
+  }
+
+  const output = stripVTControlCharacters(renderFollowerSearch(search, 96))
+
+  assert.match(output, /Showing up to 3 profiles per company/)
+  assert.match(output, /cursor · 167 profiles found/)
+  assert.match(output, /15 current · 1 former · 151 unclear/)
+  assert.doesNotMatch(output, /Company\s+│\s+Current/)
+  assert.ok(output.indexOf('Match counts') > output.indexOf('@leerob'), output)
+})
+
+test('explains an unfinished saved import without implying it is running', () => {
+  assert.deepEqual(
+    followerCoverageLines(
+      {
+        complete: false,
+        importedProfiles: 292_136,
+        expectedFollowers: 294_202,
+        updatedAt: 1,
+        lastError: null,
+      },
+      'adamwathan',
+    ),
+    [
+      '292,136 follower profiles are searchable.',
+      'The saved import is unfinished. X reports about 294,202 followers, so roughly 2,066 profiles may still be missing.',
+      'Run ilo x followers sync adamwathan --all to continue from the saved cursor.',
     ],
   )
 })

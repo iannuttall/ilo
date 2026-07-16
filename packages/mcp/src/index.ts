@@ -91,7 +91,7 @@ export const registerIloTools = (server: McpServer) => {
         return success(
           sync.complete
             ? `${sync.importedProfiles} follower profiles are searchable for @${sync.handle}; the full available list was imported.`
-            : `${sync.importedProfiles} follower profiles are searchable for @${sync.handle}; the import has not reached a confirmed end.`,
+            : `${sync.importedProfiles} follower profiles are searchable for @${sync.handle}; the saved import is unfinished.`,
           { sync },
         )
       } catch (error) {
@@ -118,7 +118,7 @@ export const registerIloTools = (server: McpServer) => {
         const sync = getXFollowersStatus({ handle })
         return success(
           sync
-            ? `${sync.importedProfiles} follower profiles are searchable for @${sync.handle}; ${sync.complete ? 'the full available list was imported' : 'the import has not reached a confirmed end'}.`
+            ? `${sync.importedProfiles} follower profiles are searchable for @${sync.handle}; ${sync.complete ? 'the full available list was imported' : 'the saved import is unfinished'}.`
             : 'No follower data has been indexed for this account.',
           { sync },
         )
@@ -136,7 +136,13 @@ export const registerIloTools = (server: McpServer) => {
       inputSchema: {
         handle: z.string().trim().min(1).max(100),
         query: z.string().trim().min(1).max(500),
-        resultLimit: z.number().int().min(1).max(100).default(20),
+        resultLimit: z
+          .number()
+          .int()
+          .min(1)
+          .max(10_000)
+          .optional()
+          .describe('Maximum results per term. Omit to return every match.'),
         candidateLimit: z.number().int().min(1).max(10_000).default(10_000),
       },
       outputSchema: openOutputSchema,
@@ -155,11 +161,14 @@ export const registerIloTools = (server: McpServer) => {
           candidateLimit,
         })
         const counts = search.groups
-          .map((group) => `${group.term}: ${group.current} current`)
+          .map(
+            (group) =>
+              `${group.term}: ${group.current} current, ${group.former} former, ${group.unclear} unclear`,
+          )
           .join(', ')
         const coverage = search.coverage.complete
           ? 'full available list imported'
-          : 'import has not reached a confirmed end'
+          : 'saved import is unfinished'
         return success(
           `Searched ${search.coverage.importedProfiles} follower profiles (${coverage}). ${counts}.`,
           { search },

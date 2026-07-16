@@ -108,9 +108,9 @@ ilo x followers search adamwathan \
   --query "how many of my followers work at cursor|vercel|sentry"
 ```
 
-Employer searches keep `current`, `former`, and `unclear` matches separate and return the public bio used as evidence. Check the coverage lines first. If the import did not reach a confirmed end, ilo shows the reported follower total and an approximate possible gap. A public bio is not a verified employment record.
+Employer searches keep `current`, `former`, and `unclear` matches separate and return the public bio used as evidence. Check the coverage lines first. If the saved import is unfinished, ilo shows the reported follower total and an approximate possible gap. A public bio is not a verified employment record.
 
-The summary stays in a compact table. Matching profiles use a wide table when it fits and stacked records in a normal or narrow terminal. `--limit` controls how many evidence rows appear for each company without changing the totals:
+Matching profiles use a wide table when it fits and stacked records in a normal or narrow terminal. Match counts appear below the profiles. Every classified profile is shown unless you pass `--limit`:
 
 ```sh
 ilo x followers search adamwathan \

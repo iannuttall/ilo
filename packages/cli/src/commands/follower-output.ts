@@ -37,13 +37,15 @@ export const followerCoverageLines = (
     ]
   }
 
-  const lines = [`${imported} follower profiles are searchable so far.`]
+  const lines = [`${imported} follower profiles are searchable.`]
   const expected = coverage.expectedFollowers
   const missing =
     expected === null ? null : Math.max(0, expected - coverage.importedProfiles)
 
   if (coverage.lastError === 'fxtwitter_follower_sync_no_progress') {
-    const stopped = ['Import stopped after repeated duplicate pages.']
+    const stopped = [
+      'The import stopped after repeated pages returned no new profiles.',
+    ]
     if (expected !== null && missing && missing > 0) {
       stopped.push(
         `X reports about ${number.format(expected)} followers, so roughly ${number.format(missing)} profiles may be missing.`,
@@ -75,24 +77,20 @@ export const followerCoverageLines = (
         ? `, so roughly ${number.format(missing)} profiles may still be missing`
         : ''
     lines.push(
-      `The import has not reached a confirmed end. X reports about ${number.format(expected)} followers${remaining}.`,
+      `The saved import is unfinished. X reports about ${number.format(expected)} followers${remaining}.`,
     )
   } else {
-    lines.push('The import has not reached a confirmed end.')
+    lines.push('The saved import is unfinished.')
   }
   if (options.showResume !== false) {
     lines.push(
-      `Run ilo x followers sync ${handle} --all to continue or retry the remaining pages.`,
+      `Run ilo x followers sync ${handle} --all to continue from the saved cursor.`,
     )
   }
   return lines
 }
 
-const renderWideEvidence = (
-  result: FollowerSearchResult,
-  displayLimit: number,
-  columns: number,
-) => {
+const renderWideEvidence = (result: FollowerSearchResult, columns: number) => {
   const targetWidth = Math.min(columns - 4, 156)
   const evidenceWidth = targetWidth - 69
   const evidence = new Table({
@@ -109,7 +107,7 @@ const renderWideEvidence = (
     wordWrap: true,
   })
   for (const group of result.groups) {
-    for (const match of group.results.slice(0, displayLimit)) {
+    for (const match of group.results) {
       evidence.push([
         group.term,
         classification(match.match),
@@ -124,13 +122,12 @@ const renderWideEvidence = (
 
 const renderStackedEvidence = (
   result: FollowerSearchResult,
-  displayLimit: number,
   columns: number,
 ) => {
   const blocks: string[] = []
   const contentWidth = Math.max(24, columns - 4)
   for (const group of result.groups) {
-    for (const match of group.results.slice(0, displayLimit)) {
+    for (const match of group.results) {
       blocks.push(
         [
           `${pc.bold(group.term)} ${pc.dim('·')} ${classification(match.match)}`,
@@ -145,37 +142,40 @@ const renderStackedEvidence = (
   return blocks.join(`\n${divider}\n`)
 }
 
+const renderMatchCounts = (result: FollowerSearchResult, columns: number) => {
+  const contentWidth = Math.max(24, columns - 4)
+  const divider = pc.dim('─'.repeat(Math.min(contentWidth, 88)))
+  return result.groups
+    .map((group) =>
+      [
+        pc.bold(
+          wrapTerminalText(
+            `${group.term} · ${number.format(group.candidates)} ${group.candidates === 1 ? 'profile' : 'profiles'} found`,
+            contentWidth,
+          ),
+        ),
+        [
+          pc.green(`${number.format(group.current)} current`),
+          pc.yellow(`${number.format(group.former)} former`),
+          pc.dim(`${number.format(group.unclear)} unclear`),
+        ].join(pc.dim(' · ')),
+      ].join('\n'),
+    )
+    .join(`\n${divider}\n`)
+}
+
 export const renderFollowerSearch = (
   result: FollowerSearchResult,
-  displayLimit: number,
   requestedColumns = process.stdout.columns ?? 120,
 ) => {
-  const summary = new Table({
-    head: [
-      pc.bold('Company'),
-      pc.bold('Current'),
-      pc.bold('Former'),
-      pc.bold('Unclear'),
-      pc.bold('Candidates'),
-    ],
-    colAligns: ['left', 'right', 'right', 'right', 'right'],
-    style: borderStyle,
-  })
-  for (const group of result.groups) {
-    summary.push([
-      group.term,
-      pc.green(number.format(group.current)),
-      pc.yellow(number.format(group.former)),
-      pc.dim(number.format(group.unclear)),
-      number.format(group.candidates),
-    ])
-  }
-
   const columns = terminalColumns(requestedColumns)
   const matchingProfiles = result.groups.reduce(
-    (total, group) => total + Math.min(displayLimit, group.results.length),
+    (total, group) => total + group.results.length,
     0,
   )
+  const limited =
+    result.resultLimit !== null &&
+    result.groups.some((group) => group.results.length < group.candidates)
   const coverage = followerCoverageLines(
     result.coverage,
     result.handle,
@@ -185,16 +185,28 @@ export const renderFollowerSearch = (
   const sections = [
     pc.bold(`Follower search for @${result.handle}`),
     ...coverage.map((line) => pc.dim(line)),
-    '',
-    summary.toString(),
   ]
   if (matchingProfiles > 0) {
     const evidence =
       columns >= 132
-        ? renderWideEvidence(result, displayLimit, columns).toString()
-        : renderStackedEvidence(result, displayLimit, columns)
-    sections.push('', pc.bold('Matching profiles'), '', evidence)
+        ? renderWideEvidence(result, columns).toString()
+        : renderStackedEvidence(result, columns)
+    sections.push('', pc.bold('Matching profiles'))
+    if (limited) {
+      sections.push(
+        pc.dim(
+          `Showing up to ${number.format(result.resultLimit ?? 0)} profiles per company. Remove --limit to show every profile counted below.`,
+        ),
+      )
+    }
+    sections.push('', evidence)
   }
+  sections.push(
+    '',
+    pc.bold('Match counts'),
+    '',
+    renderMatchCounts(result, columns),
+  )
   for (const group of result.groups) {
     if (group.truncated) {
       sections.push(

@@ -80,6 +80,7 @@ export type FollowerSearchResult = {
   handle: string
   query: string
   engine: 'sqlite_fts5'
+  resultLimit: number | null
   coverage: {
     complete: boolean
     importedProfiles: number
@@ -465,10 +466,13 @@ export const searchXFollowers = (input: {
   const handle = normalizeXHandle(input.handle)
   const state = getFollowerSyncState(handle, input.databasePath)
   if (!state) throw new Error('follower_data_not_synced')
-  const resultLimit = Math.min(10_000, Math.max(1, input.resultLimit ?? 20))
+  const resultLimit =
+    input.resultLimit === undefined
+      ? null
+      : Math.min(10_000, Math.max(1, input.resultLimit))
   const candidateLimit = Math.min(
     10_000,
-    Math.max(resultLimit, input.candidateLimit ?? 10_000),
+    Math.max(resultLimit ?? 1, input.candidateLimit ?? 10_000),
   )
   const terms = parseFollowerSearchTerms(input.query)
   const groups = terms.map((term): FollowerSearchGroup => {
@@ -492,13 +496,14 @@ export const searchXFollowers = (input: {
             matchOrder[left.match] - matchOrder[right.match] ||
             (right.followers ?? 0) - (left.followers ?? 0),
         )
-        .slice(0, resultLimit),
+        .slice(0, resultLimit ?? candidateLimit),
     }
   })
   return {
     handle: state.handle,
     query: input.query,
     engine: 'sqlite_fts5',
+    resultLimit,
     coverage: {
       complete: state.complete,
       importedProfiles: state.importedProfiles,

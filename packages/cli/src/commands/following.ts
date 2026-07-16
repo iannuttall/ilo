@@ -113,7 +113,9 @@ export const followingCommand = defineCommand({
         if (state.complete) {
           printLine('The full available following list was imported.')
         } else if (state.lastError === 'fxtwitter_following_sync_no_progress') {
-          printLine('Import stopped after repeated duplicate pages.')
+          printLine(
+            'Import stopped after repeated pages returned no new accounts.',
+          )
         } else if (state.lastError === 'fxtwitter_following_cursor_stalled') {
           printLine('Import stopped because its page cursor did not move.')
         } else {

@@ -366,10 +366,11 @@ test('CLI and public library use the same follower search behavior', async () =>
     assert.equal(humanResult.status, 0, humanResult.stderr)
     const humanOutput = stripVTControlCharacters(humanResult.stdout)
     assert.match(humanOutput, /Follower search for @subject/)
-    assert.match(humanOutput, /Company\s+│\s+Current/)
-    assert.match(humanOutput, /vercel\s+│\s+1/)
     assert.match(humanOutput, /Matching profiles/)
     assert.match(humanOutput, /@follower/)
+    assert.match(humanOutput, /Match counts/)
+    assert.match(humanOutput, /vercel · 1 profile found/)
+    assert.match(humanOutput, /1 current · 0 former · 0 unclear/)
 
     const csvPath = join(iloHome, 'exports', 'vercel-followers.csv')
     const csvResult = spawnSync(
@@ -470,7 +471,10 @@ test('CLI and public library use the same follower search behavior', async () =>
       },
     )
     assert.equal(statusResult.status, 0, statusResult.stderr)
-    assert.match(statusResult.stdout, /stopped after repeated duplicate pages/)
+    assert.match(
+      statusResult.stdout,
+      /stopped after repeated pages returned no new profiles/,
+    )
     assert.match(statusResult.stdout, /follower profiles are searchable/)
   } finally {
     await rm(iloHome, { recursive: true, force: true })

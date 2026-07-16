@@ -374,6 +374,49 @@ test('resumes follower syncs and searches normalized company handles', async () 
   }
 })
 
+test('returns every follower match unless a result limit is requested', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'ilo-followers-unlimited-'))
+  const databasePath = join(directory, 'ilo.sqlite')
+  const matches = Array.from({ length: 25 }, (_, index) =>
+    profile(
+      String(index + 1),
+      `person${index + 1}`,
+      'Software Engineer @vercel',
+      25 - index,
+    ),
+  )
+  const client: FollowerResearchClient = {
+    profile: async () =>
+      profile('subject-id', 'subject', 'Subject profile', 25),
+    followers: async () => ({ profiles: matches, nextCursor: null }),
+  }
+
+  try {
+    await syncXFollowers({ handle: 'subject', databasePath }, client)
+
+    const all = searchXFollowers({
+      handle: 'subject',
+      query: 'vercel',
+      databasePath,
+    })
+    assert.equal(all.resultLimit, null)
+    assert.equal(all.groups[0]?.candidates, 25)
+    assert.equal(all.groups[0]?.results.length, 25)
+
+    const limited = searchXFollowers({
+      handle: 'subject',
+      query: 'vercel',
+      resultLimit: 3,
+      databasePath,
+    })
+    assert.equal(limited.resultLimit, 3)
+    assert.equal(limited.groups[0]?.candidates, 25)
+    assert.equal(limited.groups[0]?.results.length, 3)
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
+})
+
 test('stops when changing cursors only return duplicate follower pages', async () => {
   const directory = mkdtempSync(join(tmpdir(), 'ilo-followers-stalled-'))
   const databasePath = join(directory, 'ilo.sqlite')
