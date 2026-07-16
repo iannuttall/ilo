@@ -4,6 +4,8 @@ import pc from 'picocolors'
 import { terminalColumns, wrapTerminalText } from '../terminal.js'
 
 const number = new Intl.NumberFormat('en-GB', { notation: 'compact' })
+const formatNumber = (value: number) =>
+  number.format(value).replace(/[kmbt]$/i, (suffix) => suffix.toUpperCase())
 
 const itemState = (item: XInboxItem) => {
   if (item.state.archivedAt) return pc.dim('archived')
@@ -39,9 +41,9 @@ const relationshipSignals = (item: XInboxItem) => {
 
 const engagement = (item: XInboxItem) =>
   [
-    `${number.format(item.replies)} replies`,
-    `${number.format(item.likes)} likes`,
-    item.views === null ? '' : `${number.format(item.views)} views`,
+    `${formatNumber(item.replies)} replies`,
+    `${formatNumber(item.likes)} likes`,
+    item.views === null ? '' : `${formatNumber(item.views)} views`,
   ]
     .filter(Boolean)
     .join(' · ')
@@ -64,7 +66,7 @@ const renderWideInbox = (items: XInboxItem[], columns: number) => {
     const followers =
       item.author.followers === null
         ? ''
-        : `\n${pc.dim(`${number.format(item.author.followers)} followers`)}`
+        : `\n${pc.dim(`${formatNumber(item.author.followers)} followers`)}`
     table.push([
       itemState(item),
       `${item.author.name}\n${pc.cyan(`@${item.author.handle}`)}${followers}`,
@@ -84,7 +86,7 @@ const renderStackedInbox = (items: XInboxItem[], columns: number) => {
       const followers =
         item.author.followers === null
           ? pc.dim('followers unknown')
-          : `${number.format(item.author.followers)} ${pc.dim('followers')}`
+          : `${formatNumber(item.author.followers)} ${pc.dim('followers')}`
       return [
         `${itemState(item)} ${pc.dim('·')} ${relativeTime(item.createdAt)} ${pc.dim('·')} ${item.monitors.map((monitor) => monitor.name).join(', ')}`,
         `${item.author.name} ${pc.cyan(`@${item.author.handle}`)} ${pc.dim('·')} ${followers}`,
