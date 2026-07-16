@@ -22,9 +22,152 @@ const classification = (match: FollowerSearchMatch['match']) => {
 const followerCount = (value: number | null) =>
   value === null ? pc.dim('unknown') : number.format(value)
 
+type FollowerCoverage = FollowerSearchResult['coverage']
+
+export const followerCoverageLines = (
+  coverage: FollowerCoverage,
+  handle: string,
+  options: { showResume?: boolean } = {},
+) => {
+  const imported = number.format(coverage.importedProfiles)
+  if (coverage.complete) {
+    return [
+      `${imported} follower profiles are searchable. The full available follower list was imported.`,
+    ]
+  }
+
+  const lines = [`${imported} follower profiles are searchable so far.`]
+  const expected = coverage.expectedFollowers
+  const missing =
+    expected === null
+      ? null
+      : Math.max(0, expected - coverage.importedProfiles)
+
+  if (coverage.lastError === 'fxtwitter_follower_sync_no_progress') {
+    const stopped = ['Import stopped after repeated duplicate pages.']
+    if (expected !== null && missing && missing > 0) {
+      stopped.push(
+        `X reports about ${number.format(expected)} followers, so roughly ${number.format(missing)} profiles may be missing.`,
+      )
+    } else if (expected !== null) {
+      stopped.push(
+        `X reports about ${number.format(expected)} followers; its total can include profiles that are unavailable to import.`,
+      )
+    }
+    lines.push(stopped.join(' '))
+    return lines
+  }
+
+  if (coverage.lastError === 'fxtwitter_follower_cursor_stalled') {
+    lines.push('The last import stopped because its page cursor did not move.')
+    return lines
+  }
+
+  if (coverage.lastError) {
+    lines.push(
+      `The last import stopped before finishing. Run ilo x followers status ${handle} for details.`,
+    )
+    return lines
+  }
+
+  if (expected !== null) {
+    const remaining =
+      missing && missing > 0
+        ? `, so roughly ${number.format(missing)} profiles may still be missing`
+        : ''
+    lines.push(
+      `The import has not reached a confirmed end. X reports about ${number.format(expected)} followers${remaining}.`,
+    )
+  } else {
+    lines.push('The import has not reached a confirmed end.')
+  }
+  if (options.showResume !== false) {
+    lines.push(
+      `Run ilo x followers sync ${handle} --all to continue or retry the remaining pages.`,
+    )
+  }
+  return lines
+}
+
+const renderWideEvidence = (
+  result: FollowerSearchResult,
+  displayLimit: number,
+  columns: number,
+) => {
+  const targetWidth = Math.min(columns - 4, 156)
+  const evidenceWidth = targetWidth - 69
+  const evidence = new Table({
+    head: [
+      pc.bold('Company'),
+      pc.bold('Match'),
+      pc.bold('Account'),
+      pc.bold('Followers'),
+      pc.bold('Evidence'),
+    ],
+    colWidths: [14, 10, 25, 14, evidenceWidth],
+    colAligns: ['left', 'left', 'left', 'right', 'left'],
+    style: borderStyle,
+    wordWrap: true,
+  })
+  for (const group of result.groups) {
+    for (const match of group.results.slice(0, displayLimit)) {
+      evidence.push([
+        group.term,
+        classification(match.match),
+        `${match.name}\n${pc.cyan(`@${match.handle}`)}`,
+        followerCount(match.followers),
+        match.evidence.replace(/\s+/g, ' ').trim(),
+      ])
+    }
+  }
+  return evidence
+}
+
+const wrapText = (value: string, width: number) => {
+  const words = value.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean)
+  const lines: string[] = []
+  let line = ''
+  for (const word of words) {
+    if (!line) {
+      line = word
+    } else if (line.length + word.length + 1 <= width) {
+      line += ` ${word}`
+    } else {
+      lines.push(line)
+      line = word
+    }
+  }
+  if (line) lines.push(line)
+  return lines.join('\n')
+}
+
+const renderStackedEvidence = (
+  result: FollowerSearchResult,
+  displayLimit: number,
+  columns: number,
+) => {
+  const blocks: string[] = []
+  const contentWidth = Math.max(24, columns - 4)
+  for (const group of result.groups) {
+    for (const match of group.results.slice(0, displayLimit)) {
+      blocks.push(
+        [
+          `${pc.bold(group.term)} ${pc.dim('·')} ${classification(match.match)}`,
+          `${match.name} ${pc.cyan(`@${match.handle}`)} ${pc.dim('·')} ${followerCount(match.followers)} ${pc.dim('followers')}`,
+          wrapText(match.evidence, contentWidth),
+          pc.dim(match.profileUrl),
+        ].join('\n'),
+      )
+    }
+  }
+  const divider = pc.dim('─'.repeat(Math.min(contentWidth, 88)))
+  return blocks.join(`\n${divider}\n`)
+}
+
 export const renderFollowerSearch = (
   result: FollowerSearchResult,
   displayLimit: number,
+  requestedColumns = process.stdout.columns ?? 120,
 ) => {
   const summary = new Table({
     head: [
@@ -47,44 +190,27 @@ export const renderFollowerSearch = (
     ])
   }
 
-  const width = Math.max(112, Math.min(process.stdout.columns ?? 120, 160))
-  const evidenceWidth = width - 70
-  const evidence = new Table({
-    head: [
-      pc.bold('Company'),
-      pc.bold('Match'),
-      pc.bold('Account'),
-      pc.bold('Followers'),
-      pc.bold('Evidence'),
-    ],
-    colWidths: [16, 10, 26, 12, evidenceWidth],
-    colAligns: ['left', 'left', 'left', 'right', 'left'],
-    style: borderStyle,
-    wordWrap: true,
-  })
-  for (const group of result.groups) {
-    for (const match of group.results.slice(0, displayLimit)) {
-      evidence.push([
-        group.term,
-        classification(match.match),
-        `${match.name}\n${pc.cyan(`@${match.handle}`)}`,
-        followerCount(match.followers),
-        match.evidence.replace(/\s+/g, ' ').trim(),
-      ])
-    }
-  }
-
-  const coverage = result.coverage.complete
-    ? `${number.format(result.coverage.importedProfiles)} profiles indexed`
-    : `${number.format(result.coverage.importedProfiles)} profiles indexed; import is partial`
+  const columns = Math.max(40, requestedColumns)
+  const matchingProfiles = result.groups.reduce(
+    (total, group) =>
+      total + Math.min(displayLimit, group.results.length),
+    0,
+  )
+  const coverage = followerCoverageLines(result.coverage, result.handle).flatMap(
+    (line) => wrapText(line, Math.max(24, columns - 4)).split('\n'),
+  )
   const sections = [
     pc.bold(`Follower search for @${result.handle}`),
-    pc.dim(coverage),
+    ...coverage.map((line) => pc.dim(line)),
     '',
     summary.toString(),
   ]
-  if (evidence.length > 0) {
-    sections.push('', pc.bold('Matching profiles'), evidence.toString())
+  if (matchingProfiles > 0) {
+    const evidence =
+      columns >= 132
+        ? renderWideEvidence(result, displayLimit, columns).toString()
+        : renderStackedEvidence(result, displayLimit, columns)
+    sections.push('', pc.bold('Matching profiles'), '', evidence)
   }
   for (const group of result.groups) {
     if (group.truncated) {
@@ -135,6 +261,7 @@ const csvRows = (result: FollowerSearchResult) => {
     'source_profiles_indexed',
     'source_expected_followers',
     'source_complete',
+    'source_last_error',
   ]
   const rows: unknown[][] = [headings]
   for (const group of result.groups) {
@@ -167,6 +294,7 @@ const csvRows = (result: FollowerSearchResult) => {
         result.coverage.importedProfiles,
         result.coverage.expectedFollowers,
         result.coverage.complete,
+        result.coverage.lastError,
       ])
     }
   }

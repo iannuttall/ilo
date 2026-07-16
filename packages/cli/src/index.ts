@@ -5,6 +5,7 @@ import { mcpCommand } from './commands/mcp.js'
 import { schedulerCommand } from './commands/scheduler.js'
 import { skillCommand } from './commands/skills.js'
 import { connectX, xCommand } from './commands/x.js'
+import { maybeOfferSelfUpdate } from './self-update.js'
 
 const main = defineCommand({
   meta: {
@@ -54,6 +55,12 @@ const main = defineCommand({
     skill: skillCommand,
   },
 })
+
+const updateExitCode = await maybeOfferSelfUpdate(
+  { name: 'iloso', version: ILO_VERSION },
+  { argv: process.argv.slice(2) },
+)
+if (updateExitCode !== undefined) process.exit(updateExitCode)
 
 runMain(main).catch((error) => {
   const message = error instanceof Error ? error.message : String(error)

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import type Database from 'better-sqlite3'
 import { openDatabase } from './database.js'
+import type Database from './sqlite.js'
 
 export type FollowingSubject = {
   id: string
@@ -62,7 +62,7 @@ const mapSyncState = (row: FollowingSourceRow): FollowingSyncState => ({
   lastError: row.last_error,
 })
 
-export const ensureFollowingSchema = (db: Database.Database) => {
+export const ensureFollowingSchema = (db: Database) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS x_following_sources (
       subject_id TEXT PRIMARY KEY,
@@ -96,7 +96,7 @@ export const ensureFollowingSchema = (db: Database.Database) => {
 }
 
 const readSyncState = (
-  db: Database.Database,
+  db: Database,
   handle: string,
 ): FollowingSyncState | null => {
   const row = db

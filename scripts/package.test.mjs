@@ -21,6 +21,7 @@ test('public API can be imported', async () => {
     await readFile(new URL('../package.json', import.meta.url), 'utf8'),
   )
   assert.equal(module.ILO_VERSION, packageJson.version)
+  assert.equal(packageJson.dependencies['better-sqlite3'], undefined)
   assert.equal(typeof module.createDraft, 'function')
   assert.equal(typeof module.parseScheduleTime, 'function')
   assert.equal(typeof module.syncXFollowers, 'function')
@@ -130,6 +131,7 @@ test('CLI stores repeated image options on a reply draft', async () => {
       },
     )
     assert.equal(result.status, 0, result.stderr)
+    assert.equal(result.stderr, '')
     const draft = JSON.parse(result.stdout)
     assert.equal(draft.replyToPostId, '123')
     assert.deepEqual(
@@ -332,8 +334,8 @@ test('CLI and public library use the same follower search behavior', async () =>
       },
     )
     assert.equal(statusResult.status, 0, statusResult.stderr)
-    assert.match(statusResult.stdout, /repeated pages added no new profiles/)
-    assert.match(statusResult.stdout, /Saved data is still searchable/)
+    assert.match(statusResult.stdout, /stopped after repeated duplicate pages/)
+    assert.match(statusResult.stdout, /follower profiles are searchable/)
   } finally {
     await rm(iloHome, { recursive: true, force: true })
   }

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import type Database from 'better-sqlite3'
 import { openDatabase } from './database.js'
+import type Database from './sqlite.js'
 
 export type StoredXProfile = {
   id: string
@@ -134,7 +134,7 @@ const mapSyncState = (row: FollowerSourceRow): FollowerSyncState => ({
   lastError: row.last_error,
 })
 
-export const ensureFollowerSchema = (db: Database.Database) => {
+export const ensureFollowerSchema = (db: Database) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS x_follower_sources (
       subject_id TEXT PRIMARY KEY,
@@ -224,7 +224,7 @@ export const ensureFollowerSchema = (db: Database.Database) => {
 }
 
 const readSyncState = (
-  db: Database.Database,
+  db: Database,
   handle: string,
 ): FollowerSyncState | null => {
   const row = db
@@ -289,7 +289,7 @@ export const startFollowerSync = (input: {
   }
 }
 
-const upsertProfile = (db: Database.Database) => {
+const upsertProfile = (db: Database) => {
   const profile = db.prepare(`INSERT INTO x_public_profiles (
       id, handle, name, bio, location, profile_url, avatar_url, banner_url,
       followers, following, posts, likes, media_count, joined_at, website_url,

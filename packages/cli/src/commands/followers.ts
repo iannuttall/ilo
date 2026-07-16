@@ -21,6 +21,7 @@ import {
 import { defineCommand } from 'citty'
 import { printJson, printLine } from '../utils.js'
 import {
+  followerCoverageLines,
   renderFollowerSearch,
   writeFollowerSearchCsv,
 } from './follower-output.js'
@@ -271,11 +272,11 @@ export const followersCommand = defineCommand({
         if (args.json) return printJson(state)
         if (state.complete) {
           return printLine(
-            `Follower sync complete for @${state.handle}: ${state.importedProfiles} profiles indexed.`,
+            `Follower sync complete for @${state.handle}: ${state.importedProfiles.toLocaleString('en-GB')} profiles are searchable.`,
           )
         }
         return printLine(
-          `Saved progress for @${state.handle}. Run the same command again to continue.`,
+          `Saved ${state.importedProfiles.toLocaleString('en-GB')} searchable follower profiles for @${state.handle}. Run the same command again to continue.`,
         )
       },
     }),
@@ -312,22 +313,24 @@ export const followersCommand = defineCommand({
           }
           return
         }
-        const coverage = state.expectedFollowers
-          ? `${state.importedProfiles} of about ${state.expectedFollowers}`
-          : String(state.importedProfiles)
-        printLine(
-          `@${state.handle}: ${coverage} profiles indexed (${state.complete ? 'complete' : 'partial'}).`,
-        )
+        printLine(`Follower data for @${state.handle}`)
+        for (const line of followerCoverageLines(state, state.handle, {
+          showResume: !job,
+        })) {
+          printLine(line)
+        }
         if (job) {
           printLine(
             `Background import running as PID ${job.pid}. Progress: ${job.logPath}`,
           )
         }
-        if (state.lastError === 'fxtwitter_follower_sync_no_progress') {
-          printLine(
-            'Last import stopped after repeated pages added no new profiles. Saved data is still searchable.',
-          )
-        } else if (state.lastError) {
+        if (
+          state.lastError &&
+          ![
+            'fxtwitter_follower_sync_no_progress',
+            'fxtwitter_follower_cursor_stalled',
+          ].includes(state.lastError)
+        ) {
           printLine(`Last import error: ${state.lastError}`)
         }
       },
@@ -378,9 +381,12 @@ export const followersCommand = defineCommand({
         )
         printLine(`Profile: ${profile.profileUrl}`)
         if (!result.coverage.complete) {
-          printLine(
-            `Coverage: partial (${result.coverage.importedProfiles} profiles imported).`,
-          )
+          for (const line of followerCoverageLines(
+            result.coverage,
+            result.handle,
+          )) {
+            printLine(line)
+          }
         }
       },
     }),

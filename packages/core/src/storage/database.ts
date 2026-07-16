@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
-import Database from 'better-sqlite3'
 import { iloDatabasePath } from './paths.js'
+import Database from './sqlite.js'
 
 export type DraftStatus =
   | 'draft'
@@ -68,7 +68,7 @@ const mapDraft = (row: DraftRow, images: DraftImage[] = []): Draft => ({
 })
 
 const loadDraftImages = (
-  db: Database.Database,
+  db: Database,
   draftId: string,
 ): DraftImage[] =>
   (
@@ -82,10 +82,10 @@ const loadDraftImages = (
     ...(row.alt_text ? { altText: row.alt_text } : {}),
   }))
 
-const readDraft = (db: Database.Database, row: DraftRow) =>
+const readDraft = (db: Database, row: DraftRow) =>
   mapDraft(row, loadDraftImages(db, row.id))
 
-export const openDatabase = (path = iloDatabasePath()): Database.Database => {
+export const openDatabase = (path = iloDatabasePath()): Database => {
   mkdirSync(dirname(path), { recursive: true, mode: 0o700 })
   const db = new Database(path)
   db.pragma('journal_mode = WAL')

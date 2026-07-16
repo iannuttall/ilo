@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto'
-import type Database from 'better-sqlite3'
 import type { FxTwitterStatus } from '../providers/x/fxtwitter.js'
 import { openDatabase } from './database.js'
 import { ensureFollowerSchema } from './followers.js'
 import { ensureFollowingSchema } from './following.js'
+import type Database from './sqlite.js'
 
 export type XMonitor = {
   id: string
@@ -198,7 +198,7 @@ const mapInboxItem = (row: InboxRow): XInboxItem => ({
   providerData: parseProviderData(row.raw_json),
 })
 
-export const ensureInboxSchema = (db: Database.Database) => {
+export const ensureInboxSchema = (db: Database) => {
   ensureFollowerSchema(db)
   ensureFollowingSchema(db)
   db.exec(`

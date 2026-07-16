@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import Database from 'better-sqlite3'
 import {
   claimDueDraftRecords,
   createDraftRecord,
@@ -13,6 +12,7 @@ import {
   openDatabase,
   scheduleDraftRecord,
 } from './database.js'
+import Database from './sqlite.js'
 
 test('stores, schedules, claims, and finishes a local draft', () => {
   const directory = mkdtempSync(join(tmpdir(), 'ilo-database-'))

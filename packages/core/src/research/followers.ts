@@ -85,6 +85,7 @@ export type FollowerSearchResult = {
     importedProfiles: number
     expectedFollowers: number | null
     updatedAt: number
+    lastError: string | null
   }
   groups: FollowerSearchGroup[]
 }
@@ -296,6 +297,7 @@ export const getXFollowerProfile = (input: {
       importedProfiles: state.importedProfiles,
       expectedFollowers: state.expectedFollowers,
       updatedAt: state.updatedAt,
+      lastError: state.lastError,
     },
     profile: {
       ...profile,
@@ -502,6 +504,7 @@ export const searchXFollowers = (input: {
       importedProfiles: state.importedProfiles,
       expectedFollowers: state.expectedFollowers,
       updatedAt: state.updatedAt,
+      lastError: state.lastError,
     },
     groups,
   }
