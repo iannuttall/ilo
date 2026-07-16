@@ -92,8 +92,10 @@ Safe current claims include:
   profiles through FxTwitter, inspect their stored public fields, and search
   the local index with SQLite FTS5.
 - Follower search returns the matched public bio evidence and labels employer
-  matches as current, former, or unclear. The CLI can export matching public
-  profile fields and import coverage to CSV.
+  matches as current, former, or unclear. Current matches are listed by
+  default while all three counts remain visible. The CLI can include former
+  and unclear profiles and export the selected public fields and import
+  coverage to CSV.
 - The CLI, MCP server, and TypeScript package can save X advanced-search
   monitors, refresh them on demand into a local reply inbox, filter saved
   posts, inspect public author and post evidence, and create local reply

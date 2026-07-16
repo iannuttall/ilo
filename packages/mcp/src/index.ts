@@ -132,7 +132,7 @@ export const registerIloTools = (server: McpServer) => {
     'ilo_search_x_followers',
     {
       description:
-        'Search imported X follower names, handles, bios, and locations. Accepts natural employer questions or pipe-separated alternatives and returns current, former, and unclear matches with bio evidence.',
+        'Search imported X follower names, handles, bios, and locations. Returns current matches with bio evidence by default and keeps counts for current, former, and unclear matches.',
       inputSchema: {
         handle: z.string().trim().min(1).max(100),
         query: z.string().trim().min(1).max(500),
@@ -142,7 +142,17 @@ export const registerIloTools = (server: McpServer) => {
           .min(1)
           .max(10_000)
           .optional()
-          .describe('Maximum results per term. Omit to return every match.'),
+          .describe(
+            'Maximum listed results per term. Omit to return every included match.',
+          ),
+        includeFormer: z
+          .boolean()
+          .default(false)
+          .describe('Include former matches in the returned profiles.'),
+        includeUnclear: z
+          .boolean()
+          .default(false)
+          .describe('Include unclear matches in the returned profiles.'),
         candidateLimit: z.number().int().min(1).max(10_000).default(10_000),
       },
       outputSchema: openOutputSchema,
@@ -152,13 +162,22 @@ export const registerIloTools = (server: McpServer) => {
         idempotentHint: true,
       },
     },
-    async ({ handle, query, resultLimit, candidateLimit }) => {
+    async ({
+      handle,
+      query,
+      resultLimit,
+      includeFormer,
+      includeUnclear,
+      candidateLimit,
+    }) => {
       try {
         const search = searchXFollowers({
           handle,
           query,
           resultLimit,
           candidateLimit,
+          includeFormer,
+          includeUnclear,
         })
         const counts = search.groups
           .map(

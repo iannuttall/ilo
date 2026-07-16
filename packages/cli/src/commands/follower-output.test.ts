@@ -14,6 +14,7 @@ const result = (
   query: 'works at cursor',
   engine: 'sqlite_fts5',
   resultLimit: null,
+  includedMatchKinds: ['current'],
   coverage,
   groups: [
     {
@@ -143,6 +144,10 @@ test('puts complete counts below the profiles and explains an explicit limit', (
   assert.match(output, /Showing up to 3 profiles per company/)
   assert.match(output, /cursor · 167 profiles found/)
   assert.match(output, /15 current · 1 former · 151 unclear/)
+  assert.match(
+    output,
+    /Add --include-former or --include-unclear to list those profiles\./,
+  )
   assert.doesNotMatch(output, /Company\s+│\s+Current/)
   assert.ok(output.indexOf('Match counts') > output.indexOf('@leerob'), output)
 })

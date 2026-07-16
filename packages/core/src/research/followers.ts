@@ -81,6 +81,7 @@ export type FollowerSearchResult = {
   query: string
   engine: 'sqlite_fts5'
   resultLimit: number | null
+  includedMatchKinds: FollowerMatchKind[]
   coverage: {
     complete: boolean
     importedProfiles: number
@@ -461,6 +462,8 @@ export const searchXFollowers = (input: {
   query: string
   resultLimit?: number
   candidateLimit?: number
+  includeFormer?: boolean
+  includeUnclear?: boolean
   databasePath?: string
 }): FollowerSearchResult => {
   const handle = normalizeXHandle(input.handle)
@@ -474,6 +477,10 @@ export const searchXFollowers = (input: {
     10_000,
     Math.max(resultLimit ?? 1, input.candidateLimit ?? 10_000),
   )
+  const includedMatchKinds: FollowerMatchKind[] = ['current']
+  if (input.includeFormer) includedMatchKinds.push('former')
+  if (input.includeUnclear) includedMatchKinds.push('unclear')
+  const includedMatchKindSet = new Set(includedMatchKinds)
   const terms = parseFollowerSearchTerms(input.query)
   const groups = terms.map((term): FollowerSearchGroup => {
     const rows = searchFollowerRows({
@@ -491,6 +498,7 @@ export const searchXFollowers = (input: {
       candidates: matches.length,
       truncated: matches.length === candidateLimit,
       results: matches
+        .filter((match) => includedMatchKindSet.has(match.match))
         .sort(
           (left, right) =>
             matchOrder[left.match] - matchOrder[right.match] ||
@@ -504,6 +512,7 @@ export const searchXFollowers = (input: {
     query: input.query,
     engine: 'sqlite_fts5',
     resultLimit,
+    includedMatchKinds,
     coverage: {
       complete: state.complete,
       importedProfiles: state.importedProfiles,

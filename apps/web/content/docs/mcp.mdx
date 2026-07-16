@@ -72,7 +72,7 @@ Install both when your client supports skills. The CLI prints the installed path
 | `ilo_status` | Checks the local install and connected X account. |
 | `ilo_sync_x_followers` | Imports public X followers through FxTwitter and saves resumable progress. |
 | `ilo_x_follower_sync_status` | Reports how many profiles are searchable and whether the saved import is finished. |
-| `ilo_search_x_followers` | Searches imported follower profiles and returns every match with public bio evidence unless `resultLimit` is set. |
+| `ilo_search_x_followers` | Searches imported follower profiles, returns current matches by default, and keeps counts for current, former, and unclear matches. |
 | `ilo_get_x_follower_profile` | Reads the complete stored public FxTwitter record for one imported follower. |
 | `ilo_create_x_monitor` | Saves an X advanced-search query as a local inbox monitor. |
 | `ilo_list_x_monitors` | Lists local monitors and their latest refresh state. |
@@ -131,7 +131,7 @@ Follower research uses public FxTwitter data and does not require a connected X 
 Index 20 pages of @adamwathan's public followers, then tell me whether the saved import is finished and how many profiles are searchable.
 ```
 
-The sync is resumable. Large accounts need repeated calls. Once some profiles are indexed, an agent can search them without another network request:
+The sync is resumable. Large accounts need repeated calls. Once some profiles are indexed, an agent can search them without another network request. Ask it to include former and unclear profiles when you want evidence for every classification:
 
 ```txt
 Among the searchable followers of @adamwathan, how many appear to work at Cursor, Vercel, or Sentry? Separate current, former, and unclear matches, show the bio evidence, and state any possible coverage gap.

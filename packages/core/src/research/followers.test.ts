@@ -280,6 +280,7 @@ test('resumes follower syncs and searches normalized company handles', async () 
         profiles: [
           profile('3', 'rich', 'I work on @sveltejs at @vercel', 90_000),
           profile('4', 'dominik', 'Software Engineer @getsentry', 50_000),
+          profile('5', 'fan', 'I like Vercel and Svelte', 40_000),
         ],
         nextCursor: null,
       },
@@ -288,7 +289,7 @@ test('resumes follower syncs and searches normalized company handles', async () 
   let followerRequests = 0
   const client: FollowerResearchClient = {
     profile: async () =>
-      profile('adam-id', 'adamwathan', 'Creator of Tailwind CSS', 4),
+      profile('adam-id', 'adamwathan', 'Creator of Tailwind CSS', 5),
     followers: async (_handle, input) => {
       followerRequests += 1
       const page = pages.get(input.cursor ?? '')
@@ -310,7 +311,7 @@ test('resumes follower syncs and searches normalized company handles', async () 
       client,
     )
     assert.equal(complete.complete, true)
-    assert.equal(complete.importedProfiles, 4)
+    assert.equal(complete.importedProfiles, 5)
     assert.equal(followerRequests, 2)
 
     const result = searchXFollowers({
@@ -319,19 +320,42 @@ test('resumes follower syncs and searches normalized company handles', async () 
       databasePath,
     })
     assert.equal(result.coverage.complete, true)
+    assert.deepEqual(result.includedMatchKinds, ['current'])
     assert.deepEqual(
       result.groups.map((group) => ({
         term: group.term,
         current: group.current,
         former: group.former,
+        unclear: group.unclear,
       })),
       [
-        { term: 'cursor', current: 1, former: 0 },
-        { term: 'vercel', current: 1, former: 1 },
-        { term: 'sentry', current: 1, former: 0 },
+        { term: 'cursor', current: 1, former: 0, unclear: 0 },
+        { term: 'vercel', current: 1, former: 1, unclear: 1 },
+        { term: 'sentry', current: 1, former: 0, unclear: 0 },
       ],
     )
+    assert.deepEqual(
+      result.groups[1]?.results.map((match) => match.handle),
+      ['rich'],
+    )
     assert.equal(result.groups[2]?.results[0]?.handle, 'dominik')
+
+    const expanded = searchXFollowers({
+      handle: 'adamwathan',
+      query: 'vercel',
+      includeFormer: true,
+      includeUnclear: true,
+      databasePath,
+    })
+    assert.deepEqual(expanded.includedMatchKinds, [
+      'current',
+      'former',
+      'unclear',
+    ])
+    assert.deepEqual(
+      expanded.groups[0]?.results.map((match) => match.handle),
+      ['rich', 'matt', 'fan'],
+    )
 
     const fullProfile = getXFollowerProfile({
       handle: 'adamwathan',
@@ -374,7 +398,7 @@ test('resumes follower syncs and searches normalized company handles', async () 
   }
 })
 
-test('returns every follower match unless a result limit is requested', async () => {
+test('returns every included follower match unless a result limit is requested', async () => {
   const directory = mkdtempSync(join(tmpdir(), 'ilo-followers-unlimited-'))
   const databasePath = join(directory, 'ilo.sqlite')
   const matches = Array.from({ length: 25 }, (_, index) =>

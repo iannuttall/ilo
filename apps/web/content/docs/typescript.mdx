@@ -85,7 +85,7 @@ console.log(profile.profile.providerData)
 
 Call `syncAllXFollowers({ handle: 'adamwathan' })` when the process should continue until FxTwitter reports the end of the list. It checkpoints every page. `getXFollowerProfile()` returns the useful stored fields plus the raw public FxTwitter object without another network request.
 
-The search result includes `coverage.complete`, the number of searchable profiles, X's reported follower total, and the last sync error when one exists. Each group includes conservative current, former, and unclear counts plus the public profile evidence. Search uses SQLite FTS5, so concrete names, handles, phrases, and locations work better than abstract semantic questions.
+The search result includes `coverage.complete`, the number of searchable profiles, X's reported follower total, and the last sync error when one exists. Each group includes conservative current, former, and unclear counts. The `results` array contains current matches and their public bio evidence by default. Pass `includeFormer: true` or `includeUnclear: true` to include those profiles. Search uses SQLite FTS5, so concrete names, handles, phrases, and locations work better than abstract semantic questions.
 
 ## Build a local reply inbox
 

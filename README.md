@@ -41,10 +41,11 @@ ilo x followers sync adamwathan --all
 ilo x followers sync adamwathan --background
 ilo x followers profile adamwathan leerob --json
 ilo x followers search adamwathan --query "works at cursor|vercel|sentry"
+ilo x followers search adamwathan --query "works at cursor|vercel|sentry" --include-former --include-unclear
 ilo x followers search adamwathan --query "works at cursor|vercel|sentry" --csv ./matches.csv
 ```
 
-The background command continues the full resumable import after the terminal closes. Profile lookup returns the stored public fields and raw FxTwitter record. Search uses SQLite FTS5 and returns every classified match with its public bio evidence unless you pass `--limit`. Counts for current, former, and unclear matches appear below the profiles. The CSV export includes the matching public profile fields and import coverage. Check whether the saved import is finished before treating a count as complete.
+The background command continues the full resumable import after the terminal closes. Profile lookup returns the stored public fields and raw FxTwitter record. Search uses SQLite FTS5 and lists every current match with its public bio evidence unless you pass `--limit`. Counts for current, former, and unclear matches appear below the profiles. Add `--include-former` or `--include-unclear` to list and export those classifications too. The CSV also includes import coverage. Check whether the saved import is finished before treating a count as complete.
 
 Save searches for posts worth replying to, then triage the matches locally:
 

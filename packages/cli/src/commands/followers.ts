@@ -411,7 +411,17 @@ export const followersCommand = defineCommand({
         limit: {
           type: 'string',
           description:
-            'Maximum profiles to return for each term. Omit to return them all.',
+            'Maximum listed profiles for each term. Omit to return them all.',
+        },
+        'include-former': {
+          type: 'boolean',
+          default: false,
+          description: 'List former matches as well as current matches.',
+        },
+        'include-unclear': {
+          type: 'boolean',
+          default: false,
+          description: 'List unclear matches as well as current matches.',
         },
         candidates: {
           type: 'string',
@@ -421,7 +431,7 @@ export const followersCommand = defineCommand({
         csv: {
           type: 'string',
           description:
-            'Write classified matches and their public profile fields to CSV.',
+            'Write listed matches and their public profile fields to CSV.',
         },
         json: {
           type: 'boolean',
@@ -430,6 +440,8 @@ export const followersCommand = defineCommand({
         },
       },
       run: async ({ args }) => {
+        const includeFormer = Boolean(args['include-former'])
+        const includeUnclear = Boolean(args['include-unclear'])
         const resultLimit =
           typeof args.limit === 'string'
             ? integerArg(args.limit, {
@@ -451,6 +463,8 @@ export const followersCommand = defineCommand({
           query: String(args.query),
           resultLimit,
           candidateLimit,
+          includeFormer,
+          includeUnclear,
         })
         const requestedCsv = typeof args.csv === 'string' ? args.csv.trim() : ''
         let csvExport: Awaited<
@@ -460,8 +474,9 @@ export const followersCommand = defineCommand({
           const exportResult = searchXFollowers({
             handle: String(args.handle),
             query: String(args.query),
-            resultLimit: candidateLimit,
             candidateLimit,
+            includeFormer,
+            includeUnclear,
           })
           csvExport = await writeFollowerSearchCsv(exportResult, requestedCsv)
         }

@@ -30,6 +30,15 @@ test('exposes follower research, inbox monitors, and reply drafts through MCP', 
     assert.equal(names.includes('ilo_list_x_inbox'), true)
     assert.equal(names.includes('ilo_sync_x_following'), true)
 
+    const followerSearch = tools.tools.find(
+      (tool) => tool.name === 'ilo_search_x_followers',
+    )
+    const followerSearchProperties = followerSearch?.inputSchema.properties as
+      | Record<string, { type?: string }>
+      | undefined
+    assert.equal(followerSearchProperties?.includeFormer?.type, 'boolean')
+    assert.equal(followerSearchProperties?.includeUnclear?.type, 'boolean')
+
     const publishPost = tools.tools.find(
       (tool) => tool.name === 'ilo_publish_post',
     )
@@ -46,7 +55,7 @@ test('exposes follower research, inbox monitors, and reply drafts through MCP', 
           id: 'subject-id',
           name: 'Subject',
           screen_name: 'subject',
-          followers: 1,
+          followers: 3,
         }),
         followers: async () => ({
           profiles: [
@@ -55,6 +64,18 @@ test('exposes follower research, inbox monitors, and reply drafts through MCP', 
               name: 'Follower',
               screen_name: 'follower',
               description: 'Software Engineer @getsentry',
+            },
+            {
+              id: 'former-id',
+              name: 'Former follower',
+              screen_name: 'former_follower',
+              description: 'Ex-@getsentry. Building something new.',
+            },
+            {
+              id: 'unclear-id',
+              name: 'Sentry fan',
+              screen_name: 'sentry_fan',
+              description: 'Sentry user and fan.',
             },
           ],
           nextCursor: null,
@@ -68,9 +89,45 @@ test('exposes follower research, inbox monitors, and reply drafts through MCP', 
     })
     assert.equal(search.isError, undefined)
     const searchContent = search.structuredContent as {
-      search: { groups: Array<{ current: number }> }
+      search: {
+        includedMatchKinds: string[]
+        groups: Array<{
+          current: number
+          former: number
+          unclear: number
+          results: Array<{ match: string }>
+        }>
+      }
     }
     assert.equal(searchContent.search.groups[0]?.current, 1)
+    assert.equal(searchContent.search.groups[0]?.former, 1)
+    assert.equal(searchContent.search.groups[0]?.unclear, 1)
+    assert.deepEqual(searchContent.search.includedMatchKinds, ['current'])
+    assert.deepEqual(
+      searchContent.search.groups[0]?.results.map((match) => match.match),
+      ['current'],
+    )
+
+    const expandedSearch = await client.callTool({
+      name: 'ilo_search_x_followers',
+      arguments: {
+        handle: 'subject',
+        query: 'works at sentry',
+        includeFormer: true,
+        includeUnclear: true,
+      },
+    })
+    const expandedSearchContent = expandedSearch.structuredContent as {
+      search: {
+        groups: Array<{ results: Array<{ match: string }> }>
+      }
+    }
+    assert.deepEqual(
+      expandedSearchContent.search.groups[0]?.results.map(
+        (match) => match.match,
+      ),
+      ['current', 'former', 'unclear'],
+    )
 
     const createdMonitor = await client.callTool({
       name: 'ilo_create_x_monitor',

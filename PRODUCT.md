@@ -45,7 +45,8 @@ it helps them choose or complete the next action.
   account counts, images, verification details, and raw FxTwitter record.
 - Search imported follower names, handles, bios, and locations with SQLite
   FTS5, including evidence-backed current, former, and unclear employer
-  matches and CSV export of the matching public profile fields.
+  counts. List current matches by default, allow former and unclear matches to
+  be included, and export the selected public profile fields to CSV.
 - Save X advanced-search queries as local monitors and refresh them on demand
   into a deduplicated reply inbox.
 - Filter saved inbox posts by monitor, local state, verified author, post or

@@ -164,6 +164,15 @@ const renderMatchCounts = (result: FollowerSearchResult, columns: number) => {
     .join(`\n${divider}\n`)
 }
 
+const includedResultCount = (
+  result: FollowerSearchResult,
+  group: FollowerSearchResult['groups'][number],
+) =>
+  result.includedMatchKinds.reduce(
+    (total, matchKind) => total + group[matchKind],
+    0,
+  )
+
 export const renderFollowerSearch = (
   result: FollowerSearchResult,
   requestedColumns = process.stdout.columns ?? 120,
@@ -175,7 +184,9 @@ export const renderFollowerSearch = (
   )
   const limited =
     result.resultLimit !== null &&
-    result.groups.some((group) => group.results.length < group.candidates)
+    result.groups.some(
+      (group) => group.results.length < includedResultCount(result, group),
+    )
   const coverage = followerCoverageLines(
     result.coverage,
     result.handle,
@@ -195,7 +206,7 @@ export const renderFollowerSearch = (
     if (limited) {
       sections.push(
         pc.dim(
-          `Showing up to ${number.format(result.resultLimit ?? 0)} profiles per company. Remove --limit to show every profile counted below.`,
+          `Showing up to ${number.format(result.resultLimit ?? 0)} profiles per company. Remove --limit to show every profile included by the current filters.`,
         ),
       )
     }
@@ -207,6 +218,29 @@ export const renderFollowerSearch = (
     '',
     renderMatchCounts(result, columns),
   )
+  const excludedMatchKinds = (['former', 'unclear'] as const).filter(
+    (matchKind) =>
+      !result.includedMatchKinds.includes(matchKind) &&
+      result.groups.some((group) => group[matchKind] > 0),
+  )
+  if (excludedMatchKinds.length > 0) {
+    const flags = excludedMatchKinds
+      .map((matchKind) => `--include-${matchKind}`)
+      .join(' or ')
+    const profiles =
+      excludedMatchKinds.length === 1
+        ? `${excludedMatchKinds[0]} profiles`
+        : 'those profiles'
+    sections.push(
+      '',
+      pc.dim(
+        wrapTerminalText(
+          `Add ${flags} to list ${profiles}.`,
+          Math.max(24, columns - 4),
+        ),
+      ),
+    )
+  }
   for (const group of result.groups) {
     if (group.truncated) {
       sections.push(
