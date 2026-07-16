@@ -77,10 +77,10 @@ export {
   toFtsQuery,
 } from './research/followers.js'
 export type {
+  FollowingResearchClient,
   FollowingSearchCoverage,
   FollowingSearchMatch,
   FollowingSearchResult,
-  FollowingResearchClient,
   XFollowingProfileResult,
   XFollowingStatus,
   XFollowingSyncInput,

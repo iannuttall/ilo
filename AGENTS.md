@@ -64,10 +64,15 @@ Run root checks from the repository root:
 
 ```sh
 pnpm lint
+pnpm loc:audit
 pnpm typecheck
 pnpm test
 pnpm build
 ```
+
+`pnpm lint` also runs the LOC audit. It reports the largest source files and
+fails when a code file exceeds 1,000 lines. Split the responsibility instead
+of raising the cap for one file.
 
 Run workspace commands with workspace-relative paths:
 

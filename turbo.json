@@ -1,6 +1,8 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalPassThroughEnv": [
+    "LOC_MAX_LINES",
+    "LOC_TOP",
     "SEO_PARITY_BASELINE",
     "SEO_PARITY_CANDIDATE",
     "SEO_PARITY_SNAPSHOT"

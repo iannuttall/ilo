@@ -19,8 +19,8 @@ import {
   parseStoredXProfileProviderData,
   toFtsQuery,
   toStoredXProfile,
-  type XFollowerProfile,
   X_FOLLOWER_NO_PROGRESS_PAGE_LIMIT,
+  type XFollowerProfile,
 } from './followers.js'
 
 export const X_FOLLOWING_STALE_AFTER_MS = 24 * 60 * 60 * 1_000

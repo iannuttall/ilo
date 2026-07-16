@@ -2,8 +2,8 @@ import { randomUUID } from 'node:crypto'
 import { openDatabase } from './database.js'
 import {
   ensureFollowerSchema,
-  mapStoredProfile,
   type FollowerSearchRow,
+  mapStoredProfile,
   type StoredXProfile,
   type StoredXProfileRow,
   upsertPublicProfile,
