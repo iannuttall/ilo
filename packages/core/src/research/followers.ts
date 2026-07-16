@@ -145,7 +145,7 @@ export const buildProfileAliases = (profile: FxTwitterUser) => {
   return [...new Set([...identifiers].flatMap(splitIdentifier))].join(' ')
 }
 
-const toStoredProfile = (
+export const toStoredXProfile = (
   profile: FxTwitterUser,
   fetchedAt = Date.now(),
 ): StoredXProfile => ({
@@ -217,7 +217,7 @@ export const syncXFollowers = async (
         handle: subject.screen_name,
         syncId: state.syncId,
         profiles: result.profiles.map((profile) =>
-          toStoredProfile(profile, now),
+          toStoredXProfile(profile, now),
         ),
         nextCursor: result.nextCursor,
         path: input.databasePath,
@@ -265,7 +265,9 @@ export const getXFollowersStatus = (input: {
   databasePath?: string
 }) => getFollowerSyncState(normalizeXHandle(input.handle), input.databasePath)
 
-const parseProviderData = (value: string): FxTwitterUser | null => {
+export const parseStoredXProfileProviderData = (
+  value: string,
+): FxTwitterUser | null => {
   try {
     const data = JSON.parse(value) as unknown
     return data && typeof data === 'object' && 'id' in data
@@ -303,7 +305,7 @@ export const getXFollowerProfile = (input: {
     },
     profile: {
       ...profile,
-      providerData: parseProviderData(providerDataJson),
+      providerData: parseStoredXProfileProviderData(providerDataJson),
     },
   }
 }

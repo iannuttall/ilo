@@ -68,7 +68,7 @@ type FollowerSourceRow = {
 
 export type FollowerSearchRow = StoredXProfile & { rank: number }
 
-type StoredXProfileRow = {
+export type StoredXProfileRow = {
   id: string
   handle: string
   name: string
@@ -93,7 +93,7 @@ type StoredXProfileRow = {
   fetched_at: number
 }
 
-const mapStoredProfile = (row: StoredXProfileRow): StoredXProfile => ({
+export const mapStoredProfile = (row: StoredXProfileRow): StoredXProfile => ({
   id: row.id,
   handle: row.handle,
   name: row.name,
@@ -289,7 +289,7 @@ export const startFollowerSync = (input: {
   }
 }
 
-const upsertProfile = (db: Database) => {
+export const upsertPublicProfile = (db: Database) => {
   const profile = db.prepare(`INSERT INTO x_public_profiles (
       id, handle, name, bio, location, profile_url, avatar_url, banner_url,
       followers, following, posts, likes, media_count, joined_at, website_url,
@@ -368,7 +368,7 @@ export const storeFollowerPage = (input: {
         .get(input.handle, input.syncId) as { subject_id: string } | undefined
       if (!source) throw new Error('follower_sync_not_active')
 
-      const saveProfile = upsertProfile(db)
+      const saveProfile = upsertPublicProfile(db)
       const relationship = db.prepare(`INSERT INTO x_follower_relationships (
           subject_id, follower_id, last_seen_sync_id, first_seen_at, last_seen_at
         ) VALUES (?, ?, ?, ?, ?)
