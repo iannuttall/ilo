@@ -1,11 +1,11 @@
 import {
   createXArticleMonitor,
   deleteXArticleMonitor,
+  getDefaultXHandle,
   getXArticle,
   listXArticleMonitors,
   normalizeXHandle,
   normalizeXPostId,
-  readConfig,
   refreshXArticleMonitor,
   refreshXArticles,
   searchXArticles,
@@ -25,9 +25,7 @@ const accountHandle = z
 
 const resolveAccountHandle = async (value?: string) => {
   if (value?.trim()) return normalizeXHandle(value)
-  const config = await readConfig()
-  if (!config.x?.username) throw new Error('x_account_required')
-  return normalizeXHandle(config.x.username)
+  return normalizeXHandle(await getDefaultXHandle())
 }
 
 export const registerArticleTools = (server: McpServer) => {

@@ -19,6 +19,14 @@ export type XUploadedImage = {
   size: number
 }
 
+export type XImageFile = {
+  path: string
+  altText: string | null
+  mediaType: XUploadedImage['mediaType']
+  size: number
+  content: Buffer
+}
+
 const apiError = async (response: Response) => {
   const payload = (await response.json().catch(() => null)) as Record<
     string,
@@ -35,7 +43,7 @@ const apiError = async (response: Response) => {
     : `x_api_error_${response.status}`
 }
 
-const detectImageType = (
+export const detectXImageType = (
   content: Buffer,
 ): XUploadedImage['mediaType'] | null => {
   if (
@@ -62,6 +70,32 @@ const detectImageType = (
     return 'image/webp'
   }
   return null
+}
+
+export const readXImageFile = async (
+  image: XPostImage,
+): Promise<XImageFile> => {
+  const normalized = normalizeXPostImages([image])[0]
+  if (!normalized) throw new Error('x_image_path_required')
+  const info = await stat(normalized.path).catch((error) => {
+    const code = (error as NodeJS.ErrnoException).code
+    throw new Error(
+      code === 'ENOENT' ? 'x_image_not_found' : 'x_image_unreadable',
+    )
+  })
+  if (!info.isFile()) throw new Error('x_image_not_file')
+  if (info.size < 1) throw new Error('x_image_empty')
+  if (info.size > X_MAX_IMAGE_BYTES) throw new Error('x_image_too_large')
+  const content = await readFile(normalized.path)
+  const mediaType = detectXImageType(content)
+  if (!mediaType) throw new Error('x_image_type_unsupported')
+  return {
+    path: normalized.path,
+    altText: normalized.altText ?? null,
+    mediaType,
+    size: info.size,
+    content,
+  }
 }
 
 export const normalizeXPostImages = (images: XPostImage[] = []) => {
@@ -102,29 +136,16 @@ export const uploadXImage = async (
   image: XPostImage,
   fetcher: typeof fetch = fetch,
 ): Promise<XUploadedImage> => {
-  const normalized = normalizeXPostImages([image])[0]
-  if (!normalized) throw new Error('x_image_path_required')
-  const info = await stat(normalized.path).catch((error) => {
-    const code = (error as NodeJS.ErrnoException).code
-    throw new Error(
-      code === 'ENOENT' ? 'x_image_not_found' : 'x_image_unreadable',
-    )
-  })
-  if (!info.isFile()) throw new Error('x_image_not_file')
-  if (info.size < 1) throw new Error('x_image_empty')
-  if (info.size > X_MAX_IMAGE_BYTES) throw new Error('x_image_too_large')
-  const content = await readFile(normalized.path)
-  const mediaType = detectImageType(content)
-  if (!mediaType) throw new Error('x_image_type_unsupported')
+  const file = await readXImageFile(image)
 
   const form = new FormData()
   form.append(
     'media',
-    new Blob([content], { type: mediaType }),
-    basename(normalized.path),
+    new Blob([file.content], { type: file.mediaType }),
+    basename(file.path),
   )
   form.append('media_category', 'tweet_image')
-  form.append('media_type', mediaType)
+  form.append('media_type', file.mediaType)
   form.append('shared', 'false')
   const response = await fetcher(`${X_API_BASE}/media/upload`, {
     method: 'POST',
@@ -138,15 +159,15 @@ export const uploadXImage = async (
   const id = payload.data?.id
   if (!id || !/^\d{1,19}$/.test(id))
     throw new Error('x_media_upload_missing_id')
-  if (normalized.altText) {
-    await uploadImageMetadata(accessToken, id, normalized.altText, fetcher)
+  if (file.altText) {
+    await uploadImageMetadata(accessToken, id, file.altText, fetcher)
   }
   return {
     id,
-    path: normalized.path,
-    altText: normalized.altText ?? null,
-    mediaType,
-    size: payload.data?.size ?? info.size,
+    path: file.path,
+    altText: file.altText,
+    mediaType: file.mediaType,
+    size: payload.data?.size ?? file.size,
   }
 }
 

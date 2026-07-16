@@ -1,8 +1,8 @@
 import {
+  getDefaultXHandle,
   getXFollowingProfile,
   getXFollowingStatus,
   normalizeXHandle,
-  readConfig,
   searchXFollowing,
   syncXFollowing,
 } from '@ilo/core'
@@ -20,9 +20,7 @@ const accountHandle = z
 
 const resolveAccountHandle = async (value?: string) => {
   if (value?.trim()) return normalizeXHandle(value)
-  const config = await readConfig()
-  if (!config.x?.username) throw new Error('x_account_required')
-  return normalizeXHandle(config.x.username)
+  return normalizeXHandle(await getDefaultXHandle())
 }
 
 const completionText = (sync: {

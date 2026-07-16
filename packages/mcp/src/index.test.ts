@@ -41,6 +41,8 @@ test('exposes follower, article, inbox, and draft tools through MCP', async () =
     assert.equal(names.includes('ilo_refresh_x_articles'), true)
     assert.equal(names.includes('ilo_search_x_articles'), true)
     assert.equal(names.includes('ilo_get_x_article'), true)
+    assert.equal(names.includes('ilo_list_publishing_accounts'), true)
+    assert.equal(names.includes('ilo_set_default_publishing_account'), true)
 
     const followerSearch = tools.tools.find(
       (tool) => tool.name === 'ilo_search_x_followers',
@@ -59,6 +61,18 @@ test('exposes follower, article, inbox, and draft tools through MCP', async () =
       type: 'boolean',
       const: true,
     })
+    const publishPostProperties = publishPost?.inputSchema.properties as
+      | Record<string, { type?: string }>
+      | undefined
+    assert.equal(publishPostProperties?.account?.type, 'string')
+
+    const createDraftTool = tools.tools.find(
+      (tool) => tool.name === 'ilo_create_draft',
+    )
+    const createDraftProperties = createDraftTool?.inputSchema.properties as
+      | Record<string, { type?: string }>
+      | undefined
+    assert.equal(createDraftProperties?.account?.type, 'string')
 
     await syncXFollowers(
       { handle: 'subject', maxPages: 1 },

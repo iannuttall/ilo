@@ -1,3 +1,16 @@
+export type {
+  TypefullyClientOptions,
+  TypefullyMe,
+  TypefullySocialSet,
+  TypefullyXAccount,
+} from './providers/typefully/client.js'
+export {
+  discoverTypefullyXAccounts,
+  fetchTypefullyMe,
+  fetchTypefullySocialSet,
+  fetchTypefullySocialSets,
+  publishTypefullyXPost,
+} from './providers/typefully/client.js'
 export {
   buildXAuthorizeUrl,
   exchangeXCode,
@@ -30,7 +43,9 @@ export {
 } from './providers/x/fxtwitter.js'
 export type { XPostImage, XUploadedImage } from './providers/x/media.js'
 export {
+  detectXImageType,
   normalizeXPostImages,
+  readXImageFile,
   uploadXImage,
   uploadXImages,
   X_MAX_ALT_TEXT_LENGTH,
@@ -38,6 +53,7 @@ export {
   X_MAX_POST_IMAGES,
 } from './providers/x/media.js'
 export { countXPostText, validateXPostText } from './providers/x/text.js'
+export { connectTypefully } from './publishing/connect.js'
 export type {
   XArticleMonitorRefreshResult,
   XArticleResearchClient,
@@ -110,25 +126,59 @@ export {
   updateXInboxItem,
 } from './research/inbox.js'
 export { parseScheduleTime } from './scheduling/parse.js'
-export type { XPostOptions } from './service.js'
+export type { PublishingAccountOptions, XPostOptions } from './service.js'
 export {
   createDraft,
   getDraft,
   listDrafts,
   publishDraft,
   publishPost,
+  resolveDraftPublishingAccount,
   runScheduler,
   scheduleDraft,
 } from './service.js'
-export type { XArticle, XArticleMonitor } from './storage/articles.js'
+export type {
+  SaveTypefullyCredentialsInput,
+  SaveXCredentialsInput,
+  TypefullyAccountInput,
+  TypefullyCredentials,
+  XCredentials,
+} from './storage/accounts.js'
 export {
   disconnectX,
-  readConfig,
+  findPublishingAccount,
+  findPublishingAccountForXHandle,
+  getDefaultPublishingAccount,
+  getDefaultXHandle,
+  getPublishingAccount,
+  listPublishingAccounts,
+  readTypefullyCredentials,
   readXCredentials,
+  removePublishingAccount,
+  saveTypefullyCredentials,
   saveXCredentials,
+  setDefaultPublishingAccount,
+} from './storage/accounts.js'
+export type { XArticle, XArticleMonitor } from './storage/articles.js'
+export type {
+  IloConfig,
+  PublishingAccount,
+  PublishingProvider,
+  TypefullyPublishingAccount,
+  XPublishingAccount,
+} from './storage/config.js'
+export {
+  defaultConfig,
+  normalizePublishingAlias,
+  readConfig,
   writeConfig,
 } from './storage/config.js'
-export type { Draft, DraftImage, DraftStatus } from './storage/database.js'
+export type {
+  Draft,
+  DraftImage,
+  DraftPublishingAccount,
+  DraftStatus,
+} from './storage/database.js'
 export type { FollowerSyncState, StoredXProfile } from './storage/followers.js'
 export type {
   FollowingCompletionReason,

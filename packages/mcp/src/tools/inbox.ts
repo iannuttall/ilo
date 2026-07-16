@@ -1,12 +1,12 @@
 import {
   createXMonitor,
   deleteXMonitor,
+  getDefaultXHandle,
   getXInboxItem,
   listXInbox,
   listXMonitors,
   normalizeXHandle,
   normalizeXPostId,
-  readConfig,
   refreshXInbox,
   refreshXMonitor,
   setXMonitorEnabled,
@@ -26,9 +26,7 @@ const accountHandle = z
 
 const resolveAccountHandle = async (value?: string) => {
   if (value?.trim()) return normalizeXHandle(value)
-  const config = await readConfig()
-  if (!config.x?.username) throw new Error('x_account_required')
-  return normalizeXHandle(config.x.username)
+  return normalizeXHandle(await getDefaultXHandle())
 }
 
 export const registerInboxTools = (server: McpServer) => {

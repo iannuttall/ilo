@@ -148,7 +148,7 @@ export const connectX = async (args: Record<string, unknown>) => {
     codeVerifier,
   })
   const account = await fetchXMe(tokens.accessToken)
-  await saveXCredentials({
+  const publishingAccount = await saveXCredentials({
     clientId,
     clientSecret,
     accessToken: tokens.accessToken,
@@ -158,12 +158,18 @@ export const connectX = async (args: Record<string, unknown>) => {
     accountId: account.id,
     username: account.username ?? account.id,
     displayName: account.name ?? account.username ?? account.id,
+    alias:
+      typeof args.alias === 'string' && args.alias.trim()
+        ? args.alias.trim()
+        : undefined,
+    makeDefault: args.makeDefault !== false,
   })
   const result = {
     connected: true,
     provider: 'x',
     accountId: account.id,
     username: account.username ?? null,
+    alias: publishingAccount.alias,
   }
   if (args.json) printJson(result)
   else printLine(`Connected @${account.username ?? account.id}.`)
@@ -191,6 +197,10 @@ export const xCommand = defineCommand({
           type: 'string',
           description: 'Only needed for a confidential X app.',
         },
+        alias: {
+          type: 'string',
+          description: 'Local alias used by --account.',
+        },
         port: {
           type: 'string',
           default: String(DEFAULT_PORT),
@@ -211,8 +221,15 @@ export const xCommand = defineCommand({
       run: ({ args }) => connectX(args),
     }),
     status: defineCommand({
-      meta: { name: 'status', description: 'Show the connected X account' },
+      meta: {
+        name: 'status',
+        description: 'Show one directly connected X account',
+      },
       args: {
+        account: {
+          type: 'string',
+          description: 'Direct X account alias, handle, or id.',
+        },
         json: {
           type: 'boolean',
           default: false,
@@ -221,7 +238,9 @@ export const xCommand = defineCommand({
       },
       run: async ({ args }) => {
         try {
-          const credentials = await readXCredentials()
+          const credentials = await readXCredentials(
+            typeof args.account === 'string' ? args.account : undefined,
+          )
           const result = {
             connected: true,
             accountId: credentials.accountId,
@@ -230,19 +249,42 @@ export const xCommand = defineCommand({
             expiresAt: credentials.expiresAt,
           }
           if (args.json) printJson(result)
-          else printLine(`Connected @${credentials.username}.`)
-        } catch {
+          else
+            printLine(
+              `Connected @${credentials.username} directly through X (${credentials.alias}).`,
+            )
+        } catch (error) {
+          if (
+            !(error instanceof Error) ||
+            error.message !== 'x_not_connected'
+          ) {
+            throw error
+          }
           const result = { connected: false }
           if (args.json) printJson(result)
-          else printLine('No X account is connected. Run `ilo start`.')
+          else
+            printLine(
+              'No direct X account matched. Run `ilo accounts list` to see every publishing account.',
+            )
         }
       },
     }),
     disconnect: defineCommand({
-      meta: { name: 'disconnect', description: 'Remove local X credentials' },
-      run: async () => {
-        await disconnectX()
-        printLine('X credentials removed.')
+      meta: {
+        name: 'disconnect',
+        description: 'Remove one directly connected X account',
+      },
+      args: {
+        account: {
+          type: 'string',
+          description: 'Direct X account alias, handle, or id.',
+        },
+      },
+      run: async ({ args }) => {
+        const account = await disconnectX(
+          typeof args.account === 'string' ? args.account : undefined,
+        )
+        printLine(`Removed direct X credentials for @${account.username}.`)
       },
     }),
   },

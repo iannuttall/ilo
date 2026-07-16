@@ -1,20 +1,47 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
-import {
-  deleteKeyringPassword,
-  getKeyringPassword,
-  setKeyringPassword,
-} from './keyring.js'
+import { bindUnassignedDraftRecords } from './database.js'
 import { iloConfigPath } from './paths.js'
 
-const KEYRING_SERVICE = 'ilo'
-const X_CLIENT_SECRET_ACCOUNT = 'x:client-secret'
-const X_ACCESS_TOKEN_ACCOUNT = 'x:access-token'
-const X_REFRESH_TOKEN_ACCOUNT = 'x:refresh-token'
+export type PublishingProvider = 'x' | 'typefully'
+
+type PublishingAccountBase = {
+  id: string
+  alias: string
+  provider: PublishingProvider
+  platform: 'x'
+  username: string
+  displayName: string
+  createdAt: number
+}
+
+export type XPublishingAccount = PublishingAccountBase & {
+  provider: 'x'
+  accountId: string
+  clientId: string
+  scopes: string
+  expiresAt: number
+  legacyKeyring?: boolean
+}
+
+export type TypefullyPublishingAccount = PublishingAccountBase & {
+  provider: 'typefully'
+  socialSetId: number
+  credentialId: string
+}
+
+export type PublishingAccount = XPublishingAccount | TypefullyPublishingAccount
 
 export type IloConfig = {
-  version: 1
+  version: 2
   timezone: string
+  defaultPublishingAccountId?: string
+  publishingAccounts: PublishingAccount[]
+}
+
+type LegacyConfig = {
+  version: 1
+  timezone?: string
   x?: {
     clientId: string
     accountId: string
@@ -25,27 +52,115 @@ export type IloConfig = {
   }
 }
 
-export type XCredentials = NonNullable<IloConfig['x']> & {
-  clientSecret?: string
-  accessToken: string
-  refreshToken?: string
-}
+const timezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 
-const defaultConfig = (): IloConfig => ({
-  version: 1,
-  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+export const defaultConfig = (): IloConfig => ({
+  version: 2,
+  timezone: timezone(),
+  publishingAccounts: [],
 })
 
-export const readConfig = async (): Promise<IloConfig> => {
-  try {
-    const parsed = JSON.parse(
-      await readFile(iloConfigPath(), 'utf8'),
-    ) as IloConfig
-    return parsed?.version === 1 ? parsed : defaultConfig()
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT')
-      return defaultConfig()
-    throw error
+const accountAlias = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/^@/, '')
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'account'
+
+const migrateLegacyConfig = (legacy: LegacyConfig): IloConfig => {
+  if (!legacy.x) {
+    return {
+      ...defaultConfig(),
+      timezone: legacy.timezone || timezone(),
+    }
+  }
+  const account: XPublishingAccount = {
+    id: `x:${legacy.x.accountId}`,
+    alias: accountAlias(legacy.x.username),
+    provider: 'x',
+    platform: 'x',
+    accountId: legacy.x.accountId,
+    username: legacy.x.username,
+    displayName: legacy.x.displayName,
+    clientId: legacy.x.clientId,
+    scopes: legacy.x.scopes,
+    expiresAt: legacy.x.expiresAt,
+    createdAt: Date.now(),
+    legacyKeyring: true,
+  }
+  return {
+    version: 2,
+    timezone: legacy.timezone || timezone(),
+    defaultPublishingAccountId: account.id,
+    publishingAccounts: [account],
+  }
+}
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && Boolean(value.trim())
+
+const isPublishingAccount = (value: unknown): value is PublishingAccount => {
+  if (!value || typeof value !== 'object') return false
+  const account = value as Partial<PublishingAccount>
+  if (
+    !isNonEmptyString(account.id) ||
+    !isNonEmptyString(account.alias) ||
+    !isNonEmptyString(account.username) ||
+    !isNonEmptyString(account.displayName) ||
+    account.platform !== 'x' ||
+    typeof account.createdAt !== 'number' ||
+    !Number.isFinite(account.createdAt)
+  ) {
+    return false
+  }
+  if (account.provider === 'x') {
+    const direct = account as Partial<XPublishingAccount>
+    return (
+      isNonEmptyString(direct.accountId) &&
+      isNonEmptyString(direct.clientId) &&
+      typeof direct.scopes === 'string' &&
+      typeof direct.expiresAt === 'number' &&
+      Number.isFinite(direct.expiresAt) &&
+      (direct.legacyKeyring === undefined ||
+        typeof direct.legacyKeyring === 'boolean')
+    )
+  }
+  if (account.provider === 'typefully') {
+    const typefully = account as Partial<TypefullyPublishingAccount>
+    return (
+      typeof typefully.socialSetId === 'number' &&
+      Number.isInteger(typefully.socialSetId) &&
+      typefully.socialSetId > 0 &&
+      isNonEmptyString(typefully.credentialId)
+    )
+  }
+  return false
+}
+
+const parseConfig = (value: unknown): IloConfig | null => {
+  if (!value || typeof value !== 'object') return null
+  const input = value as Partial<IloConfig> & Partial<LegacyConfig>
+  if (input.version === 1) return migrateLegacyConfig(input as LegacyConfig)
+  if (input.version !== 2 || !Array.isArray(input.publishingAccounts)) {
+    return null
+  }
+  if (!input.publishingAccounts.every(isPublishingAccount)) return null
+  const defaultPublishingAccountId =
+    typeof input.defaultPublishingAccountId === 'string' &&
+    input.publishingAccounts.some(
+      (account) => account.id === input.defaultPublishingAccountId,
+    )
+      ? input.defaultPublishingAccountId
+      : undefined
+  return {
+    version: 2,
+    timezone:
+      typeof input.timezone === 'string' && input.timezone.trim()
+        ? input.timezone
+        : timezone(),
+    ...(defaultPublishingAccountId ? { defaultPublishingAccountId } : {}),
+    publishingAccounts: input.publishingAccounts,
   }
 }
 
@@ -59,67 +174,31 @@ export const writeConfig = async (config: IloConfig) => {
   await rename(temporaryPath, path)
 }
 
-export const saveXCredentials = async (input: XCredentials) => {
-  await setKeyringPassword(
-    KEYRING_SERVICE,
-    X_ACCESS_TOKEN_ACCOUNT,
-    input.accessToken,
-  )
-  if (input.refreshToken) {
-    await setKeyringPassword(
-      KEYRING_SERVICE,
-      X_REFRESH_TOKEN_ACCOUNT,
-      input.refreshToken,
-    )
-  } else {
-    await deleteKeyringPassword(KEYRING_SERVICE, X_REFRESH_TOKEN_ACCOUNT)
-  }
-  if (input.clientSecret) {
-    await setKeyringPassword(
-      KEYRING_SERVICE,
-      X_CLIENT_SECRET_ACCOUNT,
-      input.clientSecret,
-    )
-  } else {
-    await deleteKeyringPassword(KEYRING_SERVICE, X_CLIENT_SECRET_ACCOUNT)
-  }
-
-  const config = await readConfig()
-  config.x = {
-    clientId: input.clientId,
-    accountId: input.accountId,
-    username: input.username,
-    displayName: input.displayName,
-    scopes: input.scopes,
-    expiresAt: input.expiresAt,
-  }
-  await writeConfig(config)
-}
-
-export const readXCredentials = async (): Promise<XCredentials> => {
-  const config = await readConfig()
-  if (!config.x) throw new Error('x_not_connected')
-  const [accessToken, refreshToken, clientSecret] = await Promise.all([
-    getKeyringPassword(KEYRING_SERVICE, X_ACCESS_TOKEN_ACCOUNT),
-    getKeyringPassword(KEYRING_SERVICE, X_REFRESH_TOKEN_ACCOUNT),
-    getKeyringPassword(KEYRING_SERVICE, X_CLIENT_SECRET_ACCOUNT),
-  ])
-  if (!accessToken) throw new Error('x_access_token_missing')
-  return {
-    ...config.x,
-    accessToken,
-    refreshToken: refreshToken || undefined,
-    clientSecret: clientSecret || undefined,
+export const readConfig = async (): Promise<IloConfig> => {
+  try {
+    const raw = JSON.parse(await readFile(iloConfigPath(), 'utf8')) as unknown
+    const config = parseConfig(raw)
+    if (!config) return defaultConfig()
+    if ((raw as { version?: number }).version === 1) {
+      await writeConfig(config)
+      const account = config.publishingAccounts.find(
+        (candidate) => candidate.id === config.defaultPublishingAccountId,
+      )
+      if (account) {
+        bindUnassignedDraftRecords({
+          id: account.id,
+          provider: account.provider,
+          username: account.username,
+        })
+      }
+    }
+    return config
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return defaultConfig()
+    }
+    throw error
   }
 }
 
-export const disconnectX = async () => {
-  const config = await readConfig()
-  delete config.x
-  await writeConfig(config)
-  await Promise.all([
-    deleteKeyringPassword(KEYRING_SERVICE, X_ACCESS_TOKEN_ACCOUNT),
-    deleteKeyringPassword(KEYRING_SERVICE, X_REFRESH_TOKEN_ACCOUNT),
-    deleteKeyringPassword(KEYRING_SERVICE, X_CLIENT_SECRET_ACCOUNT),
-  ])
-}
+export const normalizePublishingAlias = accountAlias

@@ -1,15 +1,19 @@
 import {
   createDraft,
+  getDefaultPublishingAccount,
   getXFollowerProfile,
   getXFollowersStatus,
   ILO_VERSION,
   listDrafts,
+  listPublishingAccounts,
   publishDraft,
   publishPost,
+  readTypefullyCredentials,
   readXCredentials,
   runScheduler,
   scheduleDraft,
   searchXFollowers,
+  setDefaultPublishingAccount,
   syncXFollowers,
 } from '@ilo/core'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
@@ -40,6 +44,14 @@ const postDestinationInput = {
     .describe('Local JPEG, PNG, or WebP files to attach'),
 }
 
+const publishingAccountInput = z
+  .string()
+  .trim()
+  .min(1)
+  .max(200)
+  .optional()
+  .describe('Publishing account alias, X handle, or account id')
+
 export const registerIloTools = (server: McpServer) => {
   registerArticleTools(server)
   registerFollowingTools(server)
@@ -47,7 +59,7 @@ export const registerIloTools = (server: McpServer) => {
   server.registerTool(
     'ilo_status',
     {
-      description: 'Check the local ilo installation and connected X account',
+      description: 'Check ilo and its default X publishing account',
       inputSchema: {},
       outputSchema: openOutputSchema,
       annotations: {
@@ -57,17 +69,93 @@ export const registerIloTools = (server: McpServer) => {
       },
     },
     async () => {
-      try {
-        const credentials = await readXCredentials()
-        return success(`Connected @${credentials.username}.`, {
-          connected: true,
-          provider: 'x',
-          username: credentials.username,
-          accountId: credentials.accountId,
-          scopes: credentials.scopes,
+      const [accounts, defaultAccount] = await Promise.all([
+        listPublishingAccounts(),
+        getDefaultPublishingAccount(),
+      ])
+      if (!defaultAccount) {
+        return success('No X publishing account is connected.', {
+          connected: false,
+          accounts,
         })
-      } catch {
-        return success('No X account is connected.', { connected: false })
+      }
+      try {
+        if (defaultAccount.provider === 'x') {
+          await readXCredentials(defaultAccount.id)
+        } else {
+          await readTypefullyCredentials(defaultAccount.id)
+        }
+      } catch (error) {
+        return success(
+          `@${defaultAccount.username} is the default publishing account, but its ${defaultAccount.provider === 'x' ? 'direct X credentials are' : 'Typefully API key is'} unavailable.`,
+          {
+            connected: false,
+            configured: true,
+            defaultAccount,
+            accounts,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        )
+      }
+      return success(
+        `Default publishing account: @${defaultAccount.username} via ${defaultAccount.provider === 'x' ? 'direct X' : 'Typefully'}.`,
+        {
+          connected: true,
+          configured: true,
+          defaultAccount,
+          accounts,
+        },
+      )
+    },
+  )
+
+  server.registerTool(
+    'ilo_list_publishing_accounts',
+    {
+      description:
+        'List locally connected X publishing accounts and the current default',
+      inputSchema: {},
+      outputSchema: openOutputSchema,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async () => {
+      const [accounts, defaultAccount] = await Promise.all([
+        listPublishingAccounts(),
+        getDefaultPublishingAccount(),
+      ])
+      return success(`${accounts.length} publishing accounts connected.`, {
+        accounts,
+        defaultAccount,
+      })
+    },
+  )
+
+  server.registerTool(
+    'ilo_set_default_publishing_account',
+    {
+      description:
+        'Change the local default publishing account. Existing bound drafts keep their original account.',
+      inputSchema: { account: z.string().trim().min(1).max(200) },
+      outputSchema: openOutputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async ({ account }) => {
+      try {
+        const defaultAccount = await setDefaultPublishingAccount(account)
+        return success(
+          `Default publishing account set to @${defaultAccount.username}.`,
+          { defaultAccount },
+        )
+      } catch (error) {
+        return failure(error)
       }
     },
   )
@@ -239,13 +327,18 @@ export const registerIloTools = (server: McpServer) => {
       inputSchema: {
         text: z.string().trim().min(1).max(25_000),
         ...postDestinationInput,
+        account: publishingAccountInput,
       },
       outputSchema: openOutputSchema,
       annotations: { destructiveHint: false, idempotentHint: false },
     },
-    async ({ text, replyToPostId, images }) => {
+    async ({ text, replyToPostId, images, account }) => {
       try {
-        const draft = createDraft(text, { replyToPostId, images })
+        const draft = await createDraft(text, {
+          replyToPostId,
+          images,
+          account,
+        })
         return success(`Draft created: ${draft.id}`, { draft })
       } catch (error) {
         return failure(error)
@@ -280,13 +373,14 @@ export const registerIloTools = (server: McpServer) => {
       inputSchema: {
         id: z.string().uuid(),
         at: z.string().trim().min(1).max(100),
+        account: publishingAccountInput,
       },
       outputSchema: openOutputSchema,
       annotations: { destructiveHint: false, idempotentHint: false },
     },
-    async ({ id, at }) => {
+    async ({ id, at, account }) => {
       try {
-        const draft = await scheduleDraft(id, at)
+        const draft = await scheduleDraft(id, at, { account })
         return success(
           `Draft scheduled for ${new Date(draft.scheduledAt ?? 0).toISOString()}.`,
           { draft },
@@ -301,14 +395,18 @@ export const registerIloTools = (server: McpServer) => {
     'ilo_publish_draft',
     {
       description:
-        'Publish one local post or reply draft, including its images, to the connected X account. Show the exact draft and destination first. Requires confirm=true.',
-      inputSchema: { id: z.string().uuid(), confirm: z.literal(true) },
+        'Publish one local post or reply draft through its bound account. Show the exact account, provider, draft, destination, and images first. Requires confirm=true.',
+      inputSchema: {
+        id: z.string().uuid(),
+        account: publishingAccountInput,
+        confirm: z.literal(true),
+      },
       outputSchema: openOutputSchema,
       annotations: { destructiveHint: true, idempotentHint: false },
     },
-    async ({ id }) => {
+    async ({ id, account }) => {
       try {
-        const published = await publishDraft(id)
+        const published = await publishDraft(id, { account })
         return success(`Published ${published.providerUrl}`, { published })
       } catch (error) {
         return failure(error)
@@ -320,18 +418,23 @@ export const registerIloTools = (server: McpServer) => {
     'ilo_publish_post',
     {
       description:
-        'Publish a top-level post or reply, with up to four static images, to the connected X account. Show the exact text, destination, and images first. Requires confirm=true.',
+        'Publish a top-level post or reply through a selected or default account, with up to four static images. Show the exact account, provider, text, destination, and images first. Requires confirm=true.',
       inputSchema: {
         text: z.string().trim().min(1).max(25_000),
         ...postDestinationInput,
+        account: publishingAccountInput,
         confirm: z.literal(true),
       },
       outputSchema: openOutputSchema,
       annotations: { destructiveHint: true, idempotentHint: false },
     },
-    async ({ text, replyToPostId, images }) => {
+    async ({ text, replyToPostId, images, account }) => {
       try {
-        const published = await publishPost(text, { replyToPostId, images })
+        const published = await publishPost(text, {
+          replyToPostId,
+          images,
+          account,
+        })
         return success(`Published ${published.providerUrl}`, { published })
       } catch (error) {
         return failure(error)

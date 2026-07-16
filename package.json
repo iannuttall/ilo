@@ -67,11 +67,11 @@
     "lint:fix": "biome check . --write",
     "loc:audit": "node scripts/loc-audit.mjs",
     "pack:check": "pnpm pack --dry-run",
-    "prepack": "pnpm run build:package && node --test scripts/package.test.mjs",
+    "prepack": "pnpm run build:package && node --test scripts/package.test.mjs scripts/package-accounts.test.mjs",
     "security:check": "pnpm audit --audit-level low && node scripts/security-secrets.mjs",
     "seo:parity": "node scripts/seo-parity.mjs",
-    "test": "turbo run test && pnpm run build:package && node --test scripts/package.test.mjs",
-    "test:package-install": "pnpm run build:package && node --test scripts/package.test.mjs",
+    "test": "turbo run test && pnpm run build:package && node --test scripts/package.test.mjs scripts/package-accounts.test.mjs",
+    "test:package-install": "pnpm run build:package && node --test scripts/package.test.mjs scripts/package-accounts.test.mjs",
     "typecheck": "turbo run typecheck"
   },
   "dependencies": {

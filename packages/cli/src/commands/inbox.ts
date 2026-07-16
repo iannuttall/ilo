@@ -1,5 +1,6 @@
 import {
   createDraft,
+  findPublishingAccountForXHandle,
   getXInboxItem,
   listXInbox,
   listXMonitors,
@@ -296,10 +297,12 @@ export const inboxCommand = defineCommand({
           accountHandle,
           postId: normalizeXPostId(String(args.post)),
         })
-        const draft = createDraft(
-          await readTextInput(args),
-          postOptions({ ...args, 'reply-to': item.postId }, rawArgs),
-        )
+        const publishingAccount =
+          await findPublishingAccountForXHandle(accountHandle)
+        const draft = await createDraft(await readTextInput(args), {
+          ...postOptions({ ...args, 'reply-to': item.postId }, rawArgs),
+          account: publishingAccount?.id ?? null,
+        })
         updateXInboxItem({
           accountHandle,
           postId: item.postId,

@@ -1,11 +1,13 @@
 import { ILO_VERSION } from '@ilo/core'
 import { defineCommand, runMain } from 'citty'
+import { accountsCommand, startPublishingSetup } from './commands/accounts.js'
 import { draftsCommand, postCommand } from './commands/drafts.js'
 import { mcpCommand } from './commands/mcp.js'
 import { schedulerCommand } from './commands/scheduler.js'
 import { skillCommand } from './commands/skills.js'
-import { connectX, xCommand } from './commands/x.js'
+import { xCommand } from './commands/x.js'
 import { maybeOfferSelfUpdate } from './self-update.js'
+import { friendlyErrorMessage } from './utils.js'
 
 const main = defineCommand({
   meta: {
@@ -17,9 +19,17 @@ const main = defineCommand({
     start: defineCommand({
       meta: {
         name: 'start',
-        description: 'Configure an X developer app and connect your account',
+        description: 'Connect Typefully or your own X developer app',
       },
       args: {
+        provider: {
+          type: 'string',
+          description: 'Publishing provider: typefully or x.',
+        },
+        'api-key': {
+          type: 'string',
+          description: 'Typefully v2 API key. Prefer the interactive prompt.',
+        },
         'client-id': {
           type: 'string',
           description: 'OAuth 2.0 Client ID from X Keys and tokens.',
@@ -45,8 +55,9 @@ const main = defineCommand({
           description: 'Print structured JSON.',
         },
       },
-      run: ({ args }) => connectX(args),
+      run: ({ args }) => startPublishingSetup(args),
     }),
+    accounts: accountsCommand,
     x: xCommand,
     post: postCommand,
     drafts: draftsCommand,
@@ -63,7 +74,6 @@ const updateExitCode = await maybeOfferSelfUpdate(
 if (updateExitCode !== undefined) process.exit(updateExitCode)
 
 runMain(main).catch((error) => {
-  const message = error instanceof Error ? error.message : String(error)
-  process.stderr.write(`${message}\n`)
+  process.stderr.write(`${friendlyErrorMessage(error)}\n`)
   process.exitCode = 1
 })

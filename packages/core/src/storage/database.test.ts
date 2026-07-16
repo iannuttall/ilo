@@ -23,6 +23,11 @@ test('stores, schedules, claims, and finishes a local draft', () => {
       {
         replyToPostId: '123456789',
         images: [{ path: '/tmp/image.png', altText: 'A useful chart' }],
+        publishingAccount: {
+          id: 'typefully:7:10',
+          provider: 'typefully',
+          username: 'ilodotso',
+        },
       },
       path,
     )
@@ -31,6 +36,11 @@ test('stores, schedules, claims, and finishes a local draft', () => {
     assert.deepEqual(draft.images, [
       { path: '/tmp/image.png', altText: 'A useful chart' },
     ])
+    assert.deepEqual(draft.publishingAccount, {
+      id: 'typefully:7:10',
+      provider: 'typefully',
+      username: 'ilodotso',
+    })
 
     const scheduled = scheduleDraftRecord(draft.id, 1_000, path)
     assert.equal(scheduled.status, 'scheduled')
@@ -45,6 +55,8 @@ test('stores, schedules, claims, and finishes a local draft', () => {
       ok: true,
       providerPostId: '123',
       providerUrl: 'https://x.com/i/web/status/123',
+      provider: 'typefully',
+      publishingAccountId: 'typefully:7:10',
       path,
     })
 
@@ -55,6 +67,18 @@ test('stores, schedules, claims, and finishes a local draft', () => {
     assert.deepEqual(published.images, [
       { path: '/tmp/image.png', altText: 'A useful chart' },
     ])
+    const database = openDatabase(path)
+    const attempt = database
+      .prepare(
+        'SELECT provider, publishing_account_id FROM publish_attempts WHERE draft_id = ?',
+      )
+      .get(draft.id) as {
+      provider: string
+      publishing_account_id: string
+    }
+    database.close()
+    assert.equal(attempt.provider, 'typefully')
+    assert.equal(attempt.publishing_account_id, 'typefully:7:10')
   } finally {
     rmSync(directory, { recursive: true, force: true })
   }
@@ -93,6 +117,10 @@ test('adds reply and image storage to an existing local database', () => {
       .get() as { name: string } | undefined
     assert.equal(
       draftColumns.some((column) => column.name === 'reply_to_post_id'),
+      true,
+    )
+    assert.equal(
+      draftColumns.some((column) => column.name === 'publishing_account_id'),
       true,
     )
     assert.equal(mediaTable?.name, 'draft_images')

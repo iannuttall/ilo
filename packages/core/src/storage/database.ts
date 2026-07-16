@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
+import type { PublishingAccount, PublishingProvider } from './config.js'
 import { iloDatabasePath } from './paths.js'
 import Database from './sqlite.js'
 
@@ -28,7 +29,13 @@ export type Draft = {
   publishedPostId: string | null
   publishedUrl: string | null
   lastError: string | null
+  publishingAccount: DraftPublishingAccount | null
 }
+
+export type DraftPublishingAccount = Pick<
+  PublishingAccount,
+  'id' | 'provider' | 'username'
+>
 
 type DraftRow = {
   id: string
@@ -41,6 +48,9 @@ type DraftRow = {
   published_post_id: string | null
   published_url: string | null
   last_error: string | null
+  publishing_account_id: string | null
+  publishing_provider: PublishingProvider | null
+  publishing_username: string | null
 }
 
 type DraftImageRow = {
@@ -51,6 +61,7 @@ type DraftImageRow = {
 export type DraftRecordOptions = {
   replyToPostId?: string
   images?: DraftImage[]
+  publishingAccount?: DraftPublishingAccount
 }
 
 const mapDraft = (row: DraftRow, images: DraftImage[] = []): Draft => ({
@@ -65,6 +76,16 @@ const mapDraft = (row: DraftRow, images: DraftImage[] = []): Draft => ({
   publishedPostId: row.published_post_id,
   publishedUrl: row.published_url,
   lastError: row.last_error,
+  publishingAccount:
+    row.publishing_account_id &&
+    row.publishing_provider &&
+    row.publishing_username
+      ? {
+          id: row.publishing_account_id,
+          provider: row.publishing_provider,
+          username: row.publishing_username,
+        }
+      : null,
 })
 
 const loadDraftImages = (db: Database, draftId: string): DraftImage[] =>
@@ -98,7 +119,10 @@ export const openDatabase = (path = iloDatabasePath()): Database => {
       updated_at INTEGER NOT NULL,
       published_post_id TEXT,
       published_url TEXT,
-      last_error TEXT
+      last_error TEXT,
+      publishing_account_id TEXT,
+      publishing_provider TEXT CHECK (publishing_provider IN ('x','typefully')),
+      publishing_username TEXT
     );
     CREATE INDEX IF NOT EXISTS drafts_due_idx ON drafts(status, scheduled_at);
     CREATE TABLE IF NOT EXISTS publish_attempts (
@@ -107,6 +131,8 @@ export const openDatabase = (path = iloDatabasePath()): Database => {
       attempted_at INTEGER NOT NULL,
       ok INTEGER NOT NULL,
       provider_post_id TEXT,
+      provider TEXT,
+      publishing_account_id TEXT,
       error TEXT
     );
     CREATE TABLE IF NOT EXISTS draft_images (
@@ -123,6 +149,32 @@ export const openDatabase = (path = iloDatabasePath()): Database => {
   if (!draftColumns.some((column) => column.name === 'reply_to_post_id')) {
     db.exec('ALTER TABLE drafts ADD COLUMN reply_to_post_id TEXT')
   }
+  const draftMigrations = [
+    ['publishing_account_id', 'TEXT'],
+    ['publishing_provider', 'TEXT'],
+    ['publishing_username', 'TEXT'],
+  ] as const
+  for (const [name, definition] of draftMigrations) {
+    if (!draftColumns.some((column) => column.name === name)) {
+      db.exec(`ALTER TABLE drafts ADD COLUMN ${name} ${definition}`)
+    }
+  }
+  const attemptColumns = db
+    .prepare('PRAGMA table_info(publish_attempts)')
+    .all() as Array<{ name: string }>
+  if (!attemptColumns.some((column) => column.name === 'provider')) {
+    db.exec('ALTER TABLE publish_attempts ADD COLUMN provider TEXT')
+  }
+  if (
+    !attemptColumns.some((column) => column.name === 'publishing_account_id')
+  ) {
+    db.exec(
+      'ALTER TABLE publish_attempts ADD COLUMN publishing_account_id TEXT',
+    )
+  }
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS drafts_account_idx ON drafts(publishing_account_id, status)',
+  )
   return db
 }
 
@@ -153,13 +205,19 @@ export function createDraftRecord(
       published_post_id: null,
       published_url: null,
       last_error: null,
+      publishing_account_id: options.publishingAccount?.id ?? null,
+      publishing_provider: options.publishingAccount?.provider ?? null,
+      publishing_username: options.publishingAccount?.username ?? null,
     }
     const images = options.images ?? []
     db.transaction(() => {
-      db.prepare(`INSERT INTO drafts (id, body, reply_to_post_id, status, scheduled_at, created_at, updated_at)
-        VALUES (@id, @body, @reply_to_post_id, @status, @scheduled_at, @created_at, @updated_at)`).run(
-        row,
-      )
+      db.prepare(`INSERT INTO drafts (
+        id, body, reply_to_post_id, status, scheduled_at, created_at, updated_at,
+        publishing_account_id, publishing_provider, publishing_username
+      ) VALUES (
+        @id, @body, @reply_to_post_id, @status, @scheduled_at, @created_at, @updated_at,
+        @publishing_account_id, @publishing_provider, @publishing_username
+      )`).run(row)
       const insertImage =
         db.prepare(`INSERT INTO draft_images (draft_id, position, path, alt_text)
         VALUES (?, ?, ?, ?)`)
@@ -247,6 +305,84 @@ export const claimDraftRecord = (id: string, path?: string): Draft => {
   }
 }
 
+const publishingAccountValues = (account: DraftPublishingAccount) => [
+  account.id,
+  account.provider,
+  account.username,
+]
+
+export const bindDraftPublishingAccountRecord = (
+  id: string,
+  account: DraftPublishingAccount,
+  path?: string,
+): Draft => {
+  const db = openDatabase(path)
+  try {
+    const row = db.prepare('SELECT * FROM drafts WHERE id = ?').get(id) as
+      | DraftRow
+      | undefined
+    if (!row) throw new Error('draft_not_found')
+    if (row.publishing_account_id && row.publishing_account_id !== account.id) {
+      throw new Error('draft_publishing_account_mismatch')
+    }
+    if (!row.publishing_account_id) {
+      db.prepare(`UPDATE drafts
+        SET publishing_account_id = ?, publishing_provider = ?, publishing_username = ?, updated_at = ?
+        WHERE id = ? AND publishing_account_id IS NULL`).run(
+        ...publishingAccountValues(account),
+        Date.now(),
+        id,
+      )
+    }
+    const updated = db.prepare('SELECT * FROM drafts WHERE id = ?').get(id) as
+      | DraftRow
+      | undefined
+    if (!updated) throw new Error('draft_not_found')
+    return readDraft(db, updated)
+  } finally {
+    db.close()
+  }
+}
+
+export const bindUnassignedDraftRecords = (
+  account: DraftPublishingAccount,
+  path?: string,
+) => {
+  const db = openDatabase(path)
+  try {
+    return db
+      .prepare(`UPDATE drafts
+        SET publishing_account_id = ?, publishing_provider = ?, publishing_username = ?, updated_at = ?
+        WHERE publishing_account_id IS NULL AND status IN ('draft','scheduled','failed')`)
+      .run(...publishingAccountValues(account), Date.now()).changes
+  } finally {
+    db.close()
+  }
+}
+
+export const releaseDraftsForPublishingAccountRecord = (
+  accountId: string,
+  path?: string,
+) => {
+  const db = openDatabase(path)
+  try {
+    const scheduled = db
+      .prepare(`SELECT COUNT(*) AS count FROM drafts
+        WHERE publishing_account_id = ? AND status IN ('scheduled','publishing')`)
+      .get(accountId) as { count: number }
+    if (scheduled.count > 0) {
+      throw new Error('publishing_account_has_scheduled_drafts')
+    }
+    return db
+      .prepare(`UPDATE drafts
+        SET publishing_account_id = NULL, publishing_provider = NULL, publishing_username = NULL, updated_at = ?
+        WHERE publishing_account_id = ? AND status IN ('draft','failed')`)
+      .run(Date.now(), accountId).changes
+  } finally {
+    db.close()
+  }
+}
+
 export const claimDueDraftRecords = (
   now = Date.now(),
   limit = 20,
@@ -284,6 +420,8 @@ export const finishDraftPublish = (input: {
   ok: boolean
   providerPostId?: string
   providerUrl?: string
+  provider?: PublishingProvider
+  publishingAccountId?: string
   error?: string
   path?: string
 }) => {
@@ -300,13 +438,17 @@ export const finishDraftPublish = (input: {
         input.error ?? null,
         input.id,
       )
-      db.prepare(`INSERT INTO publish_attempts (id, draft_id, attempted_at, ok, provider_post_id, error)
-        VALUES (?, ?, ?, ?, ?, ?)`).run(
+      db.prepare(`INSERT INTO publish_attempts (
+        id, draft_id, attempted_at, ok, provider_post_id, provider,
+        publishing_account_id, error
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
         randomUUID(),
         input.id,
         now,
         input.ok ? 1 : 0,
         input.providerPostId ?? null,
+        input.provider ?? null,
+        input.publishingAccountId ?? null,
         input.error ?? null,
       )
     })()

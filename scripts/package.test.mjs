@@ -23,6 +23,10 @@ test('public API can be imported', async () => {
   assert.equal(module.ILO_VERSION, packageJson.version)
   assert.equal(packageJson.dependencies['better-sqlite3'], undefined)
   assert.equal(typeof module.createDraft, 'function')
+  assert.equal(typeof module.connectTypefully, 'function')
+  assert.equal(typeof module.listPublishingAccounts, 'function')
+  assert.equal(typeof module.setDefaultPublishingAccount, 'function')
+  assert.equal(typeof module.publishTypefullyXPost, 'function')
   assert.equal(typeof module.parseScheduleTime, 'function')
   assert.equal(typeof module.syncXFollowers, 'function')
   assert.equal(typeof module.syncAllXFollowers, 'function')
@@ -68,6 +72,7 @@ test('CLI starts and prints its command surface', () => {
   assert.match(result.stdout, /Local-first social publishing/)
   assert.match(result.stdout, /scheduler/)
   assert.match(result.stdout, /mcp/)
+  assert.match(result.stdout, /accounts/)
 
   const start = spawnSync(
     process.execPath,
@@ -78,8 +83,23 @@ test('CLI starts and prints its command surface', () => {
     },
   )
   assert.equal(start.status, 0, start.stderr)
+  assert.match(start.stdout, /Typefully/)
   assert.match(start.stdout, /X developer app/)
   assert.match(start.stdout, /http:\/\/127\.0\.0\.1:8976\/callback/)
+
+  const accounts = spawnSync(
+    process.execPath,
+    ['dist/cli.js', 'accounts', '--help'],
+    {
+      cwd: new URL('..', import.meta.url),
+      encoding: 'utf8',
+    },
+  )
+  assert.equal(accounts.status, 0, accounts.stderr)
+  assert.match(accounts.stdout, /add/)
+  assert.match(accounts.stdout, /list/)
+  assert.match(accounts.stdout, /use/)
+  assert.match(accounts.stdout, /remove/)
 })
 
 test('CLI exposes research, article, inbox, reply, and image commands', () => {
@@ -192,6 +212,18 @@ test('CLI exposes research, article, inbox, reply, and image commands', () => {
   assert.equal(post.status, 0, post.stderr)
   assert.match(post.stdout, /--reply-to/)
   assert.match(post.stdout, /--image/)
+  assert.match(post.stdout, /--account/)
+
+  const drafts = spawnSync(
+    process.execPath,
+    ['dist/cli.js', 'drafts', 'list', '--help'],
+    {
+      cwd: new URL('..', import.meta.url),
+      encoding: 'utf8',
+    },
+  )
+  assert.equal(drafts.status, 0, drafts.stderr)
+  assert.match(drafts.stdout, /--account/)
 })
 
 test('CLI and public library share the local X inbox', async () => {
