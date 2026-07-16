@@ -15,6 +15,7 @@
     "@ilo/core": "workspace:*",
     "@ilo/mcp": "workspace:*",
     "citty": "^0.2.2",
+    "cli-table3": "^0.6.5",
     "open": "^11.0.0",
     "picocolors": "^1.1.1"
   },

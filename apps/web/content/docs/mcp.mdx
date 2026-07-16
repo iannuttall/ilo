@@ -16,6 +16,8 @@ npm i -g iloso
 ilo start
 ```
 
+The guided command explains how to create the required X Native App and prints `http://127.0.0.1:8976/callback` before asking for its OAuth 2.0 Client ID.
+
 You can now start ilo as a local stdio MCP server:
 
 ```sh
@@ -68,11 +70,15 @@ Install both when your client supports skills. The CLI prints the installed path
 | Tool | What it does |
 | --- | --- |
 | `ilo_status` | Checks the local install and connected X account. |
-| `ilo_create_draft` | Saves a draft to the local database. |
+| `ilo_sync_x_followers` | Imports public X followers through FxTwitter and saves resumable progress. |
+| `ilo_x_follower_sync_status` | Reports whether a local follower import is partial or complete. |
+| `ilo_search_x_followers` | Searches imported follower profiles and returns public bio evidence. |
+| `ilo_get_x_follower_profile` | Reads the complete stored public FxTwitter record for one imported follower. |
+| `ilo_create_draft` | Saves a top-level post or reply draft, with optional static images, to the local database. |
 | `ilo_list_drafts` | Lists local drafts and their state. |
 | `ilo_schedule_draft` | Schedules a draft using an ISO time or plain language. |
 | `ilo_publish_draft` | Publishes one draft after explicit confirmation. |
-| `ilo_publish_post` | Publishes a new post after explicit confirmation. |
+| `ilo_publish_post` | Publishes a top-level post or reply after explicit confirmation. |
 | `ilo_run_scheduler` | Publishes due drafts after explicit confirmation. |
 
 Publishing tools require `confirm: true`. Read-only and draft-creation tools do not.
@@ -91,6 +97,36 @@ Show me the draft, ask me to confirm it, then publish it to X.
 
 The repository is MIT licensed, so you can add tools, providers, or new agent workflows.
 
+## Follower research
+
+Follower research uses public FxTwitter data and does not require a connected X account. Ask the agent to import a bounded number of pages first:
+
+```txt
+Index 20 pages of @adamwathan's public followers, then tell me whether the import is partial or complete.
+```
+
+The sync is resumable. Large accounts need repeated calls. Once some profiles are indexed, an agent can search them without another network request:
+
+```txt
+Among the indexed followers of @adamwathan, how many appear to work at Cursor, Vercel, or Sentry? Separate current, former, and unclear matches and show the bio evidence.
+```
+
+After finding a match, an agent can inspect all public profile data saved during the import:
+
+```txt
+Show me the complete stored profile for @leerob from @adamwathan's follower index.
+```
+
+That lookup includes the public bio, location, website, join date, account counts, avatar, banner, verification details, and raw FxTwitter object. It does not make a fresh network request.
+
+The search tool uses SQLite FTS5 rather than an embedding model. It works best with concrete names, handles, places, and phrases. The tool normalizes common company handles such as `@getsentry`, but it does not invent synonyms or verify claims in a profile bio.
+
+## Reply and image inputs
+
+`ilo_create_draft` and `ilo_publish_post` accept `replyToPostId` as a numeric X post id or URL. They also accept an `images` array with up to four local JPEG, PNG, or WebP paths and optional `altText`.
+
+The MCP process must be able to read each image path. Scheduled drafts keep those paths rather than copying the files, so the files must stay in place until publishing. X may still reject a reply under its API access or conversation rules.
+
 ## How the local server runs
 
 Your MCP client launches `iloso mcp serve` as a child process and communicates over stdin and stdout. The process ends when the client closes it. It does not listen on a network port, expose an OAuth callback, or require a browser login to ilo.
@@ -99,9 +135,9 @@ Because the CLI and MCP server share the same database, a draft created by an ag
 
 ## Permission model
 
-The MCP client controls which agents can call ilo tools. ilo adds a second guard at the action boundary: publishing a new post, publishing a draft, and running due scheduled posts all require `confirm: true`. Creating or reading a draft does not.
+The MCP client controls which agents can call ilo tools. ilo adds a second guard at the action boundary: publishing a post or reply, publishing a draft, and running due scheduled posts all require `confirm: true`. Creating or reading a draft does not.
 
-Use prompts that separate preparation from publication. For example, ask an agent to create three drafts first, review them, and only then approve one exact draft id for publishing. Do not give an unattended agent standing permission to confirm every write.
+Use prompts that separate preparation from publication. For example, ask an agent to create three drafts first, review them, and only then approve one exact draft id for publishing. Before approval, check the exact text, top-level or reply destination, images, and alt text. Do not give an unattended agent standing permission to confirm every write.
 
 ## Troubleshooting clients
 

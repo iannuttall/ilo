@@ -21,7 +21,7 @@ Both `ilo` and `iloso` run the same command.
 
 ## Create an X app
 
-Create an app in the X developer portal and enable OAuth 2.0 with read and write access.
+Open the [X Developer Console](https://console.x.com) and create or select an app. Under **User authentication settings**, enable OAuth 2.0, choose **Native App**, and use read and write permissions. Native Apps are public clients, so ilo uses PKCE and does not need a client secret.
 
 Add this callback URL:
 
@@ -37,13 +37,15 @@ The X API may have its own usage charges. Those go directly to X, not ilo.
 ilo start
 ```
 
-Paste your OAuth 2.0 client ID when prompted. ilo opens X in your browser, waits for the local callback, and saves the tokens in your operating system keychain.
+The CLI shows the same setup details and callback URL before it asks for anything. Paste the OAuth 2.0 Client ID from **Keys and tokens** when prompted. ilo opens X in your browser, waits for the local callback, and saves the tokens in your operating system keychain.
 
 You can also pass the client ID directly:
 
 ```sh
 ilo x connect --client-id YOUR_CLIENT_ID
 ```
+
+If you intentionally configured a confidential Web App or Automated App instead, pass its secret with `--client-secret`. The normal Native App flow does not use one.
 
 Check the connection:
 

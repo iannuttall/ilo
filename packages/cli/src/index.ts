@@ -1,3 +1,4 @@
+import { ILO_VERSION } from '@ilo/core'
 import { defineCommand, runMain } from 'citty'
 import { draftsCommand, postCommand } from './commands/drafts.js'
 import { mcpCommand } from './commands/mcp.js'
@@ -8,25 +9,29 @@ import { connectX, xCommand } from './commands/x.js'
 const main = defineCommand({
   meta: {
     name: 'ilo',
-    version: '0.1.0',
+    version: ILO_VERSION,
     description: 'Local-first social publishing for people and AI agents',
   },
   subCommands: {
     start: defineCommand({
       meta: {
         name: 'start',
-        description: 'Connect your X account and finish local setup',
+        description: 'Configure an X developer app and connect your account',
       },
       args: {
-        'client-id': { type: 'string', description: 'X OAuth 2.0 client ID.' },
+        'client-id': {
+          type: 'string',
+          description: 'OAuth 2.0 Client ID from X Keys and tokens.',
+        },
         'client-secret': {
           type: 'string',
-          description: 'Optional confidential client secret.',
+          description: 'Only needed for a confidential X app.',
         },
         port: {
           type: 'string',
           default: '8976',
-          description: 'Local callback port.',
+          description:
+            'Callback port. Default URL: http://127.0.0.1:8976/callback.',
         },
         'no-open': {
           type: 'boolean',

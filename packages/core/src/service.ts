@@ -1,4 +1,9 @@
-import { createXPost, refreshXToken } from './providers/x/client.js'
+import {
+  createXPost,
+  normalizeXPostId,
+  refreshXToken,
+} from './providers/x/client.js'
+import { normalizeXPostImages, type XPostImage } from './providers/x/media.js'
 import { validateXPostText } from './providers/x/text.js'
 import { parseScheduleTime } from './scheduling/parse.js'
 import {
@@ -17,14 +22,26 @@ import {
   scheduleDraftRecord,
 } from './storage/database.js'
 
-export const createDraft = (body: string) => {
+export type XPostOptions = {
+  replyToPostId?: string
+  images?: XPostImage[]
+}
+
+const normalizePostOptions = (options: XPostOptions = {}) => ({
+  replyToPostId: options.replyToPostId
+    ? normalizeXPostId(options.replyToPostId)
+    : undefined,
+  images: normalizeXPostImages(options.images),
+})
+
+export const createDraft = (body: string, options: XPostOptions = {}) => {
   const text = body.trim()
   const validation = validateXPostText(text)
   if (!validation.ok)
     throw new Error(
       `x_post_text_invalid:${validation.weighted}/${validation.limit}`,
     )
-  return createDraftRecord(text)
+  return createDraftRecord(text, normalizePostOptions(options))
 }
 
 export const listDrafts = () => listDraftRecords()
@@ -62,7 +79,10 @@ const freshXCredentials = async () => {
 const publishClaimedDraft = async (draft: Draft) => {
   try {
     const credentials = await freshXCredentials()
-    const published = await createXPost(credentials.accessToken, draft.body)
+    const published = await createXPost(credentials.accessToken, draft.body, {
+      replyToPostId: draft.replyToPostId ?? undefined,
+      images: draft.images,
+    })
     finishDraftPublish({
       id: draft.id,
       ok: true,
@@ -80,8 +100,8 @@ const publishClaimedDraft = async (draft: Draft) => {
 export const publishDraft = (id: string) =>
   publishClaimedDraft(claimDraftRecord(id.trim()))
 
-export const publishPost = async (body: string) => {
-  const draft = createDraft(body)
+export const publishPost = async (body: string, options: XPostOptions = {}) => {
+  const draft = createDraft(body, options)
   return publishDraft(draft.id)
 }
 

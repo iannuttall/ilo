@@ -11,25 +11,40 @@ npm i -g iloso
 ilo start
 ```
 
-Create an X developer app with OAuth 2.0 read and write access, then register this callback:
+`ilo start` explains the X app setup before asking for a Client ID. Create or open an app in the [X Developer Console](https://console.x.com), enable OAuth 2.0, choose **Native App**, and use read and write permissions. Register this callback exactly:
 
 ```txt
 http://127.0.0.1:8976/callback
 ```
 
-`ilo start` opens the browser flow and stores OAuth tokens in your operating system keychain.
+Copy the OAuth 2.0 Client ID from **Keys and tokens**. Native Apps use PKCE and do not need a client secret. ilo then opens the browser flow and stores OAuth tokens in your operating system keychain.
 
 ## Use the CLI
 
 ```sh
 ilo post --text "Hello from ilo"
+ilo post --reply-to https://x.com/example/status/123 --text "A reply from ilo"
+ilo post --text "A chart" --image ./chart.png --alt "Weekly signups by source"
 ilo drafts create --text "Post this tomorrow"
 ilo drafts list
 ilo drafts schedule <draft-id> --at "tomorrow at 9am"
 ilo scheduler watch
 ```
 
-Publishing asks for confirmation. Scripts can pass `--yes` after getting approval elsewhere.
+Publishing asks for confirmation and shows the exact text, destination, and images. Scripts can pass `--yes` after getting approval elsewhere.
+
+Import public follower profiles through FxTwitter and search the local index:
+
+```sh
+ilo x followers sync adamwathan --pages 20
+ilo x followers sync adamwathan --all
+ilo x followers sync adamwathan --background
+ilo x followers profile adamwathan leerob --json
+ilo x followers search adamwathan --query "works at cursor|vercel|sentry"
+ilo x followers search adamwathan --query "works at cursor|vercel|sentry" --csv ./matches.csv
+```
+
+The background command continues the full resumable import after the terminal closes. Profile lookup returns the stored public fields and raw FxTwitter record. Search uses SQLite FTS5 and returns a terminal table with public bio evidence and current, former, and unclear matches. The CSV export includes the matching public profile fields and import coverage. Check whether the import is partial before treating a count as complete.
 
 ## Add local MCP
 
@@ -64,10 +79,18 @@ npm install iloso
 ```
 
 ```ts
-import { createDraft, scheduleDraft } from 'iloso'
+import { createDraft, scheduleDraft, searchXFollowers } from 'iloso'
 
-const draft = createDraft('A post to review')
+const draft = createDraft('A reply to review', {
+  replyToPostId: 'https://x.com/example/status/123',
+  images: [{ path: './chart.png', altText: 'Weekly signups by source' }],
+})
 await scheduleDraft(draft.id, 'tomorrow at 9am')
+
+const matches = searchXFollowers({
+  handle: 'adamwathan',
+  query: 'works at cursor|vercel|sentry',
+})
 ```
 
 ## Repository
@@ -88,7 +111,7 @@ pnpm build
 
 ## Roadmap
 
-X publishing and scheduling are first. Bluesky and LinkedIn are the next provider targets. Local imports and automated performance reports come next.
+X publishing, replies, static images, follower search, and scheduling are first. Bluesky and LinkedIn are the next provider targets. Public post-history imports and automated performance reports come next.
 
 ## License and support
 

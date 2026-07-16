@@ -32,14 +32,23 @@ it helps them choose or complete the next action.
 
 ## What ships today
 
-- Connect one X profile with OAuth 2.0 PKCE.
+- Guide the user through creating an X Native App, registering the local
+  callback, and connecting one X profile with OAuth 2.0 PKCE.
 - Create and list local drafts.
 - Schedule drafts with ISO timestamps or plain-language times.
-- Publish a post or draft after confirmation.
+- Publish a top-level post or reply after confirmation.
+- Attach up to four JPEG, PNG, or WebP images with optional alt text.
 - Run the scheduler once or as a local watcher.
+- Import public X follower profiles through FxTwitter into local SQLite, with
+  resumable foreground and background full-list syncs.
+- Retain each imported profile's public bio, location, website, join date,
+  account counts, images, verification details, and raw FxTwitter record.
+- Search imported follower names, handles, bios, and locations with SQLite
+  FTS5, including evidence-backed current, former, and unclear employer
+  matches and CSV export of the matching public profile fields.
 - Use the same actions through local stdio MCP.
-- Import the same draft, scheduling, publishing, and MCP functions from the
-  `iloso` TypeScript package.
+- Import the same research, draft, scheduling, publishing, and MCP functions
+  from the `iloso` TypeScript package.
 - Install the packaged ilo skill for coding agents.
 - Use public X and Bluesky tools on ilo.so.
 - Read the public X report library for research questions, evidence checks,
@@ -53,8 +62,8 @@ history or produces every report automatically.
 
 - Restore the strongest legacy ilo analytics as local reports.
 - Import public profile and post history for repeatable analysis.
-- Add media, threads, schedule cancellation, retries, and stronger scheduler
-  installation.
+- Add animated GIF and video uploads, threads, schedule cancellation, retries,
+  and stronger scheduler installation.
 - Add Bluesky publishing, then LinkedIn.
 - Keep the public site, tools, blog, and report library useful.
 
@@ -63,7 +72,8 @@ history or produces every report automatically.
 - Start with the user's question and return evidence they can inspect.
 - Keep drafts, schedules, settings, and credentials under the user's control.
 - Make the human path calm and the agent path explicit.
-- Require confirmation for the exact content before publishing.
+- Require confirmation for the exact content, reply destination, and media
+  before publishing.
 - Share one implementation across CLI, MCP, and TypeScript.
 - Keep provider boundaries clear so more networks can follow X.
 - Ship the core product as free, MIT-licensed software.

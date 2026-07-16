@@ -11,9 +11,16 @@ export type DraftStatus =
   | 'published'
   | 'failed'
 
+export type DraftImage = {
+  path: string
+  altText?: string
+}
+
 export type Draft = {
   id: string
   body: string
+  replyToPostId: string | null
+  images: DraftImage[]
   status: DraftStatus
   scheduledAt: number | null
   createdAt: number
@@ -26,6 +33,7 @@ export type Draft = {
 type DraftRow = {
   id: string
   body: string
+  reply_to_post_id: string | null
   status: DraftStatus
   scheduled_at: number | null
   created_at: number
@@ -35,9 +43,21 @@ type DraftRow = {
   last_error: string | null
 }
 
-const mapDraft = (row: DraftRow): Draft => ({
+type DraftImageRow = {
+  path: string
+  alt_text: string | null
+}
+
+export type DraftRecordOptions = {
+  replyToPostId?: string
+  images?: DraftImage[]
+}
+
+const mapDraft = (row: DraftRow, images: DraftImage[] = []): Draft => ({
   id: row.id,
   body: row.body,
+  replyToPostId: row.reply_to_post_id,
+  images,
   status: row.status,
   scheduledAt: row.scheduled_at,
   createdAt: row.created_at,
@@ -46,6 +66,24 @@ const mapDraft = (row: DraftRow): Draft => ({
   publishedUrl: row.published_url,
   lastError: row.last_error,
 })
+
+const loadDraftImages = (
+  db: Database.Database,
+  draftId: string,
+): DraftImage[] =>
+  (
+    db
+      .prepare(
+        'SELECT path, alt_text FROM draft_images WHERE draft_id = ? ORDER BY position ASC',
+      )
+      .all(draftId) as DraftImageRow[]
+  ).map((row) => ({
+    path: row.path,
+    ...(row.alt_text ? { altText: row.alt_text } : {}),
+  }))
+
+const readDraft = (db: Database.Database, row: DraftRow) =>
+  mapDraft(row, loadDraftImages(db, row.id))
 
 export const openDatabase = (path = iloDatabasePath()): Database.Database => {
   mkdirSync(dirname(path), { recursive: true, mode: 0o700 })
@@ -56,6 +94,7 @@ export const openDatabase = (path = iloDatabasePath()): Database.Database => {
     CREATE TABLE IF NOT EXISTS drafts (
       id TEXT PRIMARY KEY,
       body TEXT NOT NULL,
+      reply_to_post_id TEXT,
       status TEXT NOT NULL CHECK (status IN ('draft','scheduled','publishing','published','failed')),
       scheduled_at INTEGER,
       created_at INTEGER NOT NULL,
@@ -73,17 +112,43 @@ export const openDatabase = (path = iloDatabasePath()): Database.Database => {
       provider_post_id TEXT,
       error TEXT
     );
+    CREATE TABLE IF NOT EXISTS draft_images (
+      draft_id TEXT NOT NULL REFERENCES drafts(id) ON DELETE CASCADE,
+      position INTEGER NOT NULL,
+      path TEXT NOT NULL,
+      alt_text TEXT,
+      PRIMARY KEY (draft_id, position)
+    );
   `)
+  const draftColumns = db.prepare('PRAGMA table_info(drafts)').all() as Array<{
+    name: string
+  }>
+  if (!draftColumns.some((column) => column.name === 'reply_to_post_id')) {
+    db.exec('ALTER TABLE drafts ADD COLUMN reply_to_post_id TEXT')
+  }
   return db
 }
 
-export const createDraftRecord = (body: string, path?: string): Draft => {
-  const db = openDatabase(path)
+export function createDraftRecord(body: string, path?: string): Draft
+export function createDraftRecord(
+  body: string,
+  options?: DraftRecordOptions,
+  path?: string,
+): Draft
+export function createDraftRecord(
+  body: string,
+  optionsOrPath: DraftRecordOptions | string = {},
+  path?: string,
+): Draft {
+  const options = typeof optionsOrPath === 'string' ? {} : optionsOrPath
+  const databasePath = typeof optionsOrPath === 'string' ? optionsOrPath : path
+  const db = openDatabase(databasePath)
   try {
     const now = Date.now()
     const row: DraftRow = {
       id: randomUUID(),
       body,
+      reply_to_post_id: options.replyToPostId ?? null,
       status: 'draft',
       scheduled_at: null,
       created_at: now,
@@ -92,11 +157,20 @@ export const createDraftRecord = (body: string, path?: string): Draft => {
       published_url: null,
       last_error: null,
     }
-    db.prepare(`INSERT INTO drafts (id, body, status, scheduled_at, created_at, updated_at)
-      VALUES (@id, @body, @status, @scheduled_at, @created_at, @updated_at)`).run(
-      row,
-    )
-    return mapDraft(row)
+    const images = options.images ?? []
+    db.transaction(() => {
+      db.prepare(`INSERT INTO drafts (id, body, reply_to_post_id, status, scheduled_at, created_at, updated_at)
+        VALUES (@id, @body, @reply_to_post_id, @status, @scheduled_at, @created_at, @updated_at)`).run(
+        row,
+      )
+      const insertImage =
+        db.prepare(`INSERT INTO draft_images (draft_id, position, path, alt_text)
+        VALUES (?, ?, ?, ?)`)
+      images.forEach((image, position) => {
+        insertImage.run(row.id, position, image.path, image.altText ?? null)
+      })
+    })()
+    return mapDraft(row, images)
   } finally {
     db.close()
   }
@@ -109,7 +183,7 @@ export const listDraftRecords = (path?: string): Draft[] => {
       db
         .prepare('SELECT * FROM drafts ORDER BY created_at DESC')
         .all() as DraftRow[]
-    ).map(mapDraft)
+    ).map((row) => readDraft(db, row))
   } finally {
     db.close()
   }
@@ -122,7 +196,7 @@ export const getDraftRecord = (id: string, path?: string): Draft => {
       | DraftRow
       | undefined
     if (!row) throw new Error('draft_not_found')
-    return mapDraft(row)
+    return readDraft(db, row)
   } finally {
     db.close()
   }
@@ -143,7 +217,7 @@ export const scheduleDraftRecord = (
     const row = db
       .prepare('SELECT * FROM drafts WHERE id = ?')
       .get(id) as DraftRow
-    return mapDraft(row)
+    return readDraft(db, row)
   } finally {
     db.close()
   }
@@ -163,7 +237,7 @@ export const claimDraftRecord = (id: string, path?: string): Draft => {
       db.prepare(
         `UPDATE drafts SET status = 'publishing', updated_at = ?, last_error = NULL WHERE id = ?`,
       ).run(now, id)
-      return mapDraft({
+      return readDraft(db, {
         ...row,
         status: 'publishing',
         updated_at: now,
@@ -194,7 +268,7 @@ export const claimDueDraftRecords = (
       return rows
         .filter((row) => update.run(now, row.id).changes === 1)
         .map((row) =>
-          mapDraft({
+          readDraft(db, {
             ...row,
             status: 'publishing',
             updated_at: now,

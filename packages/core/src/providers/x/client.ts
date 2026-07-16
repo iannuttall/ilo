@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
+import { uploadXImages, type XPostImage } from './media.js'
 
 const AUTHORIZE_URL = 'https://x.com/i/oauth2/authorize'
 const TOKEN_URL = 'https://api.x.com/2/oauth2/token'
@@ -135,14 +136,58 @@ export const fetchXMe = async (accessToken: string) => {
   return result.data
 }
 
-export const createXPost = async (accessToken: string, text: string) => {
+export const normalizeXPostId = (input: string) => {
+  const value = input.trim()
+  if (/^\d{1,19}$/.test(value)) return value
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    throw new Error('invalid_x_post_id')
+  }
+  if (
+    url.protocol !== 'https:' ||
+    !['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'].includes(
+      url.hostname.toLowerCase(),
+    )
+  ) {
+    throw new Error('invalid_x_post_id')
+  }
+  const id = url.pathname.match(
+    /\/(?:status|statuses)\/(\d{1,19})(?:\/|$)/i,
+  )?.[1]
+  if (!id) throw new Error('invalid_x_post_id')
+  return id
+}
+
+export type CreateXPostOptions = {
+  replyToPostId?: string
+  images?: XPostImage[]
+}
+
+export const createXPost = async (
+  accessToken: string,
+  text: string,
+  options: CreateXPostOptions = {},
+) => {
+  const replyToPostId = options.replyToPostId
+    ? normalizeXPostId(options.replyToPostId)
+    : undefined
+  const uploadedImages = await uploadXImages(accessToken, options.images)
+  const body: Record<string, unknown> = { text }
+  if (replyToPostId) {
+    body.reply = { in_reply_to_tweet_id: replyToPostId }
+  }
+  if (uploadedImages.length) {
+    body.media = { media_ids: uploadedImages.map((image) => image.id) }
+  }
   const result = await xFetch<{ data?: { id: string; text?: string } }>(
     accessToken,
     '/tweets',
     {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify(body),
     },
   )
   if (!result.data?.id) throw new Error('x_publish_missing_post_id')
@@ -150,5 +195,7 @@ export const createXPost = async (accessToken: string, text: string) => {
     providerPostId: result.data.id,
     providerUrl: `https://x.com/i/web/status/${result.data.id}`,
     text: result.data.text ?? text,
+    replyToPostId: replyToPostId ?? null,
+    media: uploadedImages,
   }
 }

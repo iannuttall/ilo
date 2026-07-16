@@ -1,5 +1,5 @@
 import { createServer } from 'node:http'
-import { password, text } from '@clack/prompts'
+import { cancel, isCancel, text } from '@clack/prompts'
 import {
   buildXAuthorizeUrl,
   disconnectX,
@@ -13,17 +13,44 @@ import {
 import { defineCommand } from 'citty'
 import open from 'open'
 import { canPrompt, printJson, printLine } from '../utils.js'
+import { followersCommand } from './followers.js'
 
 const DEFAULT_PORT = 8976
+const X_DEVELOPER_PORTAL = 'https://console.x.com'
 
-const requiredValue = async (
-  value: unknown,
-  message: string,
-  secret = false,
-) => {
+const callbackUrl = (port: number) => `http://127.0.0.1:${port}/callback`
+
+const callbackPort = (value: unknown) => {
+  const port = Number(value ?? DEFAULT_PORT)
+  if (!Number.isInteger(port) || port < 1024 || port > 65_535) {
+    throw new Error('invalid_callback_port')
+  }
+  return port
+}
+
+const printXAppSetup = (redirectUri: string) => {
+  printLine(`Before ilo can connect, create or open an X developer app.
+
+Developer portal: ${X_DEVELOPER_PORTAL}
+
+In User authentication settings, use:
+  App type: Native App (public client with PKCE)
+  OAuth 2.0: enabled
+  App permissions: Read and write
+  Callback URI: ${redirectUri}
+
+Then open Keys and tokens and copy the OAuth 2.0 Client ID.
+Native Apps do not need a client secret.`)
+}
+
+const requiredValue = async (value: unknown, message: string) => {
   if (typeof value === 'string' && value.trim()) return value.trim()
   if (!canPrompt()) throw new Error('x_client_id_required')
-  const result = secret ? await password({ message }) : await text({ message })
+  const result = await text({ message })
+  if (isCancel(result)) {
+    cancel('X setup cancelled.')
+    process.exit(0)
+  }
   if (typeof result !== 'string' || !result.trim())
     throw new Error('x_client_id_required')
   return result.trim()
@@ -82,24 +109,19 @@ const waitForCode = async (input: {
   })
 
 export const connectX = async (args: Record<string, unknown>) => {
+  const port = callbackPort(args.port)
+  const redirectUri = callbackUrl(port)
+  const hasClientId =
+    typeof args['client-id'] === 'string' && Boolean(args['client-id'].trim())
+  if (!hasClientId && canPrompt()) printXAppSetup(redirectUri)
   const clientId = await requiredValue(
     args['client-id'],
-    'X OAuth 2.0 client ID',
+    'Paste the X OAuth 2.0 Client ID',
   )
   const clientSecret =
     typeof args['client-secret'] === 'string'
       ? args['client-secret'].trim() || undefined
-      : canPrompt()
-        ? (
-            (await password({
-              message: 'X client secret (leave blank for a public client)',
-            })) as string
-          ).trim() || undefined
-        : undefined
-  const portValue = Number(args.port ?? DEFAULT_PORT)
-  if (!Number.isInteger(portValue) || portValue < 1024 || portValue > 65_535)
-    throw new Error('invalid_callback_port')
-  const redirectUri = `http://127.0.0.1:${portValue}/callback`
+      : undefined
   const state = generateOAuthState()
   const codeVerifier = generatePkceVerifier()
   const authorizeUrl = buildXAuthorizeUrl({
@@ -109,7 +131,7 @@ export const connectX = async (args: Record<string, unknown>) => {
     codeVerifier,
   })
   const code = await waitForCode({
-    port: portValue,
+    port,
     state,
     authorizeUrl,
     shouldOpen: args.open !== false && args['no-open'] !== true,
@@ -146,21 +168,26 @@ export const connectX = async (args: Record<string, unknown>) => {
 export const xCommand = defineCommand({
   meta: { name: 'x', description: 'Connect and manage your X account' },
   subCommands: {
+    followers: followersCommand,
     connect: defineCommand({
       meta: {
         name: 'connect',
-        description: 'Connect an X account with OAuth 2.0 PKCE',
+        description: 'Configure an X developer app and connect your account',
       },
       args: {
-        'client-id': { type: 'string', description: 'X OAuth 2.0 client ID.' },
+        'client-id': {
+          type: 'string',
+          description: 'OAuth 2.0 Client ID from X Keys and tokens.',
+        },
         'client-secret': {
           type: 'string',
-          description: 'Optional confidential client secret.',
+          description: 'Only needed for a confidential X app.',
         },
         port: {
           type: 'string',
           default: String(DEFAULT_PORT),
-          description: 'Local callback port.',
+          description:
+            'Callback port. Default URL: http://127.0.0.1:8976/callback.',
         },
         'no-open': {
           type: 'boolean',
@@ -199,7 +226,7 @@ export const xCommand = defineCommand({
         } catch {
           const result = { connected: false }
           if (args.json) printJson(result)
-          else printLine('No X account is connected. Run `ilo x connect`.')
+          else printLine('No X account is connected. Run `ilo start`.')
         }
       },
     }),

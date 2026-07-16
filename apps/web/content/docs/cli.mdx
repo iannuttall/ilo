@@ -1,12 +1,12 @@
 ---
 title: "CLI"
-description: "Create local drafts, schedule them, and publish to X from the terminal."
+description: "Search public followers, create local drafts, and publish posts or replies to X from the terminal."
 category: "agent"
 order: 2
 status: published
-h1: "Draft, schedule, and publish from the terminal."
+h1: "Research, draft, and publish from the terminal."
 seoTitle: "ilo CLI: Local X Drafts, Scheduling and Publishing"
-seoDescription: "Use the open source ilo CLI to connect X, manage local drafts, schedule posts, and publish from your terminal."
+seoDescription: "Use the open source ilo CLI to search public X followers, manage local drafts, schedule posts, and publish posts or replies."
 ---
 
 Install ilo from npm:
@@ -27,6 +27,14 @@ ilo x disconnect
 
 `ilo start` is the guided shortcut for `ilo x connect`.
 
+Before asking for a Client ID, the guided flow shows the X developer portal, recommends a Native App with OAuth 2.0 read and write access, and prints the exact default callback URL:
+
+```txt
+http://127.0.0.1:8976/callback
+```
+
+Copy the OAuth 2.0 Client ID from the app's **Keys and tokens** page. A Native App uses PKCE and does not need a client secret.
+
 Your X client configuration and account metadata live in `~/.config/ilo/config.json`. OAuth tokens and the optional client secret are stored in the operating system keychain.
 
 ## Publish one post
@@ -38,6 +46,87 @@ printf "Post from stdin" | ilo post
 ```
 
 Interactive publishing asks for confirmation. Use `--yes` only when the caller has already confirmed the post.
+
+## Reply and attach images
+
+Pass an X post id or URL to publish a reply:
+
+```sh
+ilo post --reply-to https://x.com/example/status/123 --text "Reply text"
+```
+
+Attach up to four JPEG, PNG, or WebP files. Repeat `--image` and pair each file with `--alt` in the same order:
+
+```sh
+ilo post \
+  --text "Weekly signups" \
+  --image ./chart.png \
+  --alt "Bar chart of weekly signups by source"
+```
+
+The same options work with `ilo drafts create`, including scheduled drafts. ilo saves absolute image paths with the draft, so the files must remain available until it publishes. Each image can be up to 5 MB.
+
+X applies its own API access and conversation rules to replies. A reply that works in the X website can still be rejected by the API.
+
+## Search public followers
+
+Import public follower profiles through FxTwitter. The default command reads 20 pages and saves progress, so rerunning it resumes a large import:
+
+```sh
+ilo x followers sync adamwathan --pages 20
+ilo x followers status adamwathan
+```
+
+Use `--all` to continue until FxTwitter reports the end of the list:
+
+```sh
+ilo x followers sync adamwathan --all
+```
+
+For a large account, run the same full import as a detached local process:
+
+```sh
+ilo x followers sync adamwathan --background
+ilo x followers status adamwathan
+```
+
+The start command prints the progress log path. The status command shows the background PID while it is running. Every page is committed to local SQLite, so a stopped job can resume without starting over.
+
+Read the complete public FxTwitter record stored for one imported follower:
+
+```sh
+ilo x followers profile adamwathan leerob
+ilo x followers profile adamwathan leerob --json
+```
+
+The JSON result includes the public bio, location, website, join date, account counts, avatar, banner, verification details, and raw provider object. Older rows imported before these fields were added need a `--restart` sync to fill them in.
+
+Search the local names, handles, bios, and locations with SQLite FTS5:
+
+```sh
+ilo x followers search adamwathan \
+  --query "how many of my followers work at cursor|vercel|sentry"
+```
+
+Employer searches keep `current`, `former`, and `unclear` matches separate and return the public bio used as evidence. Check the coverage line first. A partial import only answers for the profiles indexed so far, and a public bio is not a verified employment record.
+
+The normal result uses a terminal table. `--limit` controls how many evidence rows appear for each company without changing the totals:
+
+```sh
+ilo x followers search adamwathan \
+  --query "works at cursor|vercel|sentry" \
+  --limit 10
+```
+
+Export the matching public profiles when you want to inspect them in a spreadsheet or make a chart:
+
+```sh
+ilo x followers search adamwathan \
+  --query "works at cursor|vercel|sentry" \
+  --csv ./adam-company-followers.csv
+```
+
+The CSV has one row per company and profile match. It includes the classification, bio evidence, account counts, location, website, verification details, public image URLs, join date, and import coverage. Search classifies up to 10,000 candidates for each company by default. Change that cap with `--candidates`.
 
 ## Drafts
 
@@ -87,7 +176,7 @@ The packaged ilo skill teaches coding agents when to use ilo, which CLI commands
 
 ## Safe automation
 
-Publishing commands are interactive by default. A person sees the final text and confirms before ilo sends it to X. Use `--yes` only in automation that already has an approval step. Draft creation, listing, and status checks do not publish anything.
+Publishing commands are interactive by default. A person sees the final text, reply destination, image paths, and alt text before ilo sends anything to X. Use `--yes` only in automation that already has an approval step. Draft creation, follower research, listing, and status checks do not publish anything.
 
 For scripts, prefer JSON output and check the process exit code. Successful commands exit with code `0`; invalid input, missing credentials, and provider failures return a non-zero code with an actionable message.
 

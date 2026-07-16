@@ -88,7 +88,14 @@ Safe current claims include:
 - The report library explains what evidence to inspect for top posts, weak
   posts, topics, hooks, formats, timing, and audience response.
 - Public tools can inspect supported public profiles, posts, and links.
-- The CLI and MCP server can create drafts, schedule them, and publish to X.
+- The CLI, MCP server, and TypeScript package can import public follower
+  profiles through FxTwitter, inspect their stored public fields, and search
+  the local index with SQLite FTS5.
+- Follower search returns the matched public bio evidence and labels employer
+  matches as current, former, or unclear. The CLI can export matching public
+  profile fields and import coverage to CSV.
+- The CLI and MCP server can create drafts, schedule them, and publish
+  top-level posts or replies to X with up to four static images.
 - The agent skill teaches the ilo workflow and confirmation rules.
 
 Do not claim that ilo automatically builds a complete historical performance
@@ -159,7 +166,8 @@ For setup pages, prefer this order:
 
 1. Install with `npm i -g iloso`.
 2. Run `ilo start`.
-3. Explain the X app requirement and callback URL.
+3. Let the CLI explain the X app requirement, app type, permissions, and exact
+   callback URL before it asks for a client ID.
 4. Create the first useful draft.
 5. Add MCP or the skill if an agent is part of the workflow.
 6. Use the TypeScript package when the workflow belongs inside another Node

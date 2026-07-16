@@ -1,6 +1,11 @@
+import { resolve } from 'node:path'
 import { defineConfig } from 'tsdown'
 
 const bundledPackages = [/^@ilo\//]
+const sourceAliases = {
+  '@ilo/core': resolve('packages/core/src/index.ts'),
+  '@ilo/mcp': resolve('packages/mcp/src/index.ts'),
+}
 
 export default defineConfig([
   {
@@ -15,6 +20,7 @@ export default defineConfig([
     dts: true,
     sourcemap: true,
     clean: true,
+    alias: sourceAliases,
     deps: { alwaysBundle: bundledPackages, onlyBundle: false },
   },
   {
@@ -27,6 +33,7 @@ export default defineConfig([
     sourcemap: true,
     clean: false,
     minify: true,
+    alias: sourceAliases,
     deps: { alwaysBundle: bundledPackages, onlyBundle: false },
     banner: { js: '#!/usr/bin/env node' },
   },
