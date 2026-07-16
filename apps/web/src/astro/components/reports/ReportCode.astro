@@ -1,0 +1,30 @@
+---
+import CheckIcon from '@/astro/components/ui/check-icon.astro'
+import CopyIcon from '@/astro/components/ui/copy-icon.astro'
+
+type Props = {
+  label: string
+  value: string
+  language?: string
+}
+
+const { label, value, language = 'text' } = Astro.props
+---
+
+<div class="mt-5">
+  <p class="text-sm/6 text-foreground-muted">{label}</p>
+  <div class="code-frame">
+    <pre data-language={language}><code>{value}</code></pre>
+    <div class="code-copy-strip">
+      <button
+        type="button"
+        class="code-copy-button"
+        aria-label="Copy code"
+        data-code-copy
+      >
+        <CopyIcon class="code-copy-icon" data-copy-icon />
+        <CheckIcon class="code-copy-icon hidden" data-copy-check-icon />
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,361 @@
+---
+import {
+  getXReportDoc,
+  getXReportDocNavigation,
+  type XReportDoc,
+} from '@/lib/x-report-docs'
+import PageHeader from '@/astro/components/PageHeader.astro'
+import ReportCode from '@/astro/components/reports/ReportCode.astro'
+
+type Props = {
+  doc: XReportDoc
+  basePath: '/reports' | '/docs/reports'
+}
+
+const { doc, basePath } = Astro.props
+const nav = getXReportDocNavigation(doc.slug)
+const relatedDocs = doc.related
+  .map((slug) => getXReportDoc(slug))
+  .filter((item): item is XReportDoc => Boolean(item))
+const isDocs = basePath === '/docs/reports'
+const reportHref = (slug: string) => `${basePath}/${slug}`
+
+function inlineCodeParts(value: string) {
+  return value.split(/(`[^`]+`)/g).map((part) => ({
+    code: part.startsWith('`') && part.endsWith('`'),
+    text: part.startsWith('`') && part.endsWith('`') ? part.slice(1, -1) : part,
+  }))
+}
+---
+
+<main class="site-frame py-10" data-agent-content>
+  <nav aria-label="Breadcrumb" class="mb-6 text-sm text-foreground-muted">
+    <ol class="flex flex-wrap items-center gap-1.5">
+      <li>
+        <a
+          class="underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+          href="/"
+        >
+          Home
+        </a>
+      </li>
+      <li aria-hidden="true" class="text-border">/</li>
+      {
+        isDocs ? (
+          <>
+            <li>
+              <a
+                class="underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+                href="/docs"
+              >
+                Docs
+              </a>
+            </li>
+            <li aria-hidden="true" class="text-border">/</li>
+          </>
+        ) : null
+      }
+      <li>
+        <a
+          class="underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+          href={basePath}
+        >
+          Reports
+        </a>
+      </li>
+      <li aria-hidden="true" class="text-border">/</li>
+      <li class="text-foreground">{doc.title}</li>
+    </ol>
+  </nav>
+
+  <PageHeader title={doc.seoHeading} description={doc.lead} bordered={false} />
+
+  <article class="docs-prose min-w-0" data-report-guide>
+    <p class="text-lg/7 text-foreground" data-report-specific>
+      {doc.question}
+    </p>
+
+    <section class="mt-8 rounded-lg bg-muted p-6" data-report-specific>
+      <h2 class="m-0 text-lg font-medium text-foreground">
+        Available today as a research guide
+      </h2>
+      <p class="mt-3 text-base/7 text-foreground-muted">{doc.availability}</p>
+    </section>
+
+    <h2>Use this report for a specific decision</h2>
+    <ul data-report-specific>
+      {doc.bestFor.map((item) => <li>{item}</li>)}
+    </ul>
+
+    <h2>Collect the evidence before interpreting it</h2>
+    <ul data-report-specific>
+      {doc.dataSources.map((source) => <li>{source}</li>)}
+    </ul>
+    <dl
+      class="mt-6 divide-y divide-border rounded-lg bg-muted px-6"
+      data-report-specific
+    >
+      {
+        doc.evidence.map((item) => (
+          <div class="py-5 first:pt-6 last:pb-6 sm:grid sm:grid-cols-[11rem_1fr] sm:gap-6">
+            <dt class="font-medium text-foreground">{item.label}</dt>
+            <dd class="mt-1 text-base/6 text-foreground-muted sm:mt-0">
+              {item.detail}
+            </dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    <h2>Work through the analysis in this order</h2>
+    <ol
+      class="mt-6 divide-y divide-border rounded-lg bg-muted px-6"
+      data-report-specific
+    >
+      {
+        doc.method.map((step) => (
+          <li class="py-5 first:pt-6 last:pb-6">
+            <h3 class="m-0 text-base font-medium text-foreground">
+              {step.title}
+            </h3>
+            <p class="mt-2 text-base/6 text-foreground-muted">
+              {step.instruction}
+            </p>
+            <p class="mt-2 text-sm/6 text-foreground-soft">
+              Keep: {step.evidence}
+            </p>
+          </li>
+        ))
+      }
+    </ol>
+
+    <h2>What a useful result contains</h2>
+    <ul data-report-specific>
+      {doc.returns.map((item) => <li>{item}</li>)}
+    </ul>
+
+    <section class="mt-6 rounded-lg bg-muted p-6" data-report-specific>
+      <h3 class="m-0 text-lg font-medium text-foreground">
+        {doc.example.title}
+      </h3>
+      <dl class="mt-4 divide-y divide-border">
+        <div class="py-3 first:pt-0 sm:grid sm:grid-cols-[7rem_1fr] sm:gap-5">
+          <dt class="font-medium text-foreground">Sample</dt>
+          <dd class="mt-1 text-base/6 text-foreground-muted sm:mt-0">
+            {doc.example.sample}
+          </dd>
+        </div>
+        <div class="py-3 sm:grid sm:grid-cols-[7rem_1fr] sm:gap-5">
+          <dt class="font-medium text-foreground">Finding</dt>
+          <dd class="mt-1 text-base/6 text-foreground-muted sm:mt-0">
+            {doc.example.finding}
+          </dd>
+        </div>
+        <div class="pt-3 sm:grid sm:grid-cols-[7rem_1fr] sm:gap-5">
+          <dt class="font-medium text-foreground">Decision</dt>
+          <dd class="mt-1 text-base/6 text-foreground-muted sm:mt-0">
+            {doc.example.decision}
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <h2>Read the result without overclaiming</h2>
+    <ul data-report-specific>
+      {doc.interpretation.map((item) => <li>{item}</li>)}
+    </ul>
+
+    <section
+      class="mt-10 rounded-lg bg-foreground p-6 text-background"
+      data-report-specific
+    >
+      <h2 class="m-0 text-xl font-medium text-background">
+        What the result cannot prove
+      </h2>
+      <div class="mt-4 space-y-4 text-base/7 text-background/75">
+        {doc.caveats.map((item) => <p>{item}</p>)}
+      </div>
+    </section>
+
+    <h2>Use this guide from the CLI, local MCP, or TypeScript</h2>
+    <p>
+      Choose the surface that already fits your workflow. The CLI and local MCP
+      save evidence in ilo's local database. The TypeScript example returns
+      public data for your application to keep or analyze. None currently
+      produces this complete report in one call, so the final synthesis stays
+      with you or your agent.
+    </p>
+
+    <div
+      class="mt-6 divide-y divide-border border-y border-border"
+      data-report-specific
+    >
+      <section class="py-6" data-report-surface="cli">
+        <h3 class="m-0 text-lg font-medium text-foreground">
+          Use it from the CLI
+        </h3>
+        <p class="mt-2 text-base/7 text-foreground-muted">
+          {
+            inlineCodeParts(doc.surfaces.cli.summary).map((part) =>
+              part.code ? <code>{part.text}</code> : part.text,
+            )
+          }
+        </p>
+        <ol class="mt-3 pl-5">
+          {
+            doc.surfaces.cli.steps.map((step) => (
+              <li>
+                {inlineCodeParts(step).map((part) =>
+                  part.code ? <code>{part.text}</code> : part.text,
+                )}
+              </li>
+            ))
+          }
+        </ol>
+        {
+          doc.surfaces.cli.examples.map((example) => (
+            <ReportCode
+              label={example.label}
+              value={example.code}
+              language="sh"
+            />
+          ))
+        }
+        <p class="mt-3 text-sm/6 text-foreground-muted">
+          The <a href="/docs/cli">CLI guide</a> documents the commands that are
+          available now.
+        </p>
+      </section>
+
+      <section class="py-6" data-report-surface="mcp">
+        <h3 class="m-0 text-lg font-medium text-foreground">
+          Use it with local MCP
+        </h3>
+        <p class="mt-2 text-base/7 text-foreground-muted">
+          {
+            inlineCodeParts(doc.surfaces.mcp.summary).map((part) =>
+              part.code ? <code>{part.text}</code> : part.text,
+            )
+          }
+        </p>
+        <ol class="mt-3 pl-5">
+          {
+            doc.surfaces.mcp.steps.map((step) => (
+              <li>
+                {inlineCodeParts(step).map((part) =>
+                  part.code ? <code>{part.text}</code> : part.text,
+                )}
+              </li>
+            ))
+          }
+        </ol>
+        {
+          doc.surfaces.mcp.examples.map((example, index) => (
+            <ReportCode
+              label={example.label}
+              value={example.code}
+              language={index === 0 ? 'text' : 'json'}
+            />
+          ))
+        }
+        <p class="mt-3 text-sm/6 text-foreground-muted">
+          The <a href="/docs/mcp">local MCP guide</a> covers setup and the current
+          tool names.
+        </p>
+      </section>
+
+      <section class="py-6" data-report-surface="typescript">
+        <h3 class="m-0 text-lg font-medium text-foreground">
+          Use it from TypeScript
+        </h3>
+        <p class="mt-2 text-base/7 text-foreground-muted">
+          {
+            inlineCodeParts(doc.surfaces.typescript.summary).map((part) =>
+              part.code ? <code>{part.text}</code> : part.text,
+            )
+          }
+        </p>
+        <ol class="mt-3 pl-5">
+          {
+            doc.surfaces.typescript.steps.map((step) => (
+              <li>
+                {inlineCodeParts(step).map((part) =>
+                  part.code ? <code>{part.text}</code> : part.text,
+                )}
+              </li>
+            ))
+          }
+        </ol>
+        {
+          doc.surfaces.typescript.examples.map((example) => (
+            <ReportCode
+              label={example.label}
+              value={example.code}
+              language="ts"
+            />
+          ))
+        }
+        <p class="mt-3 text-sm/6 text-foreground-muted">
+          The <a href="/docs/typescript">TypeScript guide</a> lists the public
+          exports that ship in <code>iloso</code> today.
+        </p>
+      </section>
+    </div>
+
+    <h2>Give the analysis brief to your agent</h2>
+    <div data-report-specific>
+      <ReportCode
+        label={`Copy the ${doc.title.toLowerCase()} brief into your agent.`}
+        value={doc.agentPrompt}
+      />
+    </div>
+
+    <h2>Use these reports next</h2>
+    <ul data-report-specific>
+      {
+        relatedDocs.map((related) => (
+          <li>
+            <a href={reportHref(related.slug)}>{related.title}</a>.{' '}
+            {related.description}
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+
+  <nav
+    aria-label="Report guides"
+    class="mt-16 flex items-stretch justify-between gap-4 border-t border-border pt-6"
+  >
+    {
+      nav.prev ? (
+        <a
+          href={reportHref(nav.prev.slug)}
+          class="group flex max-w-[45%] flex-col gap-1 no-underline"
+        >
+          <span class="text-sm text-foreground-muted">Previous</span>
+          <span class="font-medium text-foreground underline decoration-border underline-offset-4 transition-colors group-hover:decoration-foreground">
+            {nav.prev.title}
+          </span>
+        </a>
+      ) : (
+        <span />
+      )
+    }
+    {
+      nav.next ? (
+        <a
+          href={reportHref(nav.next.slug)}
+          class="group flex max-w-[45%] flex-col items-end gap-1 text-right no-underline"
+        >
+          <span class="text-sm text-foreground-muted">Next</span>
+          <span class="font-medium text-foreground underline decoration-border underline-offset-4 transition-colors group-hover:decoration-foreground">
+            {nav.next.title}
+          </span>
+        </a>
+      ) : (
+        <span />
+      )
+    }
+  </nav>
+</main>

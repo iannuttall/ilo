@@ -1,5 +1,6 @@
 import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
+import { checkReportGuides } from './check-report-guides.mjs'
 
 const root = process.cwd()
 const serverDir = path.join(root, 'dist', 'server')
@@ -25,6 +26,7 @@ if (await exists(devVarsPath)) {
 for (const relativePath of [
   'index.html',
   'index.md',
+  'docs/audience-research.md',
   'docs/articles.md',
   'docs/mcp.md',
   'docs/typescript.md',
@@ -45,6 +47,9 @@ if (!homeHtml.includes('rel="alternate" type="text/markdown"')) {
 if (!homeHtml.includes('href="/docs/articles"')) {
   fail('homepage is missing its article monitoring docs link')
 }
+if (!homeHtml.includes('href="/docs/audience-research"')) {
+  fail('homepage is missing its audience research docs link')
+}
 
 const mcpHtml = await readFile(
   path.join(clientDir, 'docs', 'mcp', 'index.html'),
@@ -54,6 +59,8 @@ if (!mcpHtml.includes('data-code-copy')) {
   fail('documentation code blocks are missing copy buttons')
 }
 
+await checkReportGuides(clientDir)
+
 const agentManifest = JSON.parse(
   await readFile(path.join(clientDir, 'agent-routes.json'), 'utf8'),
 )
@@ -61,6 +68,9 @@ if (agentManifest.version !== 1 || !Array.isArray(agentManifest.pages)) {
   fail('agent-routes.json is invalid')
 }
 const agentPaths = new Set(agentManifest.pages.map((page) => page.htmlPath))
+if (agentPaths.size !== agentManifest.pages.length) {
+  fail('agent-routes.json contains duplicate canonical routes')
+}
 const sitemap = await readFile(path.join(clientDir, 'sitemap.xml'), 'utf8')
 const sitemapPaths = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map(
   (match) => new URL(match[1]).pathname,
@@ -72,6 +82,12 @@ for (const pathname of sitemapPaths) {
 }
 if (sitemapPaths.includes('/docs/api')) {
   fail('/docs/api must stay out of the sitemap')
+}
+if (!sitemapPaths.includes('/reports/account-snapshot')) {
+  fail('public report guides are missing from the sitemap')
+}
+if (!sitemapPaths.includes('/docs/reports/account-snapshot')) {
+  fail('docs report guides are missing from the sitemap')
 }
 
 const cloudflareGuide = await readFile(cloudflareGuidePath, 'utf8')

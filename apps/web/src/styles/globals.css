@@ -374,7 +374,6 @@
   .docs-prose pre {
     margin-top: 1.25rem;
     overflow-x: auto;
-    border: 1px solid var(--border);
     border-radius: 0.5rem;
     background: var(--muted) !important;
     padding: 1rem;
@@ -409,9 +408,9 @@
 
   .code-copy-strip {
     position: absolute;
-    top: 1px;
-    right: 1px;
-    bottom: 1px;
+    top: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     align-items: flex-start;
     border-radius: 0 0.5rem 0.5rem 0;

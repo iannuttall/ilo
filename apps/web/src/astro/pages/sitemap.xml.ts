@@ -16,6 +16,7 @@ const staticPaths: SitemapEntry[] = [
   '/tools',
   '/docs',
   '/docs/reports',
+  '/reports',
   '/blog',
 ].map((pathname) => ({ pathname }))
 
@@ -33,6 +34,7 @@ export const SITEMAP_ENTRIES = uniqueEntries([
   ...ASTRO_TOOLS.map((tool) => ({ pathname: tool.href })),
   ...DOCS_MANIFEST.map((doc) => ({ pathname: `/docs/${doc.slug}` })),
   ...xReportDocs.map((report) => ({ pathname: xReportDocPath(report) })),
+  ...xReportDocs.map((report) => ({ pathname: `/reports/${report.slug}` })),
   ...listBlogEntries().map((post) => ({
     pathname: `/blog/${post.slug}`,
     lastmod: new Date(post.date).toISOString().slice(0, 10),

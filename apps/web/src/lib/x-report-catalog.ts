@@ -17,19 +17,19 @@ export const reportGroups: XReportGroup[] = [
         slug: 'account-snapshot',
         title: 'Account snapshot',
         description:
-          'A quick read on what the account is known for, what is growing, and what needs attention.',
+          'A quick read on the profile, recent output, performance range, and the signals worth investigating next.',
       },
       {
         slug: 'top-posts',
         title: 'Top posts',
         description:
-          'The posts that earned the strongest response, with the patterns that made them work.',
+          'The posts that earned the strongest response, with the patterns that appeared across them.',
       },
       {
         slug: 'weak-posts',
         title: 'Weak posts',
         description:
-          'The posts that missed, plus the likely reasons they did not get replies, reposts, or reach.',
+          'The posts that missed, plus the signals worth checking when they got fewer replies, reposts, or views.',
       },
       {
         slug: 'growth-signals',
@@ -52,19 +52,19 @@ export const reportGroups: XReportGroup[] = [
         slug: 'topic-winners',
         title: 'Topic winners',
         description:
-          'The ideas and themes the audience keeps rewarding across multiple posts.',
+          'The ideas and themes associated with stronger responses across multiple posts.',
       },
       {
         slug: 'hook-patterns',
         title: 'Hook patterns',
         description:
-          'The opening lines and structures that get people to reply, repost, or keep reading.',
+          'The opening lines and structures that appear across posts with more replies, reposts, or views.',
       },
       {
         slug: 'voice-patterns',
         title: 'Voice patterns',
         description:
-          'The account traits that make strong posts sound specific, recognizable, and worth following.',
+          'The account traits shared by stronger posts that sound specific and recognizable.',
       },
       {
         slug: 'language-repeats',
@@ -76,7 +76,7 @@ export const reportGroups: XReportGroup[] = [
         slug: 'post-length',
         title: 'Post length',
         description:
-          'The length ranges that tend to earn stronger views, replies, and reposts for the account.',
+          'The length ranges associated with stronger views, replies, and reposts for the account.',
       },
     ],
   },
@@ -87,31 +87,31 @@ export const reportGroups: XReportGroup[] = [
         slug: 'threads-vs-single-posts',
         title: 'Threads vs single posts',
         description:
-          'Whether the account gets more reach from threads or more conversation from single posts.',
+          'How complete threads compare with similar single posts for views, replies, and reposts.',
       },
       {
         slug: 'long-posts',
         title: 'Long posts',
         description:
-          'How longer posts perform compared with shorter ones, and when the extra space helps.',
+          'How longer posts compare with shorter ones across similar subjects and publishing jobs.',
       },
       {
         slug: 'media-vs-text',
         title: 'Media vs text',
         description:
-          'Whether images and videos lift attention or pull it away from replies and discussion.',
+          'How posts with images or videos compare with text-only posts for views, replies, and discussion.',
       },
       {
         slug: 'links-vs-no-links',
         title: 'Links vs no links',
         description:
-          'How posts with links compare with text-only posts for reach, replies, and reposts.',
+          'How posts with links compare with text-only posts for views, replies, and reposts.',
       },
       {
         slug: 'quote-posts',
         title: 'Quote posts',
         description:
-          'When quoting another post helps the account join a conversation and when it falls flat.',
+          'How quote posts compare with original posts and which added commentary appears in stronger examples.',
       },
     ],
   },
@@ -128,7 +128,7 @@ export const reportGroups: XReportGroup[] = [
         slug: 'day-by-day-performance',
         title: 'Day-by-day performance',
         description:
-          'A simple view of which days tend to bring stronger responses for the account.',
+          'A simple view of which days are associated with stronger responses for the account.',
       },
       {
         slug: 'cadence-check',
@@ -140,13 +140,13 @@ export const reportGroups: XReportGroup[] = [
         slug: 'repeatable-windows',
         title: 'Repeatable windows',
         description:
-          'Posting windows that have worked more than once and deserve another test.',
+          'Posting windows linked with stronger results more than once and worth testing again.',
       },
       {
         slug: 'stale-slots',
         title: 'Stale slots',
         description:
-          'Times the account keeps using even though the posts there rarely perform well.',
+          'Times the account keeps using alongside repeatedly weaker post results.',
       },
     ],
   },
@@ -157,31 +157,31 @@ export const reportGroups: XReportGroup[] = [
         slug: 'reply-drivers',
         title: 'Reply drivers',
         description:
-          'The topics, hooks, and formats that make people answer instead of scrolling past.',
+          'The topics, hooks, and formats that appear most often in posts people answer.',
       },
       {
         slug: 'repost-drivers',
         title: 'Repost drivers',
         description:
-          'The post traits that make followers share the account with their own audience.',
+          'The post traits that appear most often in posts people share with their own audience.',
       },
       {
         slug: 'bookmark-drivers',
         title: 'Bookmark drivers',
         description:
-          'The useful posts people are most likely to save, revisit, or treat as reference material.',
+          'The posts people saved most often and the useful traits those posts have in common.',
       },
       {
         slug: 'view-to-reply-gaps',
         title: 'View-to-reply gaps',
         description:
-          'Posts that got attention but did not turn that attention into conversation.',
+          'Posts with substantial views and relatively few replies for their topic and format.',
       },
       {
         slug: 'conversation-starters',
         title: 'Conversation starters',
         description:
-          'The questions, claims, and angles that tend to start higher-quality replies.',
+          'The questions, claims, and angles found in posts with more substantive reply samples.',
       },
     ],
   },

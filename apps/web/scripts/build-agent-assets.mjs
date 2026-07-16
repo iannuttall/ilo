@@ -190,7 +190,7 @@ const injectAlternate = (html, markdownUrl) => {
   return html.replace('</head>', `${tag}</head>`)
 }
 
-const pages = []
+const renderedPages = []
 for (const htmlFile of await walkHtml(output)) {
   const relativeHtml = path.relative(output, htmlFile).split(path.sep).join('/')
   if (/^(?:404|500)(?:\/index)?\.html$/.test(relativeHtml)) continue
@@ -214,7 +214,7 @@ for (const htmlFile of await walkHtml(output)) {
   await writeFile(markdownFile, rendered.markdown, 'utf8')
   await writeFile(htmlFile, injectAlternate(html, markdownUrl), 'utf8')
 
-  pages.push({
+  renderedPages.push({
     bytes: Buffer.byteLength(rendered.markdown),
     canonical: canonical.toString(),
     description: rendered.description,
@@ -231,6 +231,18 @@ for (const htmlFile of await walkHtml(output)) {
     tokens: Math.ceil(Buffer.byteLength(rendered.markdown) / 4),
   })
 }
+
+const pagesByPath = new Map()
+for (const page of renderedPages) {
+  const existing = pagesByPath.get(page.htmlPath)
+  if (existing && existing.sha256 !== page.sha256) {
+    throw new Error(
+      `Canonical route has conflicting Markdown: ${page.htmlPath}`,
+    )
+  }
+  pagesByPath.set(page.htmlPath, page)
+}
+const pages = [...pagesByPath.values()]
 pages.sort((left, right) =>
   left.htmlPath.localeCompare(right.htmlPath, 'en-US'),
 )
@@ -254,7 +266,6 @@ const llmsSections = [
       '/docs/audience-research',
       '/docs/articles',
       '/docs/cli',
-      '/docs/reports',
       '/reports',
       '/tools',
     ],
