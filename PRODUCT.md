@@ -55,6 +55,10 @@ it helps them choose or complete the next action.
 - Import the public following list used by inbox relationship filters. Keep
   follower and following relationships unknown until the local imports can
   support a true or false answer.
+- Save selected X handles as local article monitors. Refresh them on demand,
+  resume unfinished history imports, fetch each new article's full text, and
+  search the local title, preview, and body index with SQLite FTS5.
+- Read one saved article with its full public text and raw FxTwitter record.
 - Inspect the stored public post, author, engagement, and raw FxTwitter data;
   mark items read, archived, or replied; and create a local reply draft without
   publishing it.

@@ -41,6 +41,7 @@ export { countXPostText, validateXPostText } from './providers/x/text.js'
 export type {
   XArticleMonitorRefreshResult,
   XArticleResearchClient,
+  XArticleSearchResult,
 } from './research/articles.js'
 export {
   createXArticleMonitor,

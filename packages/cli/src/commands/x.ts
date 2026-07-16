@@ -13,6 +13,7 @@ import {
 import { defineCommand } from 'citty'
 import open from 'open'
 import { canPrompt, printJson, printLine } from '../utils.js'
+import { articlesCommand } from './articles.js'
 import { followersCommand } from './followers.js'
 import { followingCommand } from './following.js'
 import { inboxCommand } from './inbox.js'
@@ -171,6 +172,7 @@ export const connectX = async (args: Record<string, unknown>) => {
 export const xCommand = defineCommand({
   meta: { name: 'x', description: 'Connect and manage your X account' },
   subCommands: {
+    articles: articlesCommand,
     followers: followersCommand,
     following: followingCommand,
     monitors: monitorsCommand,

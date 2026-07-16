@@ -30,9 +30,15 @@ test('public API can be imported', async () => {
   assert.equal(typeof module.getXFollowerProfile, 'function')
   assert.equal(typeof module.fetchFxTwitterFollowers, 'function')
   assert.equal(typeof module.fetchFxTwitterSearch, 'function')
+  assert.equal(typeof module.fetchFxTwitterArticles, 'function')
+  assert.equal(typeof module.fetchFxTwitterStatus, 'function')
   assert.equal(typeof module.createXMonitor, 'function')
   assert.equal(typeof module.listXInbox, 'function')
   assert.equal(typeof module.syncXFollowing, 'function')
+  assert.equal(typeof module.createXArticleMonitor, 'function')
+  assert.equal(typeof module.refreshXArticleMonitor, 'function')
+  assert.equal(typeof module.searchXArticles, 'function')
+  assert.equal(typeof module.getXArticle, 'function')
   assert.equal(typeof module.normalizeXPostId, 'function')
 })
 
@@ -71,7 +77,7 @@ test('CLI starts and prints its command surface', () => {
   assert.match(start.stdout, /http:\/\/127\.0\.0\.1:8976\/callback/)
 })
 
-test('CLI exposes follower research, inbox, replies, and images', () => {
+test('CLI exposes research, article, inbox, reply, and image commands', () => {
   const x = spawnSync(process.execPath, ['dist/cli.js', 'x', '--help'], {
     cwd: new URL('..', import.meta.url),
     encoding: 'utf8',
@@ -80,6 +86,7 @@ test('CLI exposes follower research, inbox, replies, and images', () => {
   assert.match(x.stdout, /following/)
   assert.match(x.stdout, /monitors/)
   assert.match(x.stdout, /inbox/)
+  assert.match(x.stdout, /articles/)
 
   const followers = spawnSync(
     process.execPath,
@@ -117,6 +124,20 @@ test('CLI exposes follower research, inbox, replies, and images', () => {
   assert.match(inbox.stdout, /--verified/)
   assert.match(inbox.stdout, /--follows-me/)
   assert.match(inbox.stdout, /--i-follow/)
+
+  const articles = spawnSync(
+    process.execPath,
+    ['dist/cli.js', 'x', 'articles', '--help'],
+    {
+      cwd: new URL('..', import.meta.url),
+      encoding: 'utf8',
+    },
+  )
+  assert.equal(articles.status, 0, articles.stderr)
+  assert.match(articles.stdout, /add/)
+  assert.match(articles.stdout, /refresh/)
+  assert.match(articles.stdout, /search/)
+  assert.match(articles.stdout, /show/)
 
   const post = spawnSync(process.execPath, ['dist/cli.js', 'post', '--help'], {
     cwd: new URL('..', import.meta.url),
@@ -232,6 +253,121 @@ test('CLI and public library share the local X inbox', async () => {
     )
     assert.equal(archive.status, 0, archive.stderr)
     assert.ok(JSON.parse(archive.stdout).item.state.archivedAt)
+  } finally {
+    await rm(iloHome, { recursive: true, force: true })
+  }
+})
+
+test('CLI and public library share monitored X articles', async () => {
+  const iloHome = await mkdtemp(join(tmpdir(), 'ilo-package-articles-'))
+  const databasePath = join(iloHome, 'ilo.sqlite')
+  try {
+    const module = await import('../dist/index.js')
+    const monitor = module.createXArticleMonitor({
+      accountHandle: 'ilodotso',
+      sourceHandle: 'swyx',
+      databasePath,
+    })
+    const articlePost = {
+      type: 'status',
+      id: '987654321',
+      url: 'https://x.com/swyx/status/987654321',
+      text: '',
+      created_at: 'Thu Jul 16 08:00:00 +0000 2026',
+      likes: 20,
+      reposts: 5,
+      quotes: 1,
+      replies: 3,
+      author: {
+        id: 'swyx-id',
+        name: 'Shawn Wang',
+        screen_name: 'swyx',
+        description: 'Writes technical articles',
+      },
+      article: {
+        id: 'article-987654321',
+        title: 'Building browser tools',
+        preview_text: 'A practical article about browser automation.',
+        created_at: '2026-07-16T08:00:00.000Z',
+        content: {
+          blocks: [
+            {
+              key: 'body',
+              type: 'unstyled',
+              text: 'The complete article body about browser automation.',
+            },
+          ],
+          entityMap: [],
+        },
+      },
+    }
+    await module.refreshXArticleMonitor(
+      { id: monitor.id, databasePath },
+      {
+        articles: async () => ({
+          posts: [
+            {
+              ...articlePost,
+              article: {
+                ...articlePost.article,
+                content: { blocks: [], entityMap: [] },
+              },
+            },
+          ],
+          nextCursor: null,
+        }),
+        status: async () => articlePost,
+      },
+    )
+
+    const search = spawnSync(
+      process.execPath,
+      [
+        'dist/cli.js',
+        'x',
+        'articles',
+        'search',
+        '--account',
+        'ilodotso',
+        '--query',
+        'browser automation',
+        '--json',
+      ],
+      {
+        cwd: new URL('..', import.meta.url),
+        encoding: 'utf8',
+        env: { ...process.env, ILO_HOME: iloHome },
+      },
+    )
+    assert.equal(search.status, 0, search.stderr)
+    const searched = JSON.parse(search.stdout)
+    assert.equal(searched.articles.length, 1)
+    assert.equal(searched.articles[0].postId, '987654321')
+    assert.match(searched.articles[0].excerpt, /browser automation/)
+    assert.equal(searched.articles[0].bodyText, undefined)
+
+    const show = spawnSync(
+      process.execPath,
+      [
+        'dist/cli.js',
+        'x',
+        'articles',
+        'show',
+        '987654321',
+        '--account',
+        'ilodotso',
+        '--json',
+      ],
+      {
+        cwd: new URL('..', import.meta.url),
+        encoding: 'utf8',
+        env: { ...process.env, ILO_HOME: iloHome },
+      },
+    )
+    assert.equal(show.status, 0, show.stderr)
+    const shown = JSON.parse(show.stdout)
+    assert.match(shown.article.bodyText, /complete article body/)
+    assert.equal(shown.article.providerData.id, '987654321')
   } finally {
     await rm(iloHome, { recursive: true, force: true })
   }

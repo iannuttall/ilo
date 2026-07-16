@@ -100,6 +100,9 @@ Safe current claims include:
   monitors, refresh them on demand into a local reply inbox, filter saved
   posts, inspect public author and post evidence, and create local reply
   drafts.
+- The CLI, MCP server, and TypeScript package can monitor selected X handles
+  for articles, resume older history imports, search saved titles, previews,
+  and full text with SQLite FTS5, and read one complete stored article.
 - Inbox relationship fields are true, false, or unknown. Do not turn an
   incomplete or missing follower or following import into a false answer.
 - The CLI and MCP server can create drafts, schedule them, and publish

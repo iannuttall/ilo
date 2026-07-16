@@ -3,12 +3,16 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { refreshXMonitor, syncXFollowers } from '@ilo/core'
+import {
+  refreshXArticleMonitor,
+  refreshXMonitor,
+  syncXFollowers,
+} from '@ilo/core'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { createServer } from './index.js'
 
-test('exposes follower research, inbox monitors, and reply drafts through MCP', async () => {
+test('exposes follower, article, inbox, and draft tools through MCP', async () => {
   const directory = mkdtempSync(join(tmpdir(), 'ilo-mcp-'))
   const previousHome = process.env.ILO_HOME
   process.env.ILO_HOME = directory
@@ -29,6 +33,10 @@ test('exposes follower research, inbox monitors, and reply drafts through MCP', 
     assert.equal(names.includes('ilo_refresh_x_inbox'), true)
     assert.equal(names.includes('ilo_list_x_inbox'), true)
     assert.equal(names.includes('ilo_sync_x_following'), true)
+    assert.equal(names.includes('ilo_create_x_article_monitor'), true)
+    assert.equal(names.includes('ilo_refresh_x_articles'), true)
+    assert.equal(names.includes('ilo_search_x_articles'), true)
+    assert.equal(names.includes('ilo_get_x_article'), true)
 
     const followerSearch = tools.tools.find(
       (tool) => tool.name === 'ilo_search_x_followers',
@@ -194,6 +202,103 @@ test('exposes follower research, inbox monitors, and reply drafts through MCP', 
       },
     })
     assert.equal(read.isError, undefined)
+
+    const createdArticleMonitor = await client.callTool({
+      name: 'ilo_create_x_article_monitor',
+      arguments: {
+        accountHandle: 'subject',
+        sourceHandle: 'swyx',
+      },
+    })
+    assert.equal(createdArticleMonitor.isError, undefined)
+    const articleMonitorContent = createdArticleMonitor.structuredContent as {
+      monitor: { id: string }
+    }
+    const articlePost = {
+      type: 'status' as const,
+      id: '789',
+      url: 'https://x.com/swyx/status/789',
+      text: '',
+      created_at: 'Wed Jul 16 07:00:00 +0000 2026',
+      likes: 30,
+      reposts: 10,
+      quotes: 2,
+      replies: 4,
+      author: {
+        id: 'swyx-id',
+        name: 'Shawn Wang',
+        screen_name: 'swyx',
+        description: 'Writes technical articles',
+      },
+      article: {
+        id: 'article-789',
+        title: 'Building browser tools',
+        preview_text: 'A detailed article about browser automation.',
+        created_at: '2026-07-16T07:00:00.000Z',
+        content: {
+          blocks: [
+            {
+              key: 'body',
+              type: 'unstyled',
+              text: 'Full article text about browser automation and agents.',
+            },
+          ],
+          entityMap: [],
+        },
+      },
+    }
+    await refreshXArticleMonitor(
+      { id: articleMonitorContent.monitor.id },
+      {
+        articles: async () => ({
+          posts: [
+            {
+              ...articlePost,
+              article: {
+                ...articlePost.article,
+                content: { blocks: [], entityMap: [] },
+              },
+            },
+          ],
+          nextCursor: null,
+        }),
+        status: async () => articlePost,
+      },
+    )
+
+    const articleSearch = await client.callTool({
+      name: 'ilo_search_x_articles',
+      arguments: { accountHandle: 'subject', query: 'browser automation' },
+    })
+    assert.equal(articleSearch.isError, undefined)
+    const articleSearchContent = articleSearch.structuredContent as {
+      articles: Array<{
+        postId: string
+        excerpt: string
+        bodyCharacters: number
+        bodyText?: string
+        providerData?: unknown
+      }>
+    }
+    assert.equal(articleSearchContent.articles[0]?.postId, '789')
+    assert.match(articleSearchContent.articles[0]?.excerpt ?? '', /browser/)
+    assert.ok((articleSearchContent.articles[0]?.bodyCharacters ?? 0) > 40)
+    assert.equal(articleSearchContent.articles[0]?.bodyText, undefined)
+    assert.equal(articleSearchContent.articles[0]?.providerData, undefined)
+
+    const fullArticle = await client.callTool({
+      name: 'ilo_get_x_article',
+      arguments: {
+        accountHandle: 'subject',
+        postId: 'https://x.com/swyx/status/789',
+      },
+    })
+    assert.equal(fullArticle.isError, undefined)
+    const fullArticleContent = fullArticle.structuredContent as {
+      article: { bodyText: string; providerData: { id: string } }
+    }
+    assert.match(fullArticleContent.article.bodyText, /browser automation/)
+    assert.equal(fullArticleContent.article.providerData.id, '789')
 
     const created = await client.callTool({
       name: 'ilo_create_draft',

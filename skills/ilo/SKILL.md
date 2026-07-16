@@ -1,6 +1,6 @@
 ---
 name: ilo
-description: Use ilo for a local X reply inbox, search monitors, follower research, drafting, account setup, scheduling, publishing, and agent workflows. Triggers when a user asks to monitor X searches, find posts worth replying to, filter authors by relationship or verification, search followers, draft, reply, attach images, queue, schedule, publish, or inspect social posts with the ilo CLI or local MCP server.
+description: Use ilo for local X article monitoring, reply inboxes, search monitors, follower research, drafting, account setup, scheduling, publishing, and agent workflows. Triggers when a user asks to monitor or search X articles, monitor X searches, find posts worth replying to, filter authors by relationship or verification, search followers, draft, reply, attach images, queue, schedule, publish, or inspect social posts with the ilo CLI or local MCP server.
 ---
 
 # ilo
@@ -24,6 +24,13 @@ Use the local MCP tools when available:
 - `ilo_x_follower_sync_status`
 - `ilo_search_x_followers`
 - `ilo_get_x_follower_profile`
+- `ilo_create_x_article_monitor`
+- `ilo_list_x_article_monitors`
+- `ilo_set_x_article_monitor_enabled`
+- `ilo_delete_x_article_monitor`
+- `ilo_refresh_x_articles`
+- `ilo_search_x_articles`
+- `ilo_get_x_article`
 - `ilo_create_x_monitor`
 - `ilo_list_x_monitors`
 - `ilo_set_x_monitor_enabled`
@@ -53,6 +60,10 @@ ilo x followers status <handle> --json
 ilo x followers profile <handle> <follower-handle> --json
 ilo x followers search <handle> --query "works at cursor|vercel|sentry" --json
 ilo x followers search <handle> --query "works at cursor|vercel|sentry" --csv ./matches.csv
+ilo x articles add <handle> --json
+ilo x articles refresh <handle> --json
+ilo x articles search --query "browser tools" --json
+ilo x articles show <post-id-or-url> --json
 ilo x monitors add "product mentions" --query '"product" OR "product.com" -is:retweet' --json
 ilo x monitors list --json
 ilo x inbox refresh --json
@@ -87,6 +98,14 @@ Use the CLI `--background` mode for an unattended full import. Use `ilo_get_x_fo
 Search uses the local SQLite FTS5 index. For employer questions, report `current` as the conservative count and keep `former` and `unclear` separate. Include the returned public bio evidence. Do not present a partial import or an ambiguous bio as a complete employment record.
 
 Follower research does not require a connected X account. Publishing does.
+
+## Article monitoring
+
+Article monitors save selected X handles. Refresh them on demand with `ilo_refresh_x_articles` or `ilo x articles refresh`. A refresh saves new articles and resumes older history from the local cursor. It does not run in the background or publish anything.
+
+Use `ilo_search_x_articles` or the CLI `search` command to search saved titles, previews, and full article text with SQLite FTS5. Search results return a compact excerpt. Use `ilo_get_x_article` or `ilo x articles show` to inspect the complete stored body and raw provider record before quoting or summarizing it.
+
+State the evidence limit when article history is incomplete. A monitor with `historyComplete: false` has more older pages available. Refresh it again before describing the local results as the complete article history for that handle.
 
 ## Reply inbox
 

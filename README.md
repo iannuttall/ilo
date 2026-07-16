@@ -2,7 +2,7 @@
 
 Local X research, reply triage, drafting, scheduling, and publishing.
 
-Search public follower profiles, collect posts through focused monitors, find the people and conversations worth your time, then draft and publish after review.
+Search public follower profiles, collect focused replies and articles, find the people and conversations worth your time, then draft and publish after review.
 
 ## Install
 
@@ -46,6 +46,17 @@ ilo x followers search adamwathan --query "works at cursor|vercel|sentry" --csv 
 ```
 
 The background command continues the full resumable import after the terminal closes. Profile lookup returns the stored public fields and raw FxTwitter record. Search uses SQLite FTS5 and lists every current match with its public bio evidence unless you pass `--limit`. Counts for current, former, and unclear matches appear below the profiles. Add `--include-former` or `--include-unclear` to list and export those classifications too. The CSV also includes import coverage. Check whether the saved import is finished before treating a count as complete.
+
+Monitor articles from selected X accounts and search their full text locally:
+
+```sh
+ilo x articles add swyx
+ilo x articles refresh swyx
+ilo x articles search --query "browser tools"
+ilo x articles show <post-id-or-url>
+```
+
+Refreshes run only when asked. ilo saves the timeline cursor, fetches the complete body for each new article, and resumes older history on the next refresh when more pages remain. Search returns every match unless you pass `--limit`.
 
 Save searches for posts worth replying to, then triage the matches locally:
 
@@ -125,7 +136,7 @@ pnpm build
 
 ## Roadmap
 
-The local reply inbox, follower search, X publishing, replies, static images, and scheduling ship today. Local post-history reports, scheduled monitor refreshes, and spam heuristics come next, followed by Bluesky and LinkedIn publishing.
+The local reply inbox, article monitoring, follower search, X publishing, replies, static images, and scheduling ship today. Local post-history reports, scheduled monitor refreshes, and spam heuristics come next, followed by Bluesky and LinkedIn publishing.
 
 ## License and support
 

@@ -1,6 +1,6 @@
 ---
 title: "Local MCP"
-description: "Give Claude, Codex, Cursor, or another agent a local X reply inbox, follower search, drafts, and publishing tools over stdio."
+description: "Give Claude, Codex, Cursor, or another agent local X article search, reply inbox, follower research, drafts, and publishing tools over stdio."
 category: "agent"
 order: 1
 status: published
@@ -74,6 +74,13 @@ Install both when your client supports skills. The CLI prints the installed path
 | `ilo_x_follower_sync_status` | Reports how many profiles are searchable and whether the saved import is finished. |
 | `ilo_search_x_followers` | Searches imported follower profiles, returns current matches by default, and keeps counts for current, former, and unclear matches. |
 | `ilo_get_x_follower_profile` | Reads the complete stored public FxTwitter record for one imported follower. |
+| `ilo_create_x_article_monitor` | Saves an X handle as a local article monitor. |
+| `ilo_list_x_article_monitors` | Lists article monitors and their saved history state. |
+| `ilo_set_x_article_monitor_enabled` | Pauses or resumes one article monitor. |
+| `ilo_delete_x_article_monitor` | Deletes an article monitor and articles saved only by it. |
+| `ilo_refresh_x_articles` | Fetches new articles and continues unfinished history imports. |
+| `ilo_search_x_articles` | Searches saved article titles, previews, and full text with local FTS5. |
+| `ilo_get_x_article` | Reads one complete saved article and its raw provider record. |
 | `ilo_create_x_monitor` | Saves an X advanced-search query as a local inbox monitor. |
 | `ilo_list_x_monitors` | Lists local monitors and their latest refresh state. |
 | `ilo_set_x_monitor_enabled` | Pauses or resumes one monitor. |
@@ -106,6 +113,18 @@ Show me the draft, ask me to confirm it, then publish it to X.
 ```
 
 The repository is MIT licensed, so you can add tools, providers, or new agent workflows.
+
+## Article monitoring
+
+Ask an agent to monitor a few writers, refresh them, and search the saved article text:
+
+```txt
+Monitor articles from @swyx and @karpathy. Refresh both, then find articles about browser tools. Do not publish anything.
+```
+
+Article refreshes run on demand. ilo saves each timeline cursor and resumes unfinished history on later calls. New timeline entries are hydrated from their public X status so the local FTS5 index contains the complete article body rather than its short preview.
+
+`ilo_search_x_articles` returns compact evidence excerpts. Call `ilo_get_x_article` after choosing a result to read its full stored text and raw provider record. Neither action publishes or changes anything on X.
 
 ## Reply inbox
 

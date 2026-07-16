@@ -1,12 +1,12 @@
 ---
 title: "CLI"
-description: "Find posts worth replying to, search public followers, create local drafts, and publish to X from the terminal."
+description: "Find posts worth replying to, monitor X articles, search public followers, create local drafts, and publish from the terminal."
 category: "agent"
 order: 2
 status: published
 h1: "Research, draft, and publish from the terminal."
 seoTitle: "ilo CLI: Local X Drafts, Scheduling and Publishing"
-seoDescription: "Use the open source ilo CLI to build a local X reply inbox, search public followers, manage drafts, schedule posts, and publish after review."
+seoDescription: "Use the open source ilo CLI to monitor X articles, build a local reply inbox, search followers, manage drafts, and publish after review."
 ---
 
 Install ilo from npm:
@@ -136,6 +136,35 @@ ilo x followers search adamwathan \
 ```
 
 The CSV has one row per company and listed profile match. It includes the classification, bio evidence, account counts, location, website, verification details, public image URLs, join date, and import coverage. Current matches are exported by default. Add `--include-former` or `--include-unclear` to export those profiles too. Search classifies up to 10,000 candidates for each company by default. Change that cap with `--candidates`.
+
+## Monitor X articles
+
+Add the handles whose articles you want to keep, then refresh them when you want new writing:
+
+```sh
+ilo x articles add swyx
+ilo x articles add karpathy
+ilo x articles refresh
+```
+
+ilo reads each handle's public article timeline and fetches the complete body for every new article. The timeline cursor and article text stay in local SQLite. Refreshes do not run in the background and never publish anything.
+
+Each refresh reads up to three pages per monitor. When older articles remain, ilo prints the command to run again and resumes from the saved cursor.
+
+Search saved titles, previews, and full article text with SQLite FTS5:
+
+```sh
+ilo x articles search --query "browser tools"
+ilo x articles search --from swyx
+ilo x articles search --query "agents" --limit 10 --json
+```
+
+Search returns every match unless you pass `--limit`. Normal output shows an evidence excerpt and the X link. JSON search results stay compact too. Read the full stored body and raw provider record when you choose an article:
+
+```sh
+ilo x articles show <post-id-or-url>
+ilo x articles show <post-id-or-url> --json
+```
 
 ## Build a local reply inbox
 

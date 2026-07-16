@@ -16,6 +16,7 @@ import {
   type StoredXArticle,
   setArticleMonitorEnabledRecord,
   storeArticleRecords,
+  type XArticle,
   type XArticleMonitor,
 } from '../storage/articles.js'
 import { normalizeXHandle, toFtsQuery } from './followers.js'
@@ -35,6 +36,14 @@ export type XArticleMonitorRefreshResult = {
   articlesHydrated: number
   newArticles: number
   truncated: boolean
+}
+
+export type XArticleSearchResult = Omit<
+  XArticle,
+  'bodyText' | 'providerData'
+> & {
+  excerpt: string
+  bodyCharacters: number
 }
 
 const comparePostIds = (left: string, right: string) => {
@@ -93,6 +102,23 @@ export const flattenXArticleBody = (post: FxTwitterStatus) =>
     .map((block) => block.text.trim())
     .filter(Boolean)
     .join('\n\n')
+
+const cleanExcerpt = (value: string) => value.replace(/\s+/g, ' ').trim()
+
+const articleExcerpt = (article: XArticle, query?: string) => {
+  const body = cleanExcerpt(article.bodyText)
+  const fallback = cleanExcerpt(article.previewText) || body
+  if (!body || !query?.trim()) return fallback.slice(0, 320)
+  const terms = query.toLowerCase().match(/[\p{L}\p{N}_]+/gu) ?? []
+  const lower = body.toLowerCase()
+  const match = terms
+    .map((term) => lower.indexOf(term))
+    .find((index) => index >= 0)
+  if (match === undefined) return fallback.slice(0, 320)
+  const start = Math.max(0, match - 100)
+  const end = Math.min(body.length, start + 320)
+  return `${start > 0 ? '...' : ''}${body.slice(start, end).trim()}${end < body.length ? '...' : ''}`
+}
 
 const toStoredArticle = (
   post: FxTwitterStatus,
@@ -352,7 +378,7 @@ export const searchXArticles = (input: {
   ) {
     throw new Error('invalid_x_article_result_limit')
   }
-  return listArticleRecords({
+  const articles = listArticleRecords({
     accountHandle: normalizeXHandle(input.accountHandle),
     monitorId: input.monitorId?.trim() || undefined,
     authorHandle: input.sourceHandle
@@ -362,6 +388,16 @@ export const searchXArticles = (input: {
     limit: input.limit,
     path: input.databasePath,
   })
+  return articles.map(
+    ({ bodyText, providerData: _providerData, ...article }) => ({
+      ...article,
+      excerpt: articleExcerpt(
+        { ...article, bodyText, providerData: null },
+        input.query,
+      ),
+      bodyCharacters: bodyText.length,
+    }),
+  ) satisfies XArticleSearchResult[]
 }
 
 export const getXArticle = (input: {

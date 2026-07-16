@@ -153,7 +153,7 @@ test('resumes article history and searches hydrated article text', async () => {
     assert.equal(all[0]?.title, 'Browser automation')
     assert.equal(all[0]?.coverImageUrl, 'https://images.test/201.jpg')
     assert.equal(all[0]?.monitors[0]?.sourceHandle, 'swyx')
-    assert.match(all[0]?.bodyText ?? '', /deterministic tests/)
+    assert.ok((all[0]?.bodyCharacters ?? 0) > 70)
 
     const search = searchXArticles({
       accountHandle: 'owner',
@@ -164,6 +164,7 @@ test('resumes article history and searches hydrated article text', async () => {
       search.map((article) => article.postId),
       ['201'],
     )
+    assert.match(search[0]?.excerpt ?? '', /deterministic tests/)
     assert.equal(
       getXArticle({
         accountHandle: 'owner',

@@ -16,6 +16,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import * as z from 'zod/v4'
 import { failure, openOutputSchema, success } from './tool-result.js'
+import { registerArticleTools } from './tools/articles.js'
 import { registerInboxTools } from './tools/inbox.js'
 
 const postDestinationInput = {
@@ -39,6 +40,7 @@ const postDestinationInput = {
 }
 
 export const registerIloTools = (server: McpServer) => {
+  registerArticleTools(server)
   registerInboxTools(server)
   server.registerTool(
     'ilo_status',
