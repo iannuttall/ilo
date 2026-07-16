@@ -2,10 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { ILO_VERSION } from '../../version.js'
 import {
+  fetchFxTwitterArticles,
   fetchFxTwitterFollowers,
   fetchFxTwitterFollowing,
   fetchFxTwitterProfile,
   fetchFxTwitterSearch,
+  fetchFxTwitterStatus,
 } from './fxtwitter.js'
 
 test('reads FxTwitter profiles and follower cursors', async () => {
@@ -121,4 +123,65 @@ test('treats empty FxTwitter search responses as an empty page', async () => {
   )
 
   assert.deepEqual(result, { posts: [], nextCursor: null })
+})
+
+test('reads article timelines and hydrates a full article status', async () => {
+  const requests: string[] = []
+  const article = {
+    id: 'article-123',
+    title: 'Building useful agents',
+    preview_text: 'A practical write-up.',
+    content: {
+      blocks: [
+        {
+          key: 'intro',
+          type: 'unstyled',
+          text: 'The complete article body.',
+        },
+      ],
+      entityMap: [],
+    },
+  }
+  const post = {
+    type: 'status' as const,
+    id: '123',
+    url: 'https://x.com/author/status/123',
+    text: '',
+    created_at: 'Wed Jul 16 07:00:00 +0000 2026',
+    likes: 3,
+    reposts: 1,
+    quotes: 0,
+    replies: 2,
+    author: { id: '3', name: 'Author', screen_name: 'author' },
+    article,
+  }
+  const fetcher: typeof fetch = async (input) => {
+    const url = String(input)
+    requests.push(url)
+    return url.includes('/articles')
+      ? Response.json({
+          code: 200,
+          results: [{ ...post, article: { ...article, content: undefined } }],
+          cursor: { bottom: 'article-next' },
+        })
+      : Response.json({ code: 200, status: post })
+  }
+
+  const page = await fetchFxTwitterArticles(
+    'author',
+    { count: 25, cursor: 'previous', language: 'en' },
+    { fetch: fetcher },
+  )
+  const hydrated = await fetchFxTwitterStatus('123', { fetch: fetcher })
+
+  assert.equal(page.posts[0]?.article?.title, 'Building useful agents')
+  assert.equal(page.nextCursor, 'article-next')
+  assert.equal(
+    hydrated.article?.content?.blocks?.[0]?.text,
+    'The complete article body.',
+  )
+  assert.match(requests[0] ?? '', /\/profile\/author\/articles\?count=25/)
+  assert.match(requests[0] ?? '', /cursor=previous/)
+  assert.match(requests[0] ?? '', /lang=en/)
+  assert.match(requests[1] ?? '', /\/2\/status\/123$/)
 })

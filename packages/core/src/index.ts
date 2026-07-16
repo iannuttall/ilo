@@ -8,6 +8,9 @@ export {
   X_USER_OAUTH_SCOPES,
 } from './providers/x/client.js'
 export type {
+  FxTwitterArticle,
+  FxTwitterArticleBlock,
+  FxTwitterArticleEntity,
   FxTwitterClientOptions,
   FxTwitterFollowersPage,
   FxTwitterReplyingTo,
@@ -18,10 +21,12 @@ export type {
 } from './providers/x/fxtwitter.js'
 export {
   FxTwitterError,
+  fetchFxTwitterArticles,
   fetchFxTwitterFollowers,
   fetchFxTwitterFollowing,
   fetchFxTwitterProfile,
   fetchFxTwitterSearch,
+  fetchFxTwitterStatus,
 } from './providers/x/fxtwitter.js'
 export type { XPostImage, XUploadedImage } from './providers/x/media.js'
 export {
@@ -33,6 +38,21 @@ export {
   X_MAX_POST_IMAGES,
 } from './providers/x/media.js'
 export { countXPostText, validateXPostText } from './providers/x/text.js'
+export type {
+  XArticleMonitorRefreshResult,
+  XArticleResearchClient,
+} from './research/articles.js'
+export {
+  createXArticleMonitor,
+  deleteXArticleMonitor,
+  flattenXArticleBody,
+  getXArticle,
+  listXArticleMonitors,
+  refreshXArticleMonitor,
+  refreshXArticles,
+  searchXArticles,
+  setXArticleMonitorEnabled,
+} from './research/articles.js'
 export type {
   FollowerMatchKind,
   FollowerResearchClient,
@@ -90,6 +110,7 @@ export {
   runScheduler,
   scheduleDraft,
 } from './service.js'
+export type { XArticle, XArticleMonitor } from './storage/articles.js'
 export {
   disconnectX,
   readConfig,

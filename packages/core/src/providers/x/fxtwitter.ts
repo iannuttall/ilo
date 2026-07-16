@@ -64,6 +64,42 @@ export type FxTwitterReplyingTo = {
   display_name?: string
 }
 
+export type FxTwitterArticleBlock = {
+  key: string
+  type: string
+  text: string
+  data?: Record<string, unknown>
+  entityRanges?: Array<{ key: number; offset: number; length: number }>
+  inlineStyleRanges?: Array<{
+    style: string
+    offset: number
+    length: number
+  }>
+}
+
+export type FxTwitterArticleEntity = {
+  key: string
+  value: {
+    type: string
+    mutability?: string
+    data?: Record<string, unknown>
+  }
+}
+
+export type FxTwitterArticle = {
+  id: string
+  title: string
+  preview_text?: string
+  created_at?: string
+  modified_at?: string
+  cover_media?: Record<string, unknown>
+  content?: {
+    blocks?: FxTwitterArticleBlock[]
+    entityMap?: FxTwitterArticleEntity[]
+  }
+  media_entities?: Array<Record<string, unknown>>
+}
+
 export type FxTwitterStatus = {
   type: 'status'
   id: string
@@ -79,6 +115,7 @@ export type FxTwitterStatus = {
   bookmarks?: number | null
   lang?: string | null
   author: FxTwitterUser
+  article?: FxTwitterArticle | null
   replying_to?: FxTwitterReplyingTo | null
   media?: Record<string, unknown>
   quote?: FxTwitterStatus | Record<string, unknown> | null
@@ -95,6 +132,12 @@ type FxTwitterSearchResponse = {
   code: number
   results?: FxTwitterStatus[]
   cursor?: FxTwitterCursor
+  message?: string
+}
+
+type FxTwitterStatusResponse = {
+  code: number
+  status?: FxTwitterStatus | null
   message?: string
 }
 
@@ -268,4 +311,36 @@ export const fetchFxTwitterSearch = async (
     }
     throw error
   }
+}
+
+export const fetchFxTwitterArticles = async (
+  handle: string,
+  input: { count?: number; cursor?: string | null; language?: string } = {},
+  options: FxTwitterClientOptions = {},
+): Promise<FxTwitterSearchPage> => {
+  const query = new URLSearchParams()
+  query.set('count', String(Math.min(100, Math.max(1, input.count ?? 100))))
+  if (input.cursor) query.set('cursor', input.cursor)
+  if (input.language?.trim()) query.set('lang', input.language.trim())
+  const response = await requestFxTwitter<FxTwitterSearchResponse>(
+    `/2/profile/${encodeURIComponent(handle)}/articles?${query}`,
+    options,
+  )
+  return {
+    posts: response.results ?? [],
+    nextCursor: response.cursor?.bottom ?? null,
+  }
+}
+
+export const fetchFxTwitterStatus = async (
+  postId: string,
+  options: FxTwitterClientOptions = {},
+): Promise<FxTwitterStatus> => {
+  const response = await requestFxTwitter<FxTwitterStatusResponse>(
+    `/2/status/${encodeURIComponent(postId)}`,
+    options,
+  )
+  if (!response.status)
+    throw new FxTwitterError(404, 'fxtwitter_status_not_found')
+  return response.status
 }
