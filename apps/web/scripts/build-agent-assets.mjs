@@ -250,7 +250,13 @@ const llmsSections = [
   },
   {
     heading: 'Use ilo',
-    paths: ['/docs/cli', '/docs/reports', '/reports', '/tools'],
+    paths: [
+      '/docs/articles',
+      '/docs/cli',
+      '/docs/reports',
+      '/reports',
+      '/tools',
+    ],
   },
   {
     heading: 'Public X research',

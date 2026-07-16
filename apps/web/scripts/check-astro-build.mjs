@@ -25,6 +25,7 @@ if (await exists(devVarsPath)) {
 for (const relativePath of [
   'index.html',
   'index.md',
+  'docs/articles.md',
   'docs/mcp.md',
   'docs/typescript.md',
   'agent-routes.json',
@@ -40,6 +41,9 @@ for (const relativePath of [
 const homeHtml = await readFile(path.join(clientDir, 'index.html'), 'utf8')
 if (!homeHtml.includes('rel="alternate" type="text/markdown"')) {
   fail('static HTML is missing its Markdown alternate')
+}
+if (!homeHtml.includes('href="/docs/articles"')) {
+  fail('homepage is missing its article monitoring docs link')
 }
 
 const mcpHtml = await readFile(

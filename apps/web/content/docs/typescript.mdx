@@ -2,7 +2,7 @@
 title: "TypeScript"
 description: "Use ilo's local X article search, reply inbox, follower research, drafting, scheduling, publishing, and MCP code inside your Node project."
 category: "reference"
-order: 1
+order: 2
 status: published
 h1: "Use ilo as a TypeScript package."
 seoTitle: "ilo TypeScript Package: X Drafts and Publishing"
@@ -128,6 +128,8 @@ if (results[0]) {
 ```
 
 Refreshes run on demand and save their progress in local SQLite. If `historyComplete` is false on a monitor, call the refresh again to continue from its cursor. Search results contain a short evidence excerpt and body character count. `getXArticle()` returns the complete stored body and raw FxTwitter status.
+
+The [article monitoring guide](/docs/articles) covers cursor state, CLI commands, MCP tools, stored fields, and the limits of the public article timeline.
 
 ## Build a local reply inbox
 

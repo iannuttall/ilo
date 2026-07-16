@@ -1,0 +1,226 @@
+---
+title: "Article monitoring"
+description: "Save native X articles from selected writers, search their full text locally, and retrieve the complete article from your terminal or agent."
+category: "reference"
+order: 1
+status: published
+h1: "Build a searchable library of X articles."
+seoTitle: "X Article Monitoring: Search Full Articles Locally"
+seoDescription: "Monitor native X articles from selected writers, save their full text locally, search it with SQLite FTS5, and retrieve complete articles through CLI or MCP."
+---
+
+Article monitoring turns native X Articles from selected writers into a local, searchable library. Choose the handles you trust, refresh when you want new writing, then search the complete stored text from the CLI or an agent.
+
+ilo does not scan every link a person shares. It monitors the native X Articles returned by that handle's public article timeline.
+
+## Install ilo and choose the local account
+
+Install the current CLI from npm:
+
+```sh
+npm i -g iloso
+```
+
+Article commands use your connected X handle to keep each local library separate. Run the guided setup if you have not connected one yet:
+
+```sh
+ilo start
+```
+
+The article data itself is public. You can choose a local account namespace without connecting OAuth by passing the same `--account` value to every command:
+
+```sh
+ilo x articles add swyx --account ilodotso
+ilo x articles refresh --account ilodotso
+```
+
+## Add the writers you want to monitor
+
+Create one monitor for each X handle whose native articles you want to keep:
+
+```sh
+ilo x articles add swyx
+ilo x articles add karpathy
+ilo x articles list
+```
+
+Adding a monitor only saves the handle. It does not fetch anything until you run a refresh. `ilo x articles list` shows whether a monitor is active, when it was last checked, and whether older history remains.
+
+## Import new and older articles
+
+Refresh every active monitor or choose one handle:
+
+```sh
+ilo x articles refresh
+ilo x articles refresh swyx
+```
+
+Each refresh reads up to three timeline pages per monitor by default. Increase that page budget when you want a larger first import:
+
+```sh
+ilo x articles refresh swyx --pages 10
+```
+
+The allowed range is 1 to 100 pages per call. ilo saves the timeline cursor after every refresh. If older articles remain, run the same command again and the import continues from that cursor instead of starting over.
+
+Inspect the saved state when a script or agent needs an exact answer:
+
+```sh
+ilo x articles list --json
+```
+
+The important monitor fields have specific meanings:
+
+| Field | Meaning |
+| --- | --- |
+| `historyComplete` | `true` after the public timeline reaches a confirmed end. |
+| `cursor` | The saved position used to continue an unfinished history import. |
+| `lastCheckedAt` | When ilo last attempted a refresh. |
+| `lastError` | The latest provider error, or `null` after a successful refresh. |
+| `newestPostId` | The newest article post seen for this monitor. |
+
+Once history is complete, later refreshes check the newest timeline entries and stop when they reach the previously saved boundary.
+
+## Search titles and complete article text
+
+Search every saved title, preview, body, author name, and author handle:
+
+```sh
+ilo x articles search --query "browser tools"
+ilo x articles search --query "agents" --from swyx
+```
+
+Search reads only the local SQLite index. It does not make a network request. Omit `--query` to list every saved article, or use `--from` to show articles from one monitored handle:
+
+```sh
+ilo x articles search
+ilo x articles search --from karpathy
+```
+
+There is no hidden result limit. Add one when the caller only needs a smaller result set:
+
+```sh
+ilo x articles search --query "model training" --limit 10
+```
+
+The maximum explicit limit is 10,000. Search uses SQLite FTS5 rather than embeddings or a vector database. It works best with concrete words and names. A query such as `browser tools` looks for both word prefixes somewhere in the indexed fields.
+
+Normal terminal output includes the title, writer, date, matching excerpt, and X URL. JSON keeps the results compact as well:
+
+```sh
+ilo x articles search --query "browser tools" --json
+```
+
+Each JSON search result includes `excerpt` and `bodyCharacters`, but omits the complete body and raw provider payload. This keeps an agent search from filling its context with every article before it chooses which one to read.
+
+## Read one complete saved article
+
+Pass the post id or full X status URL from a search result:
+
+```sh
+ilo x articles show <post-id-or-status-url>
+ilo x articles show <post-id-or-status-url> --json
+```
+
+Normal output prints the full stored body with its paragraph breaks. JSON adds the complete `bodyText`, article and post timestamps, cover image URL, public author fields, monitor matches, and raw public provider record.
+
+`show` reads the local database. Refresh the monitor first if the article has not been saved yet.
+
+## Pause, resume, or remove a monitor
+
+Use a source handle, full monitor id, or unique id prefix:
+
+```sh
+ilo x articles disable swyx
+ilo x articles enable swyx
+ilo x articles remove swyx
+```
+
+A paused monitor stays searchable but is skipped during refreshes. Removing it deletes articles that are no longer attached to any other local monitor. An article shared by another monitor remains available.
+
+## Give an agent article search through MCP
+
+Complete the [local MCP setup](/docs/mcp), then ask the agent to build and search the library:
+
+```txt
+Monitor native X articles from @swyx and @karpathy. Refresh both monitors, then find saved articles about browser tools. Show the evidence excerpts and history coverage. Do not publish anything.
+```
+
+The article tools are separate so an agent can search compact results before loading a full body:
+
+| MCP tool | Action |
+| --- | --- |
+| `ilo_create_x_article_monitor` | Saves one source handle. |
+| `ilo_list_x_article_monitors` | Lists active and paused monitors with their history state. |
+| `ilo_refresh_x_articles` | Refreshes one monitor id or every active monitor. |
+| `ilo_search_x_articles` | Searches local titles, previews, and full text. |
+| `ilo_get_x_article` | Returns one complete stored article and raw record. |
+| `ilo_set_x_article_monitor_enabled` | Pauses or resumes one monitor. |
+| `ilo_delete_x_article_monitor` | Removes one monitor and its orphaned articles. |
+
+Creating, refreshing, searching, and reading article monitors never publishes anything to X.
+
+## Use article monitoring from TypeScript
+
+The public package calls the same core implementation as the CLI and MCP server:
+
+```ts
+import {
+  createXArticleMonitor,
+  getXArticle,
+  refreshXArticleMonitor,
+  searchXArticles,
+} from 'iloso'
+
+const monitor = createXArticleMonitor({
+  accountHandle: 'ilodotso',
+  sourceHandle: 'swyx',
+})
+
+const refresh = await refreshXArticleMonitor({
+  id: monitor.id,
+  maxPages: 3,
+})
+
+if (refresh.truncated) {
+  console.log('Older article history remains')
+}
+
+const results = searchXArticles({
+  accountHandle: 'ilodotso',
+  query: 'browser tools',
+})
+
+if (results[0]) {
+  const article = getXArticle({
+    accountHandle: 'ilodotso',
+    identifier: results[0].postId,
+  })
+
+  console.log(article.bodyText)
+}
+```
+
+Pass `databasePath` to any core function when an application needs a database outside the normal ilo home. The [TypeScript package reference](/docs/typescript) covers the wider public API and versioning advice.
+
+## Know what the local library can prove
+
+ilo stores monitor progress and article data in `~/.config/ilo/ilo.sqlite` by default. Saved articles include the title, preview, complete text returned by X, public author profile, dates, cover image URL, source monitor, first and latest seen times, and raw provider status.
+
+The library still has practical limits:
+
+- It contains native X Articles, not normal posts or every external article a handle shares.
+- Refreshes run only when you call them. Automatic background checks are not available yet.
+- `historyComplete: false` means the public timeline has more pages or the import stopped before a confirmed end.
+- Search is word-based FTS5. It does not understand synonyms or semantic similarity.
+- Public timelines and article bodies depend on what X and the public provider return at refresh time.
+
+Treat the saved history as inspectable public evidence, not a guaranteed archive of everything a writer has ever published.
+
+## Fix the common failures
+
+If ilo reports `x_account_required`, connect an account with `ilo start` or add `--account <handle>` to the article commands.
+
+If a monitor says older history remains, repeat `ilo x articles refresh <handle>` or raise `--pages`. A failed refresh records its error on the monitor, so `ilo x articles list --json` shows what happened before you retry.
+
+If search returns no matches, confirm that the monitor has been refreshed, try `ilo x articles search --from <handle>` without a query, then use fewer concrete search words. Enable a paused monitor before trying to refresh it.
