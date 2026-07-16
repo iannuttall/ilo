@@ -139,6 +139,48 @@ ilo x followers search adamwathan \
 
 The CSV has one row per company and listed profile match. It includes the classification, bio evidence, account counts, location, website, verification details, public image URLs, join date, and import coverage. Current matches are exported by default. Add `--include-former` or `--include-unclear` to export those profiles too. Search classifies up to 10,000 candidates for each company by default. Change that cap with `--candidates`.
 
+## Search the profiles an account follows
+
+The [following search guide](/docs/following-search) covers complete profile storage, resumable syncs, automatic snapshot refreshes, freshness, local search, exports, MCP, TypeScript, and evidence limits.
+
+Build the connected account's profile index by omitting the handle, or pass a public handle explicitly:
+
+```sh
+ilo x following sync --all
+ilo x following sync adamwathan --all
+ilo x following status adamwathan
+```
+
+Without `--all`, sync reads 20 pages by default and saves its cursor. Run it again to continue, or pass `--pages 100` to choose a different budget. An unfinished import resumes. Running sync after a completed import starts a fresh membership snapshot. Use `--restart` only when you want to discard an unfinished cursor.
+
+Search the saved names, handles, bios, locations, and aliases with local SQLite FTS5:
+
+```sh
+ilo x following search adamwathan \
+  --query "building browser tools"
+```
+
+The search command never starts a sync. If no complete profiles are indexed, it tells you which sync command to run. Search returns every local match unless you pass `--limit`, and the output keeps the exact total visible when a display limit is active.
+
+Export every match and its source coverage to CSV:
+
+```sh
+ilo x following search adamwathan \
+  --query "building browser tools" \
+  --csv ./adam-browser-builders.csv
+```
+
+CSV export ignores a separate terminal `--limit` so a display choice cannot silently truncate the file. Use `--json` for structured results with `totalMatches`, `truncated`, complete profile fields, and coverage.
+
+Inspect one stored profile without making another network request:
+
+```sh
+ilo x following profile browser_builder --account adamwathan
+ilo x following profile browser_builder --account adamwathan --json
+```
+
+Status and search report whether the provider returned the end of the available list and whether the snapshot is more than 24 hours old. A partial result can prove which profiles were found, but not that an absent profile is not followed.
+
 ## Monitor X articles
 
 Add the handles whose articles you want to keep, then refresh them when you want new writing:
@@ -192,7 +234,7 @@ ilo x inbox archive <post-id-or-url>
 ilo x inbox restore <post-id-or-url>
 ```
 
-Import the connected account's following list to use `--i-follow`. The existing follower import powers `--follows-me`:
+Import the connected account's following profiles to use `--i-follow`. The same index is searchable with `ilo x following search`. The existing follower import powers `--follows-me`:
 
 ```sh
 ilo x following sync --all

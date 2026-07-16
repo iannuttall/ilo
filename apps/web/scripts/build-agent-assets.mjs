@@ -264,6 +264,7 @@ const llmsSections = [
     heading: 'Use ilo',
     paths: [
       '/docs/audience-research',
+      '/docs/following-search',
       '/docs/articles',
       '/docs/cli',
       '/reports',

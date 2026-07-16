@@ -18,6 +18,8 @@
   ·
   <a href="https://ilo.so/docs/audience-research">Audience research</a>
   ·
+  <a href="https://ilo.so/docs/following-search">Following search</a>
+  ·
   <a href="https://ilo.so/docs/articles">Article monitoring</a>
   ·
   <a href="https://www.npmjs.com/package/iloso">npm</a>
@@ -43,9 +45,9 @@
 </p>
 
 ilo gives your agent public X evidence it can inspect before it tells you what
-to publish. Search follower profiles, keep native X Articles in a local
-full-text index, collect focused replies, and turn the useful findings into
-drafts.
+to publish. Search follower profiles and the people an account follows, keep
+native X Articles in a local full-text index, collect focused replies, and turn
+the useful findings into drafts.
 
 The CLI, local MCP server, agent skill, and TypeScript package call the same
 core implementation. Drafts, monitor state, article text, schedules, and
@@ -108,6 +110,8 @@ need a namespace also accept `--account <handle>`.
 - Search imported follower names, handles, bios, and locations with SQLite
   FTS5, including evidence-backed current, former, and unclear employer
   counts.
+- Search the complete public profiles an account follows, with snapshot
+  coverage, 24-hour freshness, JSON, CSV, and complete stored profile lookup.
 - Native X Articles from selected writers become a local full-text library
   that the CLI or an agent can search later.
 - Focused X searches feed a deduplicated reply inbox with public post, author,
@@ -157,6 +161,51 @@ The [audience research guide](https://ilo.so/docs/audience-research) covers
 background progress, complete profile records, classification limits, local
 MCP tools, TypeScript functions, terminal output, and CSV fields.
 
+## Search the people an account follows
+
+Build a fresh local snapshot of your own following list, or name another
+public account explicitly:
+
+```sh
+ilo x following sync --all
+ilo x following sync adamwathan --all
+ilo x following status adamwathan
+```
+
+An omitted handle uses the connected X account. A bounded sync reads 20 pages
+by default and resumes when you run it again. `--all` continues until the
+public provider reports the end. Running sync after a completed import starts
+a fresh snapshot, while `--restart` discards an unfinished cursor.
+
+Search the saved names, handles, bios, locations, and handle aliases locally:
+
+```sh
+ilo x following search adamwathan \
+  --query "building browser tools"
+```
+
+Search uses SQLite FTS5, so concrete profile words work better than abstract
+semantic questions. It returns every match unless you pass `--limit`. Each
+result includes the public bio or location evidence, and the coverage says how
+many complete profiles are searchable, whether the import finished, and
+whether the snapshot is more than 24 hours old.
+
+Export every match or inspect one complete stored profile:
+
+```sh
+ilo x following search adamwathan \
+  --query "building browser tools" \
+  --csv ./browser-builders.csv
+
+ilo x following profile browser_builder \
+  --account adamwathan \
+  --json
+```
+
+The [following search guide](https://ilo.so/docs/following-search) documents
+sync and refresh behaviour, every CLI command, MCP tool, TypeScript function,
+JSON field, CSV column, freshness rule, and current evidence limits.
+
 ## Keep native X Articles searchable
 
 Choose the writers worth keeping, refresh their public article timelines, and
@@ -205,6 +254,8 @@ ilo x inbox list --follows-me
 
 Relationship values stay unknown until the relevant local import has enough
 coverage to answer. ilo does not turn missing data into `false`.
+The following import is also the searchable profile index described in the
+[following search guide](https://ilo.so/docs/following-search).
 
 Inspect a post before drafting a reply:
 
@@ -345,10 +396,11 @@ if (matches[0]) {
 }
 ```
 
-The root package exports follower and following syncs, article monitoring,
-reply inbox actions, local drafts, schedules, static image helpers, X OAuth,
-provider helpers, configuration, and storage paths. The package is pre-1.0, so
-pin the version when another application depends on exact function signatures.
+The root package exports follower and following sync and search functions,
+complete stored profile lookup, article monitoring, reply inbox actions, local
+drafts, schedules, static image helpers, X OAuth, provider helpers,
+configuration, and storage paths. The package is pre-1.0, so pin the version
+when another application depends on exact function signatures.
 
 The [TypeScript guide](https://ilo.so/docs/typescript) has complete examples
 for research, drafting, publishing, and embedding the MCP server.
@@ -399,11 +451,11 @@ No. Interactive commands ask for confirmation, and MCP publishing tools
 require `confirm: true`. A scheduled draft also needs explicit authorization
 before a scheduler can publish it.
 
-### Is follower or article search semantic?
+### Is follower, following, or article search semantic?
 
-No. Both use local SQLite FTS5. That keeps search fast, inspectable, and free,
-but concrete words, handles, companies, and phrases work better than questions
-that depend on synonyms or inferred meaning.
+No. All three use local SQLite FTS5. That keeps search fast, inspectable, and
+free, but concrete words, handles, companies, and phrases work better than
+questions that depend on synonyms or inferred meaning.
 
 ### Does my data stay on my machine?
 
@@ -420,6 +472,7 @@ limits, and normal network costs still apply.
 
 - [Getting started](https://ilo.so/docs/start)
 - [CLI commands](https://ilo.so/docs/cli)
+- [Following search](https://ilo.so/docs/following-search)
 - [Article monitoring](https://ilo.so/docs/articles)
 - [Local MCP and agents](https://ilo.so/docs/mcp)
 - [TypeScript package](https://ilo.so/docs/typescript)

@@ -89,8 +89,10 @@ Install both when your client supports skills. The CLI prints the installed path
 | `ilo_list_x_inbox` | Filters saved posts by state, monitor, verification, relationship, or local FTS5 query. |
 | `ilo_get_x_inbox_item` | Reads one saved post, author profile, monitor match, relationship state, and raw provider record. |
 | `ilo_update_x_inbox_item` | Marks a local inbox item read, unread, archived, restored, replied, or unreplied. |
-| `ilo_sync_x_following` | Imports public followed accounts for the inbox's `iFollow` relationship. |
-| `ilo_x_following_sync_status` | Checks the local following import used by inbox filters. |
+| `ilo_sync_x_following` | Builds or refreshes a resumable local index of complete public profiles an account follows. |
+| `ilo_x_following_sync_status` | Checks following-profile coverage, completion, age, freshness, cursor, and errors. |
+| `ilo_search_x_following` | Searches saved following names, handles, bios, locations, and aliases with local FTS5. |
+| `ilo_get_x_following_profile` | Reads one complete stored profile and raw provider object from a following index. |
 | `ilo_create_draft` | Saves a top-level post or reply draft, with optional static images, to the local database. |
 | `ilo_list_drafts` | Lists local drafts and their state. |
 | `ilo_schedule_draft` | Schedules a draft using an ISO time or plain language. |
@@ -167,6 +169,34 @@ Show me the complete stored profile for @leerob from @adamwathan's follower inde
 That lookup includes the public bio, location, website, join date, account counts, avatar, banner, verification details, and raw FxTwitter object. It does not make a fresh network request.
 
 The search tool uses SQLite FTS5 rather than an embedding model. It works best with concrete names, handles, places, and phrases. The tool normalizes common company handles such as `@getsentry`, but it does not invent synonyms or verify claims in a profile bio.
+
+## Following research
+
+The [following search guide](/docs/following-search) documents the full sync, freshness, search, export, profile, CLI, MCP, and TypeScript workflow.
+
+Following research works in the other direction from follower research. It lets an agent ask questions such as "who does this account follow that is building browser tools?" The sync saves complete available public profiles rather than only relationship IDs.
+
+Ask the agent to build a bounded snapshot first:
+
+```txt
+Index 20 pages of the public profiles @adamwathan follows. Tell me how many
+complete profiles are searchable, whether the import finished, and whether the
+snapshot is fresh. Do not draft or publish anything.
+```
+
+Repeat `ilo_sync_x_following` while `sync.complete` is false. Each call resumes from the local cursor unless `restart` is true. A call made after a completed snapshot begins a fresh one. `ilo_x_following_sync_status` returns the saved cursor, unique profile count, expected following count when available, timestamps, last error, age, and 24-hour stale flag.
+
+Once profiles are saved, search makes no network request:
+
+```txt
+Search @adamwathan's saved following profiles for "building browser tools".
+Return every match with its bio or location evidence and keep the snapshot
+coverage in the answer.
+```
+
+`ilo_search_x_following` searches names, handles, bios, locations, and aliases with SQLite FTS5. It returns every match when `resultLimit` is omitted. The tool does not infer synonyms, verify profile claims, or turn an unfinished snapshot into proof that a missing profile is not followed.
+
+Call `ilo_get_x_following_profile` after choosing a result. It returns the saved bio, location, website, account counts, join date, verification, images, protected state, fetch time, raw provider object, and snapshot coverage without refetching the account.
 
 ## Reply and image inputs
 

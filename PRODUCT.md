@@ -52,7 +52,11 @@ it helps them choose or complete the next action.
 - Filter saved inbox posts by monitor, local state, verified author, post or
   author text, whether the author follows the account, and whether the account
   follows the author.
-- Import the public following list used by inbox relationship filters. Keep
+- Import complete public profiles from an X following list into a resumable
+  local snapshot. Search saved names, handles, bios, locations, and aliases
+  with SQLite FTS5, inspect one complete profile, export every match to CSV,
+  and report completion and 24-hour freshness alongside results.
+- Use the same following snapshot for inbox relationship filters. Keep
   follower and following relationships unknown until the local imports can
   support a true or false answer.
 - Save selected X handles as local article monitors. Refresh them on demand,

@@ -91,6 +91,13 @@ Safe current claims include:
 - The CLI, MCP server, and TypeScript package can import public follower
   profiles through FxTwitter, inspect their stored public fields, and search
   the local index with SQLite FTS5.
+- The CLI, MCP server, and TypeScript package can import the complete available
+  public profiles an X account follows, search saved names, handles, bios,
+  locations, and aliases with SQLite FTS5, inspect one stored profile, and
+  return completion and freshness with the matches.
+- Following search returns every local match unless the caller explicitly
+  passes a result limit. The CLI can export every match and its snapshot
+  coverage to CSV.
 - Follower search returns the matched public bio evidence and labels employer
   matches as current, former, or unclear. Current matches are listed by
   default while all three counts remain visible. The CLI can include former

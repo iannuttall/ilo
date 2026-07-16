@@ -1,6 +1,6 @@
 ---
 name: ilo
-description: Use ilo for local X article monitoring, reply inboxes, search monitors, follower research, drafting, account setup, scheduling, publishing, and agent workflows. Triggers when a user asks to monitor or search X articles, monitor X searches, find posts worth replying to, filter authors by relationship or verification, search followers, draft, reply, attach images, queue, schedule, publish, or inspect social posts with the ilo CLI or local MCP server.
+description: Use ilo for local X article monitoring, reply inboxes, search monitors, follower and following research, drafting, account setup, scheduling, publishing, and agent workflows. Triggers when a user asks to monitor or search X articles, monitor X searches, find posts worth replying to, filter authors by relationship or verification, search followers or people an account follows, draft, reply, attach images, queue, schedule, publish, or inspect social posts with the ilo CLI or local MCP server.
 ---
 
 # ilo
@@ -41,6 +41,8 @@ Use the local MCP tools when available:
 - `ilo_update_x_inbox_item`
 - `ilo_sync_x_following`
 - `ilo_x_following_sync_status`
+- `ilo_search_x_following`
+- `ilo_get_x_following_profile`
 - `ilo_create_draft`
 - `ilo_list_drafts`
 - `ilo_schedule_draft`
@@ -68,7 +70,11 @@ ilo x monitors add "product mentions" --query '"product" OR "product.com" -is:re
 ilo x monitors list --json
 ilo x inbox refresh --json
 ilo x inbox list --unread --verified --json
-ilo x following sync --all --json
+ilo x following sync [handle] --all --json
+ilo x following status [handle] --json
+ilo x following search [handle] --query "building browser tools" --json
+ilo x following search [handle] --query "building browser tools" --csv ./following.csv
+ilo x following profile <followed-handle> --account <source-handle> --json
 ilo x inbox list --follows-me --json
 ilo x inbox list --i-follow --json
 ilo x inbox show <post-id-or-url> --json
@@ -100,6 +106,16 @@ Use the CLI `--background` mode for an unattended full import. Use `ilo_get_x_fo
 Search uses the local SQLite FTS5 index. For employer questions, report `current` as the conservative count and keep `former` and `unclear` separate. Include the returned public bio evidence. Do not present a partial import or an ambiguous bio as a complete employment record.
 
 Follower research does not require a connected X account. Publishing does.
+
+## Following research
+
+Following research answers questions about the people an account has chosen to follow, such as “find everyone I follow who is building browser tools.” Syncing saves each available public profile, not only its ID and handle. The structured record includes the name, bio, location, website, account counts, join date, verification, profile images, and the raw provider object.
+
+Run `ilo_sync_x_following` or `ilo x following sync [handle] --all` before searching. If the handle is omitted, ilo uses the locally connected X account. An unfinished import resumes from its saved cursor. Running sync after a completed import starts a fresh snapshot so removed relationships do not stay current forever.
+
+Use `ilo_x_following_sync_status` or the CLI `status` command before making a completeness claim. The result states how many complete profiles are searchable, whether the provider returned an end cursor, when the snapshot was updated, and whether it is more than 24 hours old. A partial index can prove that a returned profile was found, but it cannot prove that a missing profile is not followed.
+
+Search uses local SQLite FTS5 across names, handles, bios, and locations. It is keyword search, not embedding-based semantic search, so use concrete words found in likely profiles. ilo returns every match unless the caller explicitly supplies `resultLimit` or `--limit`. Keep the returned coverage and freshness alongside the results. Use `ilo_get_x_following_profile` or the CLI `profile` command when the task needs the complete stored record for one account.
 
 ## Article monitoring
 

@@ -11,6 +11,8 @@ seoDescription: "Import public X follower profiles, search names, bios and locat
 
 ilo can answer questions such as "how many of @adamwathan's followers appear to work at Cursor, Vercel, or Sentry?" It imports public follower profiles into local SQLite, searches names, handles, bios, and locations with FTS5, then returns the public bio behind each match.
 
+Use [following search](/docs/following-search) for the inverse question: who an account follows, such as "find everyone I follow who is building browser tools."
+
 You must import the follower profiles before you search them. The search command only reads the saved local index. It does not quietly start a large network job, which matters when the account has hundreds of thousands of followers.
 
 Public follower research does not require X OAuth or a connected X account. Install ilo and start with a bounded import:

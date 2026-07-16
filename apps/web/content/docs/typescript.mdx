@@ -2,7 +2,7 @@
 title: "TypeScript"
 description: "Use ilo's local X article search, reply inbox, follower research, drafting, scheduling, publishing, and MCP code inside your Node project."
 category: "reference"
-order: 3
+order: 4
 status: published
 h1: "Use ilo as a TypeScript package."
 seoTitle: "ilo TypeScript Package: X Drafts and Publishing"
@@ -88,6 +88,46 @@ console.log(profile.profile.providerData)
 Call `syncAllXFollowers({ handle: 'adamwathan' })` when the process should continue until FxTwitter reports the end of the list. It checkpoints every page. `getXFollowerProfile()` returns the useful stored fields plus the raw public FxTwitter object without another network request.
 
 The search result includes `coverage.complete`, the number of searchable profiles, X's reported follower total, and the last sync error when one exists. Each group includes conservative current, former, and unclear counts. The `results` array contains current matches and their public bio evidence by default. Pass `includeFormer: true` or `includeUnclear: true` to include those profiles. Search uses SQLite FTS5, so concrete names, handles, phrases, and locations work better than abstract semantic questions.
+
+## Search complete following profiles
+
+The [following search guide](/docs/following-search) covers the complete workflow, including CLI commands, MCP tools, snapshot refreshes, freshness, CSV fields, and current limits.
+
+Sync the profiles an account follows, inspect coverage, and search the same local SQLite index:
+
+```ts
+import {
+  getXFollowingProfile,
+  getXFollowingStatus,
+  searchXFollowing,
+  syncAllXFollowing,
+  syncXFollowing,
+} from 'iloso'
+
+await syncXFollowing({ handle: 'adamwathan', maxPages: 20 })
+
+const status = getXFollowingStatus({ handle: 'adamwathan' })
+const search = searchXFollowing({
+  handle: 'adamwathan',
+  query: 'building browser tools',
+})
+
+console.log({ status, totalMatches: search.totalMatches })
+
+if (search.results[0]) {
+  const stored = getXFollowingProfile({
+    handle: 'adamwathan',
+    followedHandle: search.results[0].handle,
+  })
+  console.log(stored.profile.providerData)
+}
+```
+
+`syncXFollowing()` saves its cursor and resumes an unfinished import. Calling it after a completed import starts a fresh snapshot. Use `syncAllXFollowing()` when a foreground process should continue until the provider reports the end of the available list.
+
+Search reads names, handles, bios, locations, and aliases with SQLite FTS5. It returns every matching profile unless `resultLimit` is supplied. Its `coverage` includes completion, unique searchable profiles, expected following count, timestamps, last error, age, and a stale flag that becomes true after 24 hours.
+
+`getXFollowingProfile()` returns the saved structured fields and raw public provider object without another network request. All following functions accept `databasePath` when an application needs an isolated index. `getXFollowingStatus()`, `searchXFollowing()`, and `getXFollowingProfile()` also accept `now` and `staleAfterMs` for deterministic tests or a different freshness policy.
 
 ## Monitor and search X articles
 
@@ -226,6 +266,6 @@ Most applications should call the root functions directly. `createServer()` and 
 
 ## Public exports
 
-The root package exports the FxTwitter provider helpers, follower and following syncs, article monitors and search, reply inbox actions, profile lookup, draft actions, static image helpers, schedule parsing, X text validation, X OAuth helpers, local configuration, and storage paths. These exports are covered by the packed-package tests, but ilo is still pre-1.0. Pin the package version when another application depends on the exact function signatures.
+The root package exports the FxTwitter provider helpers, follower and following sync and search functions, article monitors and search, reply inbox actions, complete profile lookup, draft actions, static image helpers, schedule parsing, X text validation, X OAuth helpers, local configuration, and storage paths. These exports are covered by the packed-package tests, but ilo is still pre-1.0. Pin the package version when another application depends on the exact function signatures.
 
 Use the [CLI reference](/docs/cli) for interactive commands or the [local MCP guide](/docs/mcp) to connect an agent without writing integration code.

@@ -1,0 +1,264 @@
+---
+title: "Following search"
+description: "Index the complete public profiles an X account follows, search names and bios locally, and check whether the saved snapshot is complete and fresh."
+category: "reference"
+order: 2
+status: published
+h1: "Search the people an X account follows."
+seoTitle: "Search Who You Follow on X with a Local Profile Index"
+seoDescription: "Save complete public X following profiles locally, search names, handles, bios and locations with SQLite FTS5, and use the same index from CLI, MCP, or TypeScript."
+---
+
+ilo can answer questions such as "find everyone I follow who is building browser tools." It saves the available public profiles from an X following list, builds a local full-text index, and returns the profile evidence behind every match.
+
+The search command does not fetch the following list for you. Sync first, then search the saved data. Keeping those steps separate prevents an innocent search from starting a long network job and makes the coverage of every answer visible.
+
+Install ilo if you have not already:
+
+```sh
+npm i -g iloso
+```
+
+If you have connected your own X account with `ilo start`, this command builds its following index:
+
+```sh
+ilo x following sync --all
+```
+
+You can also research a public account by passing its handle. That path does not require X OAuth:
+
+```sh
+ilo x following sync adamwathan --all
+```
+
+Once the sync has saved profiles, search them without another network request:
+
+```sh
+ilo x following search adamwathan \
+  --query "building browser tools"
+```
+
+## Build the local profile index
+
+The default sync reads up to 20 pages, saves its cursor, and returns. Use it when you want a bounded first pass:
+
+```sh
+ilo x following sync adamwathan
+ilo x following status adamwathan
+```
+
+Run the same command again to continue an unfinished import from its saved cursor. Every page is committed to SQLite as it arrives, so the profiles already fetched are searchable before the import finishes.
+
+Use `--pages` to choose a different page budget:
+
+```sh
+ilo x following sync adamwathan --pages 100
+```
+
+Use `--all` when the terminal can stay open until the provider returns the end of the available list:
+
+```sh
+ilo x following sync adamwathan --all
+```
+
+A page asks for up to 100 profiles, but page count is not a profile count. The provider can return shorter pages or repeat an account. ilo reports unique saved relationships and stops a stalled import after repeated pages make no progress.
+
+The sync stores much more than an ID and handle. Each available public profile includes its name, bio, location, website, follower and following counts, post, like, and media counts, join date, verification details, protected state, avatar, banner, fetch time, and raw provider object. The same relationship data also powers the reply inbox's `iFollow` filter.
+
+## Read coverage and freshness
+
+Check the status before describing the result as complete or current:
+
+```sh
+ilo x following status adamwathan
+ilo x following status adamwathan --json
+```
+
+Normal output answers the useful questions directly: how many complete profiles are searchable, whether the import reached an end cursor, when it last changed, and what command to run next. JSON includes the source account, saved cursor, pages fetched, unique profiles seen, expected following count when available, completion time, latest error, data version, age, and stale state.
+
+`complete: true` means the public provider returned no next cursor. ilo calls this the full available list. It does not guarantee that every number shown in X's interface became a public row. Deleted, protected, suspended, withheld, or otherwise unavailable profiles may be absent. The account's reported following count is useful as a rough comparison, not a promised database row count.
+
+ilo marks a following snapshot stale when its last update is more than 24 hours old. Stale does not make the rows useless. It means you should refresh before making a claim about the account's current choices. A partial snapshot can prove that a returned profile was observed, but it cannot prove that an absent profile is not followed.
+
+## Refresh a completed snapshot
+
+An unfinished sync resumes. A completed sync starts a fresh snapshot the next time you run it:
+
+```sh
+ilo x following sync adamwathan --all
+```
+
+During that refresh, search only sees relationships found in the new snapshot. When the provider reaches the end, ilo removes relationships that were present in the previous snapshot but not the new one. This keeps old and new membership from being mixed into one current result.
+
+Use `--restart` only when you want to discard the cursor of an unfinished import and begin again at page one:
+
+```sh
+ilo x following sync adamwathan --all --restart
+```
+
+Versions of ilo before complete following-profile storage cached only IDs and handles for inbox filters. The status command identifies that old cache. Run a normal full sync once and ilo will rebuild it with searchable profiles automatically.
+
+ilo keeps the latest following snapshot. It does not currently keep a timeline of changes or tell you who was unfollowed between two dates. Export or copy a result outside ilo if you need a historical comparison.
+
+## Search names, bios, handles, and locations
+
+Following search uses SQLite FTS5 over the saved name, handle, bio, location, and normalized handle aliases:
+
+```sh
+ilo x following search adamwathan \
+  --query "building browser tools"
+```
+
+All meaningful query words must match as word prefixes somewhere in the indexed profile fields. The example can match a profile whose bio says "Building browser tools for designers." A query such as `browser extension` can match those words across a name, handle, bio, or location.
+
+This is inspectable keyword search, not embedding-based semantic search. It will not infer that "web automation" means "browser tooling" or that a company name implies a particular industry. Use concrete words likely to appear in the profiles, then adjust the query after reading the returned evidence.
+
+Normal output uses stacked profile records that fit narrow terminals. Each result shows the name, handle, follower count, verification state, matching bio or location evidence, and X profile URL. The final section states the exact total match count.
+
+There is no hidden result limit. If 73 saved profiles match, normal output and JSON return all 73 unless you explicitly pass `--limit`:
+
+```sh
+ilo x following search adamwathan \
+  --query "developer relations" \
+  --limit 20
+```
+
+Limited output still reports `totalMatches` and tells you how many profiles were omitted. Remove the flag when you need the complete local result.
+
+## Export JSON or CSV
+
+Use JSON when an agent or script needs structured matches and coverage:
+
+```sh
+ilo x following search adamwathan \
+  --query "building browser tools" \
+  --json > ./browser-builders.json
+```
+
+The result contains `engine`, `query`, `resultLimit`, `totalMatches`, `truncated`, `coverage`, and `results`. Every result carries the profile fields used for comparison plus a short `evidence` string. Coverage travels with the matches so a downstream script does not accidentally drop the age or completion state.
+
+Use CSV for a spreadsheet, review list, or image you want to share:
+
+```sh
+ilo x following search adamwathan \
+  --query "building browser tools" \
+  --csv ./adam-browser-builders.csv
+```
+
+The CSV includes one row per matching profile with the query, evidence, public profile fields, fetch time, source account, searchable profile count, expected following count, completion state, snapshot time, freshness, and last error. If you combine `--limit` with `--csv`, the terminal or JSON result is limited but the CSV still receives every local match. This prevents a display preference from silently truncating an export.
+
+## Inspect one complete stored profile
+
+Search returns the fields normally needed to compare results. Use `profile` when you need the complete structured record and raw provider data for one account:
+
+```sh
+ilo x following profile browser_builder \
+  --account adamwathan
+
+ilo x following profile browser_builder \
+  --account adamwathan \
+  --json
+```
+
+The first handle is the followed profile. `--account` names the source following list. Omit `--account` to use the connected X account as the source.
+
+Profile lookup is local and makes no fresh network request. The JSON response includes coverage alongside the profile so you can see whether that record belongs to a partial or stale snapshot.
+
+## Give an agent the same search through MCP
+
+Complete the [local MCP setup](/docs/mcp), then ask the agent to sync, check coverage, search, and inspect a chosen profile. These tools use the same SQLite index as the CLI:
+
+| MCP tool | Job |
+| --- | --- |
+| `ilo_sync_x_following` | Fetches a bounded number of pages and stores complete public profiles. |
+| `ilo_x_following_sync_status` | Returns completion, profile counts, age, freshness, cursor, and errors. |
+| `ilo_search_x_following` | Searches the saved profile index and returns all matches unless `resultLimit` is supplied. |
+| `ilo_get_x_following_profile` | Reads one complete stored profile and raw provider object. |
+
+An initial sync call can use:
+
+```json
+{
+  "accountHandle": "adamwathan",
+  "maxPages": 20,
+  "restart": false
+}
+```
+
+Repeat the tool while `sync.complete` is false. Then search the local index:
+
+```json
+{
+  "accountHandle": "adamwathan",
+  "query": "building browser tools"
+}
+```
+
+Omitting `accountHandle` uses the locally connected account. Omitting `resultLimit` returns every match. A useful prompt keeps the evidence requirements explicit:
+
+```txt
+Index the public profiles @adamwathan follows. Tell me whether the snapshot is
+complete and fresh, then find profiles that mention building browser tools.
+Show the bio or location evidence for each result. Do not draft or publish.
+```
+
+Sync writes public profile data to local SQLite. Status, search, and profile lookup are local reads. None of these tools publish or change anything on X.
+
+## Use following search from TypeScript
+
+Install the ESM package in a Node 22.19 or newer project:
+
+```sh
+npm install iloso
+```
+
+The public functions call the same core implementation as the CLI and MCP server:
+
+```ts
+import {
+  getXFollowingProfile,
+  getXFollowingStatus,
+  searchXFollowing,
+  syncXFollowing,
+} from 'iloso'
+
+await syncXFollowing({
+  handle: 'adamwathan',
+  maxPages: 20,
+})
+
+const status = getXFollowingStatus({ handle: 'adamwathan' })
+const search = searchXFollowing({
+  handle: 'adamwathan',
+  query: 'building browser tools',
+})
+
+console.log({
+  status,
+  totalMatches: search.totalMatches,
+  matches: search.results.map(({ handle, evidence }) => ({
+    handle,
+    evidence,
+  })),
+})
+
+if (search.results[0]) {
+  const stored = getXFollowingProfile({
+    handle: 'adamwathan',
+    followedHandle: search.results[0].handle,
+  })
+  console.log(stored.profile.providerData)
+}
+```
+
+Call `syncAllXFollowing({ handle: 'adamwathan' })` when a foreground process should keep fetching until the provider reports an end cursor. It checkpoints every page and can run for a while on a large following list. Use bounded `syncXFollowing()` calls in a request handler or agent loop so the caller controls how long each action can run.
+
+Every function accepts `databasePath` when your application needs an isolated SQLite file. Search also accepts `resultLimit`, `now`, and `staleAfterMs`. The last two are useful for deterministic tests or a product with a different freshness policy. The [TypeScript package guide](/docs/typescript) covers installation, local storage, publishing approval, and the other public exports.
+
+## Read the result without overstating it
+
+A useful answer includes the source handle, number of searchable profiles, completion state, snapshot age, exact query, total matches, and the public evidence for the profiles it names.
+
+"The current local snapshot contains 12 followed profiles whose saved bios match all three words" is supportable. "These are everyone on X building browser tools" is not. The source account made the following choices, public profile data can be unavailable, and keyword search cannot infer every synonym or unstated interest.
+
+Use [audience research](/docs/audience-research) when the question runs in the other direction and starts with an account's followers. Use [article monitoring](/docs/articles) when the goal is to keep complete native X Articles from selected writers searchable over time.

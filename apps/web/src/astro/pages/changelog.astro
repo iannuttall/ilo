@@ -4,11 +4,33 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 export const prerender = true
 ---
 
-<BaseLayout title="Changelog" description="ilo product updates.">
+<BaseLayout
+  title="Changelog"
+  description="New ilo research, drafting, scheduling, and publishing features."
+>
   <main class="site-frame py-16">
     <article class="content-prose">
       <h1>Changelog</h1>
-      <p>Product updates will land here as ilo changes.</p>
+      <p>What changed in the CLI, local MCP server, TypeScript package, and public site.</p>
+
+      <h2>July 16, 2026</h2>
+      <h3>Search the people an X account follows</h3>
+      <p>
+        Following sync now saves complete available public profiles instead of
+        relationship IDs alone. Search names, handles, bios, locations, and
+        aliases locally, export every match to CSV, or inspect one complete
+        stored profile.
+      </p>
+      <ul>
+        <li>Resumable syncs refresh completed snapshots automatically.</li>
+        <li>Coverage includes completion, profile counts, errors, age, and 24-hour freshness.</li>
+        <li>CLI and MCP search return every match unless you set a limit.</li>
+        <li>The public TypeScript package exposes the same sync, status, search, and profile functions.</li>
+      </ul>
+      <p>
+        The <a href="/docs/following-search">following search guide</a> has the
+        complete CLI, MCP, TypeScript, JSON, CSV, refresh, and evidence workflow.
+      </p>
     </article>
   </main>
 </BaseLayout>

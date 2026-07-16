@@ -27,6 +27,7 @@ for (const relativePath of [
   'index.html',
   'index.md',
   'docs/audience-research.md',
+  'docs/following-search.md',
   'docs/articles.md',
   'docs/mcp.md',
   'docs/typescript.md',
@@ -49,6 +50,9 @@ if (!homeHtml.includes('href="/docs/articles"')) {
 }
 if (!homeHtml.includes('href="/docs/audience-research"')) {
   fail('homepage is missing its audience research docs link')
+}
+if (!homeHtml.includes('href="/docs/following-search"')) {
+  fail('homepage is missing its following search docs link')
 }
 
 const mcpHtml = await readFile(
