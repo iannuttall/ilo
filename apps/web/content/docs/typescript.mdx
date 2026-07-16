@@ -123,9 +123,9 @@ if (search.results[0]) {
 }
 ```
 
-`syncXFollowing()` saves its cursor and resumes an unfinished import. Calling it after a completed import starts a fresh snapshot. Use `syncAllXFollowing()` when a foreground process should continue until the provider reports the end of the available list.
+`syncXFollowing()` saves its cursor and resumes an unfinished import. Calling it after a completed import starts a fresh snapshot. Use `syncAllXFollowing()` when a foreground process should continue until the provider reports the end of the available list, or until the saved profiles match X's reported total and repeated pages add nothing new.
 
-Search reads names, handles, bios, locations, and aliases with SQLite FTS5. It returns every matching profile unless `resultLimit` is supplied. Its `coverage` includes completion, unique searchable profiles, expected following count, timestamps, last error, age, and a stale flag that becomes true after 24 hours.
+Search reads names, handles, bios, locations, and aliases with SQLite FTS5. It returns every matching profile unless `resultLimit` is supplied. Its `coverage` includes completion, `completionReason`, unique searchable profiles, expected following count, timestamps, last error, age, and a stale flag that becomes true after 24 hours.
 
 `getXFollowingProfile()` returns the saved structured fields and raw public provider object without another network request. All following functions accept `databasePath` when an application needs an isolated index. `getXFollowingStatus()`, `searchXFollowing()`, and `getXFollowingProfile()` also accept `now` and `staleAfterMs` for deterministic tests or a different freshness policy.
 

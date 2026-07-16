@@ -42,7 +42,11 @@ export const followingCoverageLines = (
   ]
 
   if (coverage.complete) {
-    lines.push('The full available following list was imported.')
+    lines.push(
+      coverage.completionReason === 'reported_count_confirmed'
+        ? "The import matched X's reported total and repeated pages added nothing new."
+        : 'The provider reached the end of the available following list.',
+    )
   } else if (coverage.lastError === 'fxtwitter_following_sync_no_progress') {
     lines.push(
       'The import stopped after repeated pages returned no new profiles.',
@@ -164,6 +168,7 @@ const csvRows = (result: FollowingSearchResult) => {
     'source_profiles_indexed',
     'source_expected_following',
     'source_complete',
+    'source_completion_reason',
     'source_updated_at',
     'source_stale',
     'source_last_error',
@@ -197,6 +202,7 @@ const csvRows = (result: FollowingSearchResult) => {
       result.coverage.searchableProfiles,
       result.coverage.expectedFollowing,
       result.coverage.complete,
+      result.coverage.completionReason,
       new Date(result.coverage.updatedAt).toISOString(),
       result.coverage.stale,
       result.coverage.lastError,

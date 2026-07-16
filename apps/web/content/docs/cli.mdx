@@ -79,7 +79,7 @@ ilo x followers sync adamwathan --pages 20
 ilo x followers status adamwathan
 ```
 
-Use `--all` to continue until FxTwitter reports the end of the list:
+Use `--all` to continue until FxTwitter reports the end of the list, or until the saved profiles match X's reported total and repeated pages add nothing new:
 
 ```sh
 ilo x followers sync adamwathan --all
@@ -179,7 +179,7 @@ ilo x following profile browser_builder --account adamwathan
 ilo x following profile browser_builder --account adamwathan --json
 ```
 
-Status and search report whether the provider returned the end of the available list and whether the snapshot is more than 24 hours old. A partial result can prove which profiles were found, but not that an absent profile is not followed.
+Status and search report whether the provider returned the end of the available list or repeated pages confirmed X's reported total. They also report whether the snapshot is more than 24 hours old. A partial result can prove which profiles were found, but not that an absent profile is not followed.
 
 ## Monitor X articles
 

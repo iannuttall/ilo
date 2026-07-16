@@ -55,13 +55,13 @@ Use `--pages` to choose a different page budget:
 ilo x following sync adamwathan --pages 100
 ```
 
-Use `--all` when the terminal can stay open until the provider returns the end of the available list:
+Use `--all` when the terminal can stay open until the provider returns the end of the available list, or repeated pages confirm that the saved profiles match X's reported total:
 
 ```sh
 ilo x following sync adamwathan --all
 ```
 
-A page asks for up to 100 profiles, but page count is not a profile count. The provider can return shorter pages or repeat an account. ilo reports unique saved relationships and stops a stalled import after repeated pages make no progress.
+A page asks for up to 100 profiles, but page count is not a profile count. The provider can return shorter pages or repeat an account. ilo reports unique saved relationships. If the provider keeps returning duplicate pages after the saved profiles exactly match X's reported following count, ilo confirms the count across three no-progress pages and completes the snapshot. Otherwise, the general no-progress guard stops the import without making a false completeness claim.
 
 The sync stores much more than an ID and handle. Each available public profile includes its name, bio, location, website, follower and following counts, post, like, and media counts, join date, verification details, protected state, avatar, banner, fetch time, and raw provider object. The same relationship data also powers the reply inbox's `iFollow` filter.
 
@@ -74,9 +74,9 @@ ilo x following status adamwathan
 ilo x following status adamwathan --json
 ```
 
-Normal output answers the useful questions directly: how many complete profiles are searchable, whether the import reached an end cursor, when it last changed, and what command to run next. JSON includes the source account, saved cursor, pages fetched, unique profiles seen, expected following count when available, completion time, latest error, data version, age, and stale state.
+Normal output answers the useful questions directly: how many complete profiles are searchable, how completion was confirmed, when the import last changed, and what command to run next. JSON includes the source account, saved cursor, pages fetched, unique profiles seen, expected following count when available, `completionReason`, completion time, latest error, data version, age, and stale state.
 
-`complete: true` means the public provider returned no next cursor. ilo calls this the full available list. It does not guarantee that every number shown in X's interface became a public row. Deleted, protected, suspended, withheld, or otherwise unavailable profiles may be absent. The account's reported following count is useful as a rough comparison, not a promised database row count.
+`complete: true` has two explicit meanings. `completionReason: "provider_end"` means the public provider returned no next cursor. `completionReason: "reported_count_confirmed"` means the unique saved profiles exactly matched X's reported following count and three later pages added nothing new. Both represent the full available snapshot, but neither guarantees that an unavailable profile became a public row. Deleted, protected, suspended, withheld, or otherwise unavailable profiles may be absent.
 
 ilo marks a following snapshot stale when its last update is more than 24 hours old. Stale does not make the rows useless. It means you should refresh before making a claim about the account's current choices. A partial snapshot can prove that a returned profile was observed, but it cannot prove that an absent profile is not followed.
 
@@ -88,7 +88,7 @@ An unfinished sync resumes. A completed sync starts a fresh snapshot the next ti
 ilo x following sync adamwathan --all
 ```
 
-During that refresh, search only sees relationships found in the new snapshot. When the provider reaches the end, ilo removes relationships that were present in the previous snapshot but not the new one. This keeps old and new membership from being mixed into one current result.
+During that refresh, search only sees relationships found in the new snapshot. When either completion check succeeds, ilo removes relationships that were present in the previous snapshot but not the new one. This keeps old and new membership from being mixed into one current result.
 
 Use `--restart` only when you want to discard the cursor of an unfinished import and begin again at page one:
 
@@ -145,7 +145,7 @@ ilo x following search adamwathan \
   --csv ./adam-browser-builders.csv
 ```
 
-The CSV includes one row per matching profile with the query, evidence, public profile fields, fetch time, source account, searchable profile count, expected following count, completion state, snapshot time, freshness, and last error. If you combine `--limit` with `--csv`, the terminal or JSON result is limited but the CSV still receives every local match. This prevents a display preference from silently truncating an export.
+The CSV includes one row per matching profile with the query, evidence, public profile fields, fetch time, source account, searchable profile count, expected following count, completion state and reason, snapshot time, freshness, and last error. If you combine `--limit` with `--csv`, the terminal or JSON result is limited but the CSV still receives every local match. This prevents a display preference from silently truncating an export.
 
 ## Inspect one complete stored profile
 
@@ -171,7 +171,7 @@ Complete the [local MCP setup](/docs/mcp), then ask the agent to sync, check cov
 | MCP tool | Job |
 | --- | --- |
 | `ilo_sync_x_following` | Fetches a bounded number of pages and stores complete public profiles. |
-| `ilo_x_following_sync_status` | Returns completion, profile counts, age, freshness, cursor, and errors. |
+| `ilo_x_following_sync_status` | Returns completion and its reason, profile counts, age, freshness, cursor, and errors. |
 | `ilo_search_x_following` | Searches the saved profile index and returns all matches unless `resultLimit` is supplied. |
 | `ilo_get_x_following_profile` | Reads one complete stored profile and raw provider object. |
 
@@ -251,7 +251,7 @@ if (search.results[0]) {
 }
 ```
 
-Call `syncAllXFollowing({ handle: 'adamwathan' })` when a foreground process should keep fetching until the provider reports an end cursor. It checkpoints every page and can run for a while on a large following list. Use bounded `syncXFollowing()` calls in a request handler or agent loop so the caller controls how long each action can run.
+Call `syncAllXFollowing({ handle: 'adamwathan' })` when a foreground process should keep fetching until the provider reports an end cursor or repeated pages confirm X's reported total. It checkpoints every page and can run for a while on a large following list. Use bounded `syncXFollowing()` calls in a request handler or agent loop so the caller controls how long each action can run.
 
 Every function accepts `databasePath` when your application needs an isolated SQLite file. Search also accepts `resultLimit`, `now`, and `staleAfterMs`. The last two are useful for deterministic tests or a product with a different freshness policy. The [TypeScript package guide](/docs/typescript) covers installation, local storage, publishing approval, and the other public exports.
 

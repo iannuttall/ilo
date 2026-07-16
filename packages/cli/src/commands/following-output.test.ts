@@ -22,6 +22,7 @@ const result = (
   truncated: false,
   coverage: {
     complete: true,
+    completionReason: 'provider_end',
     importedProfiles: 1,
     searchableProfiles: 1,
     profileDataVersion: 1,
@@ -91,6 +92,7 @@ test('explains partial, stale, and legacy caches with an action', () => {
   const partial = followingCoverageLines(
     {
       complete: false,
+      completionReason: null,
       importedProfiles: 80,
       searchableProfiles: 80,
       profileDataVersion: 1,
@@ -111,6 +113,7 @@ test('explains partial, stale, and legacy caches with an action', () => {
   const legacy = followingCoverageLines(
     {
       complete: true,
+      completionReason: 'provider_end',
       importedProfiles: 100,
       searchableProfiles: 0,
       profileDataVersion: 0,

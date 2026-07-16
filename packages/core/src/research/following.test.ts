@@ -69,6 +69,7 @@ test('stores complete followed profiles and searches every local match', async (
     )
 
     assert.equal(state.complete, true)
+    assert.equal(state.completionReason, 'provider_end')
     assert.equal(state.importedProfiles, 3)
     assert.equal(state.searchableProfiles, 3)
     assert.equal(state.profileDataVersion, 1)
@@ -148,6 +149,7 @@ test('resumes unfinished following imports and refreshes completed snapshots', a
       client,
     )
     assert.equal(partial.complete, false)
+    assert.equal(partial.completionReason, null)
     assert.equal(partial.searchableProfiles, 1)
     assert.deepEqual(
       searchXFollowing({
@@ -163,6 +165,7 @@ test('resumes unfinished following imports and refreshes completed snapshots', a
       client,
     )
     assert.equal(complete.complete, true)
+    assert.equal(complete.completionReason, 'provider_end')
     assert.equal(complete.importedProfiles, 2)
 
     snapshot = 2
@@ -187,6 +190,52 @@ test('resumes unfinished following imports and refreshes completed snapshots', a
         now: refreshed.updatedAt + 60_000,
       })?.stale,
       false,
+    )
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
+})
+
+test('confirms completion when the reported count is followed by duplicate pages', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'ilo-following-count-'))
+  const databasePath = join(directory, 'ilo.sqlite')
+  const owner = profile('owner-id', 'owner', { following: 2 })
+  const first = profile('first-id', 'first', {
+    description: 'Building browser tools',
+  })
+  const second = profile('second-id', 'second', {
+    description: 'Building command line tools',
+  })
+  let calls = 0
+
+  try {
+    const state = await syncXFollowing(
+      { handle: 'owner', maxPages: 10, databasePath },
+      {
+        profile: async () => owner,
+        following: async () => {
+          calls += 1
+          return {
+            profiles: [first, second],
+            nextCursor: `cursor-${calls}`,
+          }
+        },
+      },
+    )
+
+    assert.equal(calls, 4)
+    assert.equal(state.complete, true)
+    assert.equal(state.completionReason, 'reported_count_confirmed')
+    assert.equal(state.cursor, null)
+    assert.equal(state.importedProfiles, 2)
+    assert.equal(state.lastError, null)
+    assert.equal(
+      searchXFollowing({
+        handle: 'owner',
+        query: 'building',
+        databasePath,
+      }).coverage.completionReason,
+      'reported_count_confirmed',
     )
   } finally {
     rmSync(directory, { recursive: true, force: true })

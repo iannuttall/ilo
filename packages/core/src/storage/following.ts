@@ -19,6 +19,10 @@ export type FollowingSubject = {
 
 export type FollowingProfile = StoredXProfile
 
+export type FollowingCompletionReason =
+  | 'provider_end'
+  | 'reported_count_confirmed'
+
 export type FollowingSyncState = {
   syncId: string
   subjectId: string
@@ -27,6 +31,7 @@ export type FollowingSyncState = {
   expectedFollowing: number | null
   cursor: string | null
   complete: boolean
+  completionReason: FollowingCompletionReason | null
   pagesFetched: number
   importedProfiles: number
   searchableProfiles: number
@@ -45,6 +50,7 @@ type FollowingSourceRow = {
   sync_id: string
   cursor: string | null
   complete: number
+  completion_reason: string | null
   pages_fetched: number
   profiles_seen: number
   searchable_profiles: number
@@ -55,23 +61,33 @@ type FollowingSourceRow = {
   last_error: string | null
 }
 
-const mapSyncState = (row: FollowingSourceRow): FollowingSyncState => ({
-  syncId: row.sync_id,
-  subjectId: row.subject_id,
-  handle: row.handle,
-  name: row.name,
-  expectedFollowing: row.expected_following,
-  cursor: row.cursor,
-  complete: Boolean(row.complete),
-  pagesFetched: row.pages_fetched,
-  importedProfiles: row.profiles_seen,
-  searchableProfiles: row.searchable_profiles,
-  profileDataVersion: row.profile_data_version,
-  startedAt: row.started_at,
-  updatedAt: row.updated_at,
-  completedAt: row.completed_at,
-  lastError: row.last_error,
-})
+const mapSyncState = (row: FollowingSourceRow): FollowingSyncState => {
+  const complete = Boolean(row.complete)
+  const completionReason =
+    row.completion_reason === 'reported_count_confirmed'
+      ? 'reported_count_confirmed'
+      : complete
+        ? 'provider_end'
+        : null
+  return {
+    syncId: row.sync_id,
+    subjectId: row.subject_id,
+    handle: row.handle,
+    name: row.name,
+    expectedFollowing: row.expected_following,
+    cursor: row.cursor,
+    complete,
+    completionReason,
+    pagesFetched: row.pages_fetched,
+    importedProfiles: row.profiles_seen,
+    searchableProfiles: row.searchable_profiles,
+    profileDataVersion: row.profile_data_version,
+    startedAt: row.started_at,
+    updatedAt: row.updated_at,
+    completedAt: row.completed_at,
+    lastError: row.last_error,
+  }
+}
 
 export const ensureFollowingSchema = (db: Database) => {
   ensureFollowerSchema(db)
@@ -84,6 +100,7 @@ export const ensureFollowingSchema = (db: Database) => {
       sync_id TEXT NOT NULL,
       cursor TEXT,
       complete INTEGER NOT NULL DEFAULT 0,
+      completion_reason TEXT,
       pages_fetched INTEGER NOT NULL DEFAULT 0,
       profiles_seen INTEGER NOT NULL DEFAULT 0,
       profile_data_version INTEGER NOT NULL DEFAULT 1,
@@ -118,6 +135,9 @@ export const ensureFollowingSchema = (db: Database) => {
     db.exec(
       'ALTER TABLE x_following_sources ADD COLUMN profile_data_version INTEGER NOT NULL DEFAULT 0',
     )
+  }
+  if (!sourceColumns.has('completion_reason')) {
+    db.exec('ALTER TABLE x_following_sources ADD COLUMN completion_reason TEXT')
   }
 }
 
@@ -162,9 +182,9 @@ export const startFollowingSync = (input: {
     db.prepare(
       `INSERT INTO x_following_sources (
         subject_id, handle, name, expected_following, sync_id, cursor,
-        complete, pages_fetched, profiles_seen, profile_data_version, started_at,
-        updated_at, completed_at, last_error
-      ) VALUES (?, ?, ?, ?, ?, NULL, 0, 0, 0, 1, ?, ?, NULL, NULL)
+        complete, completion_reason, pages_fetched, profiles_seen,
+        profile_data_version, started_at, updated_at, completed_at, last_error
+      ) VALUES (?, ?, ?, ?, ?, NULL, 0, NULL, 0, 0, 1, ?, ?, NULL, NULL)
       ON CONFLICT(handle) DO UPDATE SET
         subject_id = excluded.subject_id,
         name = excluded.name,
@@ -173,6 +193,7 @@ export const startFollowingSync = (input: {
         sync_id = ?,
         cursor = CASE WHEN ? THEN NULL ELSE x_following_sources.cursor END,
         complete = CASE WHEN ? THEN 0 ELSE x_following_sources.complete END,
+        completion_reason = CASE WHEN ? THEN NULL ELSE x_following_sources.completion_reason END,
         pages_fetched = CASE WHEN ? THEN 0 ELSE x_following_sources.pages_fetched END,
         profiles_seen = CASE WHEN ? THEN 0 ELSE x_following_sources.profiles_seen END,
         started_at = CASE WHEN ? THEN excluded.started_at ELSE x_following_sources.started_at END,
@@ -188,6 +209,7 @@ export const startFollowingSync = (input: {
       now,
       now,
       syncId,
+      startNew ? 1 : 0,
       startNew ? 1 : 0,
       startNew ? 1 : 0,
       startNew ? 1 : 0,
@@ -261,19 +283,79 @@ export const storeFollowingPage = (input: {
       ).count
       db.prepare(
         `UPDATE x_following_sources SET
-          cursor = ?, complete = ?, pages_fetched = pages_fetched + 1,
+          cursor = ?, complete = ?, completion_reason = ?,
+          pages_fetched = pages_fetched + 1,
           profiles_seen = ?, profile_data_version = 1, updated_at = ?,
           completed_at = ?, last_error = NULL
          WHERE subject_id = ? AND sync_id = ?`,
       ).run(
         input.nextCursor,
         complete ? 1 : 0,
+        complete ? 'provider_end' : null,
         profilesSeen,
         now,
         complete ? now : null,
         source.subject_id,
         input.syncId,
       )
+    })()
+    const state = readSyncState(db, input.handle)
+    if (!state) throw new Error('following_sync_state_missing')
+    return state
+  } finally {
+    db.close()
+  }
+}
+
+export const completeFollowingSyncFromReportedCount = (input: {
+  handle: string
+  syncId: string
+  path?: string
+  now?: number
+}): FollowingSyncState => {
+  const db = openDatabase(input.path)
+  try {
+    ensureFollowingSchema(db)
+    const now = input.now ?? Date.now()
+    db.transaction(() => {
+      const source = db
+        .prepare(
+          `SELECT subject_id, expected_following
+           FROM x_following_sources
+           WHERE handle = ? COLLATE NOCASE AND sync_id = ?`,
+        )
+        .get(input.handle, input.syncId) as
+        | { subject_id: string; expected_following: number | null }
+        | undefined
+      if (!source) throw new Error('following_sync_not_active')
+
+      const profilesSeen = (
+        db
+          .prepare(
+            `SELECT COUNT(*) AS count FROM x_following_relationships
+             WHERE subject_id = ? AND last_seen_sync_id = ?`,
+          )
+          .get(source.subject_id, input.syncId) as { count: number }
+      ).count
+      if (
+        source.expected_following === null ||
+        profilesSeen !== source.expected_following
+      ) {
+        throw new Error('following_reported_count_not_reached')
+      }
+
+      db.prepare(
+        `DELETE FROM x_following_relationships
+         WHERE subject_id = ? AND last_seen_sync_id <> ?`,
+      ).run(source.subject_id, input.syncId)
+      db.prepare(
+        `UPDATE x_following_sources SET
+          cursor = NULL, complete = 1,
+          completion_reason = 'reported_count_confirmed',
+          profiles_seen = ?, profile_data_version = 1, updated_at = ?,
+          completed_at = ?, last_error = NULL
+         WHERE subject_id = ? AND sync_id = ?`,
+      ).run(profilesSeen, now, now, source.subject_id, input.syncId)
     })()
     const state = readSyncState(db, input.handle)
     if (!state) throw new Error('following_sync_state_missing')

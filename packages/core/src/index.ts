@@ -91,6 +91,7 @@ export {
   searchXFollowing,
   syncAllXFollowing,
   syncXFollowing,
+  X_FOLLOWING_REPORTED_COUNT_CONFIRMATION_PAGES,
   X_FOLLOWING_STALE_AFTER_MS,
 } from './research/following.js'
 export type {
@@ -129,7 +130,10 @@ export {
 } from './storage/config.js'
 export type { Draft, DraftImage, DraftStatus } from './storage/database.js'
 export type { FollowerSyncState, StoredXProfile } from './storage/followers.js'
-export type { FollowingSyncState } from './storage/following.js'
+export type {
+  FollowingCompletionReason,
+  FollowingSyncState,
+} from './storage/following.js'
 export type {
   XInboxItem,
   XInboxStateAction,

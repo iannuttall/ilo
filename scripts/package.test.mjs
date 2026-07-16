@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { access, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -39,6 +39,7 @@ test('public API can be imported', async () => {
   assert.equal(typeof module.getXFollowingStatus, 'function')
   assert.equal(typeof module.searchXFollowing, 'function')
   assert.equal(typeof module.getXFollowingProfile, 'function')
+  assert.equal(module.X_FOLLOWING_REPORTED_COUNT_CONFIRMATION_PAGES, 3)
   assert.equal(typeof module.createXArticleMonitor, 'function')
   assert.equal(typeof module.refreshXArticleMonitor, 'function')
   assert.equal(typeof module.searchXArticles, 'function')
@@ -142,6 +143,8 @@ test('CLI exposes research, article, inbox, reply, and image commands', () => {
   assert.match(followingSearch.stdout, /--query/)
   assert.match(followingSearch.stdout, /--limit/)
   assert.match(followingSearch.stdout, /--csv/)
+  assert.match(followingSearch.stdout, /\[HANDLE\]/)
+  assert.doesNotMatch(followingSearch.stdout, /HANDLE.*\(Required\)/)
 
   const inbox = spawnSync(
     process.execPath,
@@ -727,6 +730,45 @@ test('CLI and public library share complete following profiles', async () => {
     assert.equal(search.results[0].location, 'London')
     assert.equal(search.coverage.complete, true)
 
+    await writeFile(
+      join(iloHome, 'config.json'),
+      `${JSON.stringify({
+        version: 1,
+        timezone: 'UTC',
+        x: {
+          clientId: 'test-client',
+          accountId: 'subject-id',
+          username: 'subject',
+          displayName: 'Subject',
+          scopes: '',
+          expiresAt: 0,
+        },
+      })}\n`,
+    )
+    const connectedAccountSearch = spawnSync(
+      process.execPath,
+      [
+        'dist/cli.js',
+        'x',
+        'following',
+        'search',
+        '--query',
+        'building browser tools',
+        '--json',
+      ],
+      {
+        cwd: new URL('..', import.meta.url),
+        encoding: 'utf8',
+        env: { ...process.env, ILO_HOME: iloHome },
+      },
+    )
+    assert.equal(
+      connectedAccountSearch.status,
+      0,
+      connectedAccountSearch.stderr,
+    )
+    assert.equal(JSON.parse(connectedAccountSearch.stdout).handle, 'subject')
+
     const profileResult = spawnSync(
       process.execPath,
       [
@@ -778,6 +820,7 @@ test('CLI and public library share complete following profiles', async () => {
     assert.match(csv, /^"query","evidence","id"/)
     assert.match(csv, /"browser_builder"/)
     assert.match(csv, /"source_stale"/)
+    assert.match(csv, /"source_completion_reason"/)
   } finally {
     await rm(iloHome, { recursive: true, force: true })
   }

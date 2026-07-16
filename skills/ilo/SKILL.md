@@ -113,7 +113,7 @@ Following research answers questions about the people an account has chosen to f
 
 Run `ilo_sync_x_following` or `ilo x following sync [handle] --all` before searching. If the handle is omitted, ilo uses the locally connected X account. An unfinished import resumes from its saved cursor. Running sync after a completed import starts a fresh snapshot so removed relationships do not stay current forever.
 
-Use `ilo_x_following_sync_status` or the CLI `status` command before making a completeness claim. The result states how many complete profiles are searchable, whether the provider returned an end cursor, when the snapshot was updated, and whether it is more than 24 hours old. A partial index can prove that a returned profile was found, but it cannot prove that a missing profile is not followed.
+Use `ilo_x_following_sync_status` or the CLI `status` command before making a completeness claim. The result states how many complete profiles are searchable, whether the provider ended the list or repeated pages confirmed X's reported total, when the snapshot was updated, and whether it is more than 24 hours old. A partial index can prove that a returned profile was found, but it cannot prove that a missing profile is not followed.
 
 Search uses local SQLite FTS5 across names, handles, bios, and locations. It is keyword search, not embedding-based semantic search, so use concrete words found in likely profiles. ilo returns every match unless the caller explicitly supplies `resultLimit` or `--limit`. Keep the returned coverage and freshness alongside the results. Use `ilo_get_x_following_profile` or the CLI `profile` command when the task needs the complete stored record for one account.
 

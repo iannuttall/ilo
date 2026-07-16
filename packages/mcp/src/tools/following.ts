@@ -25,6 +25,16 @@ const resolveAccountHandle = async (value?: string) => {
   return normalizeXHandle(config.x.username)
 }
 
+const completionText = (sync: {
+  complete: boolean
+  completionReason: string | null
+}) => {
+  if (!sync.complete) return 'the saved import is unfinished'
+  return sync.completionReason === 'reported_count_confirmed'
+    ? "X's reported total was confirmed across repeated pages"
+    : 'the provider reached the end of the available list'
+}
+
 export const registerFollowingTools = (server: McpServer) => {
   server.registerTool(
     'ilo_sync_x_following',
@@ -54,7 +64,7 @@ export const registerFollowingTools = (server: McpServer) => {
         })
         return success(
           sync.complete
-            ? `${sync.searchableProfiles} complete followed profiles are searchable for @${sync.handle}; the full available list was imported.`
+            ? `${sync.searchableProfiles} complete followed profiles are searchable for @${sync.handle}; ${completionText(sync)}.`
             : `${sync.searchableProfiles} complete followed profiles are searchable for @${sync.handle}; call this tool again to continue from the saved cursor.`,
           { sync },
         )
@@ -83,7 +93,7 @@ export const registerFollowingTools = (server: McpServer) => {
         const sync = getXFollowingStatus({ handle: resolved })
         return success(
           sync
-            ? `${sync.searchableProfiles} complete followed profiles are searchable for @${sync.handle}; ${sync.complete ? 'the full available list was imported' : 'the saved import is unfinished'} and the snapshot is ${sync.stale ? 'stale' : 'fresh'}.`
+            ? `${sync.searchableProfiles} complete followed profiles are searchable for @${sync.handle}; ${completionText(sync)} and the snapshot is ${sync.stale ? 'stale' : 'fresh'}.`
             : 'No following profiles have been indexed for this account.',
           { sync },
         )

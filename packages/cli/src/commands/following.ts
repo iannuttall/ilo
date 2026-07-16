@@ -89,6 +89,7 @@ export const followingCommand = defineCommand({
       args: {
         handle: {
           type: 'positional',
+          required: false,
           description: 'X handle. Defaults to the connected account.',
         },
         pages: {
@@ -162,6 +163,7 @@ export const followingCommand = defineCommand({
       args: {
         handle: {
           type: 'positional',
+          required: false,
           description: 'X handle. Defaults to the connected account.',
         },
         json: {
@@ -198,6 +200,7 @@ export const followingCommand = defineCommand({
       args: {
         handle: {
           type: 'positional',
+          required: false,
           description: 'X handle. Defaults to the connected account.',
         },
         query: {

@@ -6,6 +6,7 @@ import {
   fetchFxTwitterProfile,
 } from '../providers/x/fxtwitter.js'
 import {
+  completeFollowingSyncFromReportedCount,
   type FollowingSyncState,
   getFollowingProfile,
   getFollowingSyncState,
@@ -24,6 +25,7 @@ import {
 } from './followers.js'
 
 export const X_FOLLOWING_STALE_AFTER_MS = 24 * 60 * 60 * 1_000
+export const X_FOLLOWING_REPORTED_COUNT_CONFIRMATION_PAGES = 3
 
 export type FollowingResearchClient = {
   profile(handle: string): Promise<FxTwitterUser>
@@ -55,6 +57,7 @@ export type FollowingSearchMatch = Omit<XFollowerProfile, 'providerData'> & {
 export type FollowingSearchCoverage = Pick<
   XFollowingStatus,
   | 'complete'
+  | 'completionReason'
   | 'importedProfiles'
   | 'searchableProfiles'
   | 'profileDataVersion'
@@ -139,6 +142,18 @@ export const syncXFollowing = async (
         !state.complete && state.importedProfiles === previousProfileCount
           ? pagesWithoutProgress + 1
           : 0
+      if (
+        pagesWithoutProgress >= X_FOLLOWING_REPORTED_COUNT_CONFIRMATION_PAGES &&
+        state.expectedFollowing !== null &&
+        state.importedProfiles === state.expectedFollowing
+      ) {
+        state = completeFollowingSyncFromReportedCount({
+          handle: subject.screen_name,
+          syncId: state.syncId,
+          path: input.databasePath,
+        })
+        input.onPage?.(state)
+      }
       if (pagesWithoutProgress >= X_FOLLOWER_NO_PROGRESS_PAGE_LIMIT) {
         throw new Error('fxtwitter_following_sync_no_progress')
       }
@@ -193,6 +208,7 @@ const coverageFromStatus = (
   status: XFollowingStatus,
 ): FollowingSearchCoverage => ({
   complete: status.complete,
+  completionReason: status.completionReason,
   importedProfiles: status.importedProfiles,
   searchableProfiles: status.searchableProfiles,
   profileDataVersion: status.profileDataVersion,

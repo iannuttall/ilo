@@ -174,8 +174,10 @@ ilo x following status adamwathan
 
 An omitted handle uses the connected X account. A bounded sync reads 20 pages
 by default and resumes when you run it again. `--all` continues until the
-public provider reports the end. Running sync after a completed import starts
-a fresh snapshot, while `--restart` discards an unfinished cursor.
+public provider reports the end, or until the saved profiles match X's
+reported total and repeated pages add nothing new. Running sync after a
+completed import starts a fresh snapshot, while `--restart` discards an
+unfinished cursor.
 
 Search the saved names, handles, bios, locations, and handle aliases locally:
 
