@@ -5,8 +5,8 @@ into drafts, schedule the ideas worth keeping, and publish after review.
 
 ## Primary users
 
-- People use the guided CLI to connect X, manage drafts, schedule posts, and
-  publish from the terminal.
+- People use the guided CLI to connect one or more X publishing accounts,
+  manage drafts, schedule posts, and publish from the terminal.
 - Agents use the skill and MCP tools to research, draft, schedule, and prepare
   publishing actions with clear evidence and explicit confirmation.
 - Consultants and social teams use public profiles and post data for client
@@ -32,12 +32,22 @@ it helps them choose or complete the next action.
 
 ## What ships today
 
-- Guide the user through creating an X Native App, registering the local
-  callback, and connecting one X profile with OAuth 2.0 PKCE.
+- Connect one or more X publishing accounts through either a personal
+  Typefully v2 API key or a user-owned X Native App with OAuth 2.0 PKCE.
+- Import every X profile available to a Typefully API key as a separate local
+  publishing account. List accounts, choose a default, and select an account
+  explicitly for a draft or publish action.
+- Keep Typefully API keys, X OAuth tokens, and optional X client secrets in the
+  operating system keychain. Keep non-secret account metadata and aliases in
+  local configuration.
 - Create and list local drafts.
+- Bind each draft to its publishing account so changing the default cannot
+  send an older draft from the wrong X profile.
 - Schedule drafts with ISO timestamps or plain-language times.
 - Publish a top-level post or reply after confirmation.
-- Attach up to four JPEG, PNG, or WebP images with optional alt text.
+- Attach up to four JPEG, PNG, or WebP images. Direct X publishing supports
+  optional alt text. Typefully publishing rejects images with alt text because
+  its documented v2 draft input does not expose that field.
 - Run the scheduler once or as a local watcher.
 - Import public X follower profiles through FxTwitter into local SQLite, with
   resumable foreground and background full-list syncs.
@@ -78,9 +88,16 @@ The report library is useful today, but automated local account-history reports
 have not shipped yet. Do not write as if the CLI already imports a full post
 history or produces every report automatically.
 
+All current research reads use public FxTwitter data, whether publishing is
+connected through Typefully, direct X OAuth, or not connected at all. The
+Typefully connection is a publishing transport in the current release. Native
+Typefully analytics ingestion has not shipped yet.
+
 ## What comes next
 
 - Restore the strongest legacy ilo analytics as local reports.
+- Add optional Typefully post and follower analytics as another local evidence
+  source without making it a requirement for research or publishing.
 - Import public profile and post history for repeatable analysis.
 - Add scheduled monitor refreshes and spam heuristics to the local reply inbox.
 - Add animated GIF and video uploads, threads, schedule cancellation, retries,

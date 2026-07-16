@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 const MCP_NOTE =
   'The MCP server runs on your machine and uses the same local database as the CLI.'
 const CLI_NOTE =
-  'Use the CLI to create drafts, manage schedules, and publish from your terminal.'
+  'Connect Typefully or direct X, then create drafts, manage schedules, and publish from your terminal.'
 const SKILL_NOTE =
   'The skill teaches coding agents the ilo commands and publishing confirmation rules.'
 const CLI_COMMAND = 'npm i -g iloso && ilo start'
@@ -178,8 +178,8 @@ export function InstallPicker({ standalone = false }: InstallPickerProps) {
           </p>
         ) : (
           <p className="leading-7 text-foreground-muted">
-            Install the CLI, run the guided setup, then draft, schedule, and
-            publish from your terminal.
+            Install the CLI, choose Typefully or direct X, then draft, schedule,
+            and publish from your terminal.
           </p>
         )}
 

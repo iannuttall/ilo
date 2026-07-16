@@ -27,7 +27,7 @@ const SCRIPT: Msg[] = [
   },
   {
     role: 'agent',
-    tools: ['checking the X connection', 'creating a local draft'],
+    tools: ['checking the publishing account', 'creating a local draft'],
     text: 'Saved locally. Nothing was sent to X.',
     bullets: [
       'We shipped v2 today.',
@@ -55,13 +55,13 @@ const SCRIPT: Msg[] = [
   {
     role: 'agent',
     tools: ['loading the scheduled draft'],
-    text: 'This will post to your connected X account. I need your explicit confirmation before ilo can publish it.',
+    text: 'This will post to @youraccount through the selected provider. I need your explicit confirmation before ilo can publish it.',
     action: 'Waiting for confirmation',
   },
   { role: 'user', text: 'Confirmed. Publish that exact draft.' },
   {
     role: 'agent',
-    tools: ['checking confirmation', 'publishing through your X connection'],
+    tools: ['checking confirmation', 'publishing through your saved account'],
     text: 'Published. ilo recorded the post ID and the successful attempt in your local database.',
     action: 'Published to X',
   },

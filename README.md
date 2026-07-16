@@ -16,6 +16,8 @@
   ·
   <a href="https://ilo.so/docs">Documentation</a>
   ·
+  <a href="https://ilo.so/docs/accounts">Publishing accounts</a>
+  ·
   <a href="https://ilo.so/docs/audience-research">Audience research</a>
   ·
   <a href="https://ilo.so/docs/following-search">Following search</a>
@@ -72,27 +74,41 @@ npm i -g iloso
 ilo start
 ```
 
-`ilo start` explains the X developer app setup before asking for a Client ID.
-Create a Native App with OAuth 2.0 read and write access, then register this
-callback exactly:
+`ilo start` asks whether you want to publish through Typefully or directly
+through your own X developer app.
+
+For Typefully, create a v2 API key under **Settings → API** and paste it into
+the hidden prompt. ilo adds every accessible Typefully social set with an X
+profile.
+
+For direct X, create a Native App with OAuth 2.0 read and write access, then
+register this callback exactly:
 
 ```txt
 http://127.0.0.1:8976/callback
 ```
 
 Copy the OAuth 2.0 Client ID from the app's **Keys and tokens** page. Native
-Apps use PKCE and do not need a client secret. ilo opens the browser sign-in
-and saves the OAuth tokens in your operating system keychain.
+Apps use PKCE and do not need a client secret. ilo opens the browser sign-in.
+Typefully API keys and X OAuth tokens stay in your operating system keychain.
+
+List or switch between every connected X publishing account:
+
+```sh
+ilo accounts list
+ilo accounts use <alias-or-handle>
+```
 
 Run `ilo --help` to see the main surface:
 
 ```txt
 Local-first social publishing for people and AI agents
 
-USAGE ilo start|x|post|drafts|scheduler|mcp|skill
+USAGE ilo start|accounts|x|post|drafts|scheduler|mcp|skill
 
 COMMANDS
-      start    Configure an X developer app and connect your account
+      start    Connect Typefully or your own X developer app
+   accounts    Connect and switch between X publishing accounts
           x    Research and manage X accounts
        post    Publish one post or reply to X
      drafts    Create, list, schedule, and publish local drafts
@@ -101,9 +117,14 @@ COMMANDS
       skill    Inspect or install the packaged ilo agent skill
 ```
 
-The connected account becomes the default local namespace for article and
-inbox monitors. Public follower research can run without OAuth. Commands that
-need a namespace also accept `--account <handle>`.
+The default publishing account's handle becomes the local namespace for
+article and inbox monitors. Those reads still use public FxTwitter data.
+Public follower research can run with no publishing connection. Commands that
+need a research namespace also accept an explicit handle.
+
+The [publishing accounts guide](https://ilo.so/docs/accounts) explains
+Typefully, direct X, multiple profiles, account aliases, and why drafts stay
+bound to their original account.
 
 ## What you can do
 
@@ -172,8 +193,9 @@ ilo x following sync adamwathan --all
 ilo x following status adamwathan
 ```
 
-An omitted handle uses the connected X account. A bounded sync reads 20 pages
-by default and resumes when you run it again. `--all` continues until the
+An omitted handle uses the default publishing account's X handle as the local
+research namespace. The profiles still come from FxTwitter. A bounded sync
+reads 20 pages by default and resumes when you run it again. `--all` continues until the
 public provider reports the end, or until the saved profiles match X's
 reported total and repeated pages add nothing new. Running sync after a
 completed import starts a fresh snapshot, while `--restart` discards an
@@ -393,16 +415,17 @@ if (matches[0]) {
     identifier: matches[0].postId,
   })
 
-  const draft = createDraft(`A useful idea from ${article.title}`)
+  const draft = await createDraft(`A useful idea from ${article.title}`)
   await scheduleDraft(draft.id, 'tomorrow at 9am')
 }
 ```
 
 The root package exports follower and following sync and search functions,
-complete stored profile lookup, article monitoring, reply inbox actions, local
-drafts, schedules, static image helpers, X OAuth, provider helpers,
-configuration, and storage paths. The package is pre-1.0, so pin the version
-when another application depends on exact function signatures.
+complete stored profile lookup, article monitoring, reply inbox actions,
+publishing accounts, Typefully setup, local drafts, schedules, static image
+helpers, X OAuth, provider helpers, configuration, and storage paths. The
+package is pre-1.0, so pin the version when another application depends on
+exact function signatures.
 
 The [TypeScript guide](https://ilo.so/docs/typescript) has complete examples
 for research, drafting, publishing, and embedding the MCP server.
@@ -410,8 +433,8 @@ for research, drafting, publishing, and embedding the MCP server.
 ## Know where the data goes
 
 ilo keeps non-secret configuration under `~/.config/ilo` and local working
-data in `~/.config/ilo/ilo.sqlite`. OAuth tokens and the optional X client
-secret use your operating system keychain.
+data in `~/.config/ilo/ilo.sqlite`. Typefully API keys, X OAuth tokens, and the
+optional X client secret use your operating system keychain.
 
 There is no hosted ilo account or draft database. The CLI makes the network
 requests required to connect X, publish approved posts, and retrieve the
@@ -424,8 +447,10 @@ script.
 
 ## Understand the current limits
 
-- X is the only publishing provider today. Bluesky and LinkedIn publishing are
-  planned.
+- X is the only publishing network today. It can publish through Typefully or
+  direct X OAuth. Bluesky and LinkedIn publishing are planned.
+- Typefully is a publishing route in the current release. Research still uses
+  FxTwitter, and Typefully analytics ingestion is planned for later.
 - Article monitors only collect native X Articles and refresh on demand.
 - Follower employer results classify claims in public bios. They do not verify
   someone's employment.
@@ -442,10 +467,17 @@ result supports.
 
 ### Do I need an X developer app?
 
-You need your own X Native App to connect an account and publish. Public
-follower research does not require OAuth. Article and inbox commands can use
-`--account <handle>` as their local namespace, although connecting the account
-once is the easier normal setup.
+No. Connect a personal Typefully v2 API key when your X profiles already live
+there. Direct publishing through X still needs your own X Native App. Public
+follower research does not require either connection. Article and inbox
+commands can use an explicit handle as their local namespace.
+
+### Can I use several X accounts?
+
+Yes. `ilo accounts add typefully` imports every accessible X social set, and
+`ilo accounts add x` connects another direct X profile. Use `ilo accounts use`
+to change the default or pass `--account` for one action. Existing drafts stay
+on the account they were created for.
 
 ### Will ilo post without asking me?
 
@@ -473,6 +505,7 @@ limits, and normal network costs still apply.
 ## Documentation and support
 
 - [Getting started](https://ilo.so/docs/start)
+- [Publishing accounts](https://ilo.so/docs/accounts)
 - [CLI commands](https://ilo.so/docs/cli)
 - [Following search](https://ilo.so/docs/following-search)
 - [Article monitoring](https://ilo.so/docs/articles)

@@ -1,0 +1,208 @@
+---
+title: "Publishing accounts"
+description: "Connect Typefully or direct X, switch between X profiles, and keep every local draft tied to the account that should publish it."
+category: "start"
+order: 2
+status: published
+h1: "Connect and switch between X publishing accounts."
+seoTitle: "Multiple X Accounts in ilo: Typefully and Direct X Setup"
+seoDescription: "Connect several X profiles to ilo through Typefully or direct X OAuth, choose a default, target one account, and keep every draft safely bound."
+---
+
+ilo can publish through Typefully or through your own X developer app. Both routes support multiple X profiles. Pick the one that is less painful for your setup, then use the same drafts, scheduler, CLI commands, MCP tools, and TypeScript functions.
+
+This choice only affects publishing. Follower research, following search, article monitoring, and the reply inbox still read public data through FxTwitter and save it in your local SQLite database. Connecting Typefully does not import Typefully analytics yet.
+
+## Choose how ilo should publish
+
+| Publishing route | What you need | Best fit | Current media support |
+| --- | --- | --- | --- |
+| Typefully | A Typefully v2 API key with access to an X social set | The quickest setup if your X profiles already live in Typefully | JPEG, PNG, and WebP images. Alt text is not available in Typefully's documented v2 draft input. |
+| Direct X | Your own X Native App, OAuth 2.0 Client ID, and any X API costs | People who want to publish straight to X or need image alt text | JPEG, PNG, and WebP images with optional alt text. |
+
+Typefully describes its API as a route for personal automations and workflows. That matches ilo's local-first model: your API key belongs to you and ilo stores it on your machine. The <a href="https://typefully.com/docs/api" target="_blank" rel="noreferrer">Typefully API reference</a> documents its current authentication, social-set, publishing, reply, and media behaviour.
+
+## Connect Typefully
+
+Open Typefully and go to **Settings → API**. Create or copy a v2 API key, then run:
+
+```sh
+ilo start
+```
+
+Choose **Typefully API key** and paste the key into the hidden prompt. ilo checks the key, finds every social set you can access, and adds each social set with an X profile as a separate publishing account. The key goes into your operating system keychain, not `config.json`.
+
+You can choose the provider directly when a script launches the setup:
+
+```sh
+ilo start --provider typefully
+```
+
+Avoid passing `--api-key` in a normal terminal because it can end up in shell history. The flag exists for controlled non-interactive setup, but the hidden prompt is the sensible default.
+
+Add another Typefully connection later with:
+
+```sh
+ilo accounts add typefully
+```
+
+One Typefully key may expose several X profiles. ilo adds all of them in one go and gives each a local alias. If two publishing routes expose the same X handle, the later alias gets a numeric suffix such as `personal-2`. Use the aliases to choose the exact route.
+
+## Connect directly to X
+
+Direct X publishing uses your own X developer app. Open the <a href="https://console.x.com" target="_blank" rel="noreferrer">X Developer Console</a>, create or select an app, and open **User authentication settings**.
+
+Use these values:
+
+```txt
+App type: Native App
+OAuth 2.0: enabled
+App permissions: Read and write
+Callback URI: http://127.0.0.1:8976/callback
+```
+
+Run `ilo start`, choose **Direct X OAuth**, and paste the OAuth 2.0 Client ID from **Keys and tokens**. ilo prints the callback URL before it asks for the ID, opens X in your browser, and waits for the local callback.
+
+A Native App is a public client and uses PKCE, so it does not need a client secret. If you deliberately configured a confidential Web App or Automated App, pass its secret with `--client-secret`.
+
+The direct command is useful when adding a second profile or choosing a memorable alias:
+
+```sh
+ilo accounts add x --alias work
+```
+
+You can also keep using the older spelling:
+
+```sh
+ilo x connect --alias work
+```
+
+Both commands save account-scoped OAuth tokens in the operating system keychain. Connecting a new account makes it the default. Existing accounts remain available.
+
+## List and switch publishing accounts
+
+See every local publishing route with:
+
+```sh
+ilo accounts list
+```
+
+The filled marker shows the current default. Each row includes the X handle, local alias, and provider, which matters when the same handle is available through both Typefully and direct X.
+
+Choose another default by alias, handle, or full account ID:
+
+```sh
+ilo accounts use work
+ilo accounts use @ilodotso
+```
+
+Use an alias when a handle is connected through more than one provider. A bare handle is rejected as ambiguous if ilo cannot identify one safe target.
+
+The default does two jobs. It chooses the publishing account for new drafts, and its X handle becomes the default local namespace for commands such as `ilo x articles refresh` or `ilo x following sync`. Those research commands still fetch public FxTwitter data. No Typefully or X OAuth read endpoint is involved.
+
+## Choose an account for one draft or post
+
+Pass `--account` when one action should ignore the current default:
+
+```sh
+ilo drafts create \
+  --account work \
+  --text "A product update for the work account"
+
+ilo post \
+  --account personal \
+  --text "A note for my personal account"
+```
+
+The selector accepts the same alias, handle, or account ID as `ilo accounts use`. Interactive publishing shows the exact X handle and whether the route is Typefully or direct X before asking for confirmation.
+
+List every draft with its bound account, or filter the list:
+
+```sh
+ilo drafts list
+ilo drafts list --account work
+```
+
+An inbox draft tries to bind itself to a publishing account with the same handle as the inbox namespace. If no matching publishing account exists, the draft stays unassigned until you schedule or publish it with `--account`.
+
+## Drafts stay on their original account
+
+A draft is bound when you create it under a connected default or pass `--account`. Changing the default later does not move that draft.
+
+For example:
+
+```sh
+ilo accounts use personal
+ilo drafts create --text "This belongs to personal"
+
+ilo accounts use work
+ilo drafts publish <draft-id>
+```
+
+The publish preview still says `@personal`. ilo will reject an attempt to override that bound draft with `--account work`. This is deliberate. Reusing an old draft is common; accidentally publishing it from a client or company account is much worse than typing one extra command.
+
+Drafts created before any publishing account is connected remain unassigned. The first schedule or publish action binds them to the account you select. Old single-account ilo configuration is migrated automatically, and existing unassigned drafts are kept with the old default if you later switch accounts.
+
+## Scheduling stays local for both routes
+
+Scheduling works the same way with Typefully and direct X:
+
+```sh
+ilo drafts schedule <draft-id> --at "tomorrow at 9am"
+ilo scheduler watch
+```
+
+ilo stores the schedule in local SQLite. When the draft becomes due, the local scheduler publishes it through the account already attached to the draft. A Typefully-bound draft is sent to Typefully with `publish_at: "now"` at that point. ilo does not create a separate future schedule inside Typefully in this release.
+
+Keep `ilo scheduler watch` running or call `ilo scheduler run` from your task runner. A sleeping laptop cannot publish a local schedule.
+
+## Replies and images work through either provider
+
+Top-level posts and direct replies use the same command shape:
+
+```sh
+ilo post \
+  --account work \
+  --reply-to https://x.com/example/status/123 \
+  --text "A reply to review"
+```
+
+Both routes support up to four static JPEG, PNG, or WebP images. Typefully's documented v2 API does not currently expose an image alt-text field in its draft input, so ilo rejects a Typefully publish when an image includes `--alt`. It does not silently drop accessibility text. Choose a direct X account for that post instead.
+
+```sh
+ilo post \
+  --account direct-work \
+  --text "Weekly signups" \
+  --image ./chart.png \
+  --alt "Bar chart showing weekly signups by source"
+```
+
+## Remove a publishing account
+
+Remove one local connection by alias, handle, or ID:
+
+```sh
+ilo accounts remove work
+```
+
+ilo deletes its keychain credentials when no remaining account needs them. Unscheduled drafts attached to the removed account become unassigned, so you can choose a new account later. Published drafts keep their account snapshot as an audit record.
+
+An account with scheduled or currently publishing drafts cannot be removed. Publish the scheduled drafts or let the local scheduler run them first. This guard stops a due scheduler from discovering that its credentials vanished halfway through a job.
+
+`ilo x disconnect --account <selector>` removes a direct X connection only. Use `ilo accounts remove` for Typefully or when you want one command that works with either provider.
+
+## Agents and TypeScript use the same accounts
+
+The local MCP server exposes `ilo_list_publishing_accounts` and `ilo_set_default_publishing_account`. Draft, schedule, and publish tools also accept an optional `account` selector. Ask the agent to show the exact account, provider, text, destination, and images before any publishing tool receives `confirm: true`.
+
+The TypeScript package exports `connectTypefully()`, `listPublishingAccounts()`, `setDefaultPublishingAccount()`, and the same account-aware draft functions. `createDraft()` is asynchronous because it resolves the selected local account before writing the draft.
+
+The [local MCP setup](/docs/mcp) has agent prompts and the full tool list. The [TypeScript package guide](/docs/typescript) shows account setup and typed examples.
+
+## Know which data leaves your machine
+
+Drafts, schedules, research indexes, inbox state, and publish attempts stay in local SQLite. Non-secret aliases and account metadata live in `~/.config/ilo/config.json`. Typefully keys, X OAuth tokens, and optional X client secrets stay in the operating system keychain.
+
+Approved Typefully posts and their media go to Typefully for publishing. Approved direct X posts and their media go straight to X. Research commands request the public FxTwitter data needed for the command you ran. ilo has no hosted account or draft service in the middle.
+
+If setup succeeds but publishing fails, start with `ilo accounts list`. Confirm the expected alias and provider, then check the provider itself for expired access, a paused plan, missing write permission, or a rate limit. The CLI returns provider errors without switching to another account behind your back.

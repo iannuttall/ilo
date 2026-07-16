@@ -1,15 +1,15 @@
 ---
 title: "Start"
-description: "Install ilo, connect your own X app, and publish your first local draft."
+description: "Install ilo, choose Typefully or direct X publishing, and publish your first reviewed local draft."
 category: "start"
 order: 1
 status: published
 h1: "Set up ilo on your machine."
-seoTitle: "Set Up ilo: Local X CLI and MCP"
-seoDescription: "Install the open source ilo CLI, connect your own X developer app, and use local drafts, scheduling, publishing, and MCP tools."
+seoTitle: "Set Up ilo: Typefully, Direct X, CLI and Local MCP Guide"
+seoDescription: "Install the open source ilo CLI, connect Typefully or direct X, choose a publishing account, and use local drafts, scheduling, and MCP tools."
 ---
 
-ilo is an open source CLI, local MCP server, and agent skill for drafting, scheduling, and publishing to X.
+Install ilo, choose how it should publish, and review one post end to end. The same local setup then works from the CLI, MCP server, agent skill, and TypeScript package.
 
 ## Install the CLI
 
@@ -19,47 +19,66 @@ npm i -g iloso
 
 Both `ilo` and `iloso` run the same command.
 
-## Create an X app
+## Choose Typefully or direct X
 
-Open the [X Developer Console](https://console.x.com) and create or select an app. Under **User authentication settings**, enable OAuth 2.0, choose **Native App**, and use read and write permissions. Native Apps are public clients, so ilo uses PKCE and does not need a client secret.
-
-Add this callback URL:
-
-```txt
-http://127.0.0.1:8976/callback
-```
-
-The X API may have its own usage charges. Those go directly to X, not ilo.
-
-## Connect your account
+Run the guided setup:
 
 ```sh
 ilo start
 ```
 
-The CLI shows the same setup details and callback URL before it asks for anything. Paste the OAuth 2.0 Client ID from **Keys and tokens** when prompted. ilo opens X in your browser, waits for the local callback, and saves the tokens in your operating system keychain.
+Choose **Typefully API key** if your X account is already connected to Typefully. Open Typefully **Settings → API**, create a v2 API key, and paste it into ilo's hidden prompt. ilo imports every accessible Typefully social set that has an X profile and stores the key in your operating system keychain.
 
-You can also pass the client ID directly:
+Choose **Direct X OAuth** when you want ilo to publish straight to X through your own developer app. Open the <a href="https://console.x.com" target="_blank" rel="noreferrer">X Developer Console</a> and create or select an app. Under **User authentication settings**, enable OAuth 2.0, choose **Native App**, and use read and write permissions.
 
-```sh
-ilo x connect --client-id YOUR_CLIENT_ID
+Register this exact callback URL:
+
+```txt
+http://127.0.0.1:8976/callback
 ```
 
-If you intentionally configured a confidential Web App or Automated App instead, pass its secret with `--client-secret`. The normal Native App flow does not use one.
+Native Apps are public clients, so ilo uses PKCE and does not need a client secret. Copy the OAuth 2.0 Client ID from **Keys and tokens**. X controls its developer plans, limits, and charges.
 
-Check the connection:
+The [publishing accounts guide](/docs/accounts) compares both routes, covers multiple X profiles, and explains the current Typefully image-alt-text limit.
 
-```sh
-ilo x status
-```
+## Check the account ilo will use
 
-## Publish your first post
+List the connected accounts and current default:
 
 ```sh
-ilo post --text "Hello from ilo"
+ilo accounts list
 ```
 
-ilo asks for confirmation before publishing. For non-interactive scripts, pass `--yes`.
+A filled marker shows the default. Typefully may add several X profiles from one API key. Switch by local alias or handle:
+
+```sh
+ilo accounts use work
+```
+
+New drafts use this default unless you pass `--account`. The chosen publishing route does not change research reads. Public follower, following, article, and inbox data still comes through FxTwitter and stays in local SQLite.
+
+## Publish your first reviewed post
+
+Start with a local draft so you can inspect the account binding:
+
+```sh
+ilo drafts create --text "Hello from ilo"
+ilo drafts list
+```
+
+The list includes the X handle and provider attached to the draft. Publish it when both are correct:
+
+```sh
+ilo drafts publish <draft-id>
+```
+
+ilo shows the publishing account, provider, destination, text, and images before it asks for confirmation. Nothing is sent before you accept. Use `--yes` only when a separate caller already recorded approval for that exact action.
+
+You can publish one reviewed post without keeping a draft first:
+
+```sh
+ilo post --account work --text "Hello from ilo"
+```
 
 ## Create and schedule a draft
 
@@ -70,7 +89,7 @@ ilo drafts schedule <draft-id> --at "tomorrow at 9am"
 ilo scheduler watch
 ```
 
-The scheduler is a local process. Keep `ilo scheduler watch` running, or call `ilo scheduler run` from cron or another task runner.
+The scheduler is a local process. Keep `ilo scheduler watch` running, or call `ilo scheduler run` from cron or another task runner. Typefully schedules also stay local in this release; ilo sends the post to Typefully when it becomes due.
 
 ## Connect an agent
 
@@ -83,7 +102,7 @@ The MCP server uses stdio and reads the same local database and keychain credent
 
 ## Check where ilo stores data
 
-Drafts, schedules, publish attempts, and settings stay in a local SQLite database. Account metadata lives in `~/.config/ilo/config.json`; OAuth tokens and an optional client secret are stored in your operating system keychain.
+Drafts, schedules, publish attempts, and settings stay in a local SQLite database. Account metadata lives in `~/.config/ilo/config.json`. Typefully API keys, X OAuth tokens, and an optional X client secret are stored in your operating system keychain.
 
 The CLI, MCP server, and agent skill use the same drafts, schedules, and publishing workflow.
 
@@ -100,14 +119,18 @@ ilo scheduler run --json
 
 ## Troubleshooting
 
-If browser authorization fails, confirm that the X app callback URL exactly matches `http://127.0.0.1:8976/callback` and that OAuth 2.0 read and write access is enabled. Run `ilo x status` after reconnecting.
+If direct X browser authorization fails, confirm that the callback exactly matches `http://127.0.0.1:8976/callback` and that OAuth 2.0 read and write access is enabled. Run `ilo x status` after reconnecting.
+
+If Typefully setup fails, create a current v2 key under **Settings → API** and confirm the Typefully user can write to at least one social set with an X profile. `ilo accounts list` shows what was saved locally.
 
 If an agent cannot start ilo, use the absolute executable path returned by `which iloso` in the MCP configuration. The server writes protocol messages to stdout, so keep shell banners and debug output away from the MCP process.
 
-Disconnecting removes the saved X connection without deleting local drafts:
+Remove one publishing connection without deleting published draft history:
 
 ```sh
-ilo x disconnect
+ilo accounts remove <alias-or-handle>
 ```
 
-Read the [CLI reference](/docs/cli) or [local MCP guide](/docs/mcp) for the full surface.
+Accounts with scheduled drafts are protected from removal until those drafts publish. Unscheduled drafts become unassigned and can be bound to another account later.
+
+The [CLI reference](/docs/cli) covers research and publishing commands. The [local MCP guide](/docs/mcp) covers agent setup and confirmation rules.

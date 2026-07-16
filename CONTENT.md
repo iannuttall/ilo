@@ -71,6 +71,12 @@ Do not repeat the surface list as a substitute for explaining the product.
 - Speak of the skill in the singular.
 - A **draft** is saved content that has not been published.
 - A **scheduled draft** has a future publishing time.
+- A **publishing account** is one X profile plus the route ilo uses to publish
+  for it: Typefully or direct X OAuth.
+- Use **direct X** for the user-owned X OAuth route. Do not describe FxTwitter
+  research as part of the direct X connection.
+- A research **handle** or **account handle** names the public X data and local
+  namespace being searched. It does not choose a publishing credential.
 - A **report** is a structured analysis result or a named report-library entry.
 - A **guide** teaches someone how to carry out an analysis when the automated
   report does not exist yet.
@@ -114,6 +120,10 @@ Safe current claims include:
   incomplete or missing follower or following import into a false answer.
 - The CLI and MCP server can create drafts, schedule them, and publish
   top-level posts or replies to X with up to four static images.
+- Typefully is an optional publishing connection. Public audience research,
+  following search, article monitoring, and reply inbox reads still use
+  FxTwitter and local SQLite. Do not claim Typefully analytics are imported
+  until that code ships.
 - The agent skill teaches the ilo workflow and confirmation rules.
 
 Do not claim that ilo automatically builds a complete historical performance

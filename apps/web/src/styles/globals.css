@@ -465,6 +465,19 @@
     color: var(--foreground-muted);
     vertical-align: top;
   }
+
+  @media (max-width: 40rem) {
+    .docs-prose > table {
+      display: block;
+      overflow-x: auto;
+      overscroll-behavior-inline: contain;
+    }
+
+    .docs-prose th,
+    .docs-prose td {
+      min-width: 9rem;
+    }
+  }
 }
 
 /* Logo wink-on-hover: open eye by default, closed wink stroke on hover */

@@ -5,21 +5,24 @@ description: Use ilo for local X article monitoring, reply inboxes, search monit
 
 # ilo
 
-ilo is a local-first social publishing CLI and stdio MCP server. Drafts and schedules stay in local SQLite. X OAuth credentials stay in the operating system keychain.
+ilo is a local-first X research and publishing CLI with a stdio MCP server. Drafts and schedules stay in local SQLite. Typefully API keys and direct X OAuth credentials stay in the operating system keychain. Research reads use public FxTwitter data regardless of the publishing provider.
 
 ## Safety
 
 - Never publish, run the due scheduler, or pass `--yes` without explicit user confirmation for the exact content or already-reviewed batch.
 - Creating, listing, and scheduling drafts do not publish.
-- Show the final text, top-level or reply destination, image paths, and alt text before asking for confirmation.
-- If the connected account is unclear, check `ilo x status --json` first.
-- Do not ask the user to paste OAuth access or refresh tokens. Use `ilo start`.
+- Show the publishing account, provider, final text, top-level or reply destination, image paths, and alt text before asking for confirmation.
+- If the publishing account is unclear, check `ilo_status` or `ilo accounts list --json` first.
+- Do not ask the user to paste OAuth access or refresh tokens. Use `ilo start`. A Typefully v2 API key may be entered in ilo's hidden interactive prompt.
+- A bound draft must stay on its saved publishing account. Never work around an account mismatch by changing local storage.
 
 ## Prefer MCP
 
 Use the local MCP tools when available:
 
 - `ilo_status`
+- `ilo_list_publishing_accounts`
+- `ilo_set_default_publishing_account`
 - `ilo_sync_x_followers`
 - `ilo_x_follower_sync_status`
 - `ilo_search_x_followers`
@@ -55,7 +58,8 @@ Publishing tools require `confirm: true`.
 ## CLI fallback
 
 ```sh
-ilo x status --json
+ilo accounts list --json
+ilo accounts use <alias-or-handle> --json
 ilo x followers sync <handle> --pages 20 --json
 ilo x followers sync <handle> --background --json
 ilo x followers status <handle> --json
@@ -79,18 +83,18 @@ ilo x inbox list --follows-me --json
 ilo x inbox list --i-follow --json
 ilo x inbox show <post-id-or-url> --json
 ilo x inbox draft <post-id-or-url> --text "Reply text" --json
-ilo drafts create --text "Draft text" --json
-ilo drafts create --reply-to <post-id-or-url> --text "Reply text" --image ./chart.png --alt "Chart description" --json
-ilo drafts list --json
-ilo drafts schedule <draft-id> --at "tomorrow at 9am" --json
+ilo drafts create --account <alias-or-handle> --text "Draft text" --json
+ilo drafts create --account <alias-or-handle> --reply-to <post-id-or-url> --text "Reply text" --image ./chart.png --alt "Chart description" --json
+ilo drafts list --account <alias-or-handle> --json
+ilo drafts schedule <draft-id> --account <alias-or-handle> --at "tomorrow at 9am" --json
 ```
 
 After explicit confirmation:
 
 ```sh
-ilo drafts publish <draft-id> --yes --json
-ilo post --text "Approved text" --yes --json
-ilo post --reply-to <post-id-or-url> --text "Approved reply" --yes --json
+ilo drafts publish <draft-id> --account <alias-or-handle> --yes --json
+ilo post --account <alias-or-handle> --text "Approved text" --yes --json
+ilo post --account <alias-or-handle> --reply-to <post-id-or-url> --text "Approved reply" --yes --json
 ```
 
 Use `ilo scheduler run --json` to inspect the result of a due-post pass. Treat it as a publishing action and confirm first.
@@ -105,13 +109,13 @@ Use the CLI `--background` mode for an unattended full import. Use `ilo_get_x_fo
 
 Search uses the local SQLite FTS5 index. For employer questions, report `current` as the conservative count and keep `former` and `unclear` separate. Include the returned public bio evidence. Do not present a partial import or an ambiguous bio as a complete employment record.
 
-Follower research does not require a connected X account. Publishing does.
+Follower research does not require a publishing account. Publishing does.
 
 ## Following research
 
 Following research answers questions about the people an account has chosen to follow, such as “find everyone I follow who is building browser tools.” Syncing saves each available public profile, not only its ID and handle. The structured record includes the name, bio, location, website, account counts, join date, verification, profile images, and the raw provider object.
 
-Run `ilo_sync_x_following` or `ilo x following sync [handle] --all` before searching. If the handle is omitted, ilo uses the locally connected X account. An unfinished import resumes from its saved cursor. Running sync after a completed import starts a fresh snapshot so removed relationships do not stay current forever.
+Run `ilo_sync_x_following` or `ilo x following sync [handle] --all` before searching. If the handle is omitted, ilo uses the default publishing account's X handle as the local namespace. The profiles still come from FxTwitter. An unfinished import resumes from its saved cursor. Running sync after a completed import starts a fresh snapshot so removed relationships do not stay current forever.
 
 Use `ilo_x_following_sync_status` or the CLI `status` command before making a completeness claim. The result states how many complete profiles are searchable, whether the provider ended the list or repeated pages confirmed X's reported total, when the snapshot was updated, and whether it is more than 24 hours old. A partial index can prove that a returned profile was found, but it cannot prove that a missing profile is not followed.
 
@@ -139,15 +143,25 @@ Inspect the complete inbox item before drafting. Creating a reply draft and chan
 
 Pass `replyToPostId` to create or publish a reply. It accepts a numeric X post id or an X post URL. X can still reject a target under its API access or conversation rules.
 
-Posts and drafts accept up to four local JPEG, PNG, or WebP files. Use alt text when it adds useful context. A scheduled draft stores the image paths, so those files must remain available until it publishes.
+Posts and drafts accept up to four local JPEG, PNG, or WebP files. Use alt text when it adds useful context. Direct X publishing supports image alt text. Typefully's documented v2 draft input does not, so ilo rejects a Typefully publish that contains alt text instead of silently dropping it. A scheduled draft stores the image paths, so those files must remain available until it publishes.
+
+## Publishing accounts
+
+ilo can publish through a personal Typefully v2 API key or a user-owned X developer app. `ilo start` guides either route. Typefully adds every accessible social set with an X profile. Direct X connects one profile per OAuth flow.
+
+Use `ilo_list_publishing_accounts` or `ilo accounts list --json` before preparing work for several handles. Pass the returned alias, handle, or ID as `account` or `--account`. Use an alias when the same X handle is available through both providers.
+
+A new draft snapshots its publishing account. Changing the default does not move existing drafts. If a draft is unassigned, scheduling or publishing binds the selected or default account. If it is already bound, a different selector must fail before any provider request.
+
+Schedules stay in ilo's local SQLite database for both providers. When a Typefully draft becomes due, ilo asks Typefully to publish it immediately. Native Typefully analytics and remote Typefully scheduling are not part of the current workflow.
 
 ## Setup
 
-If no X account is connected:
+If no publishing account is connected, run `ilo start` interactively and let the user choose:
 
-1. Tell the user to create an X developer app with OAuth 2.0 read and write access.
-2. Recommend the Native App type so PKCE works without a client secret.
-3. Tell them to register `http://127.0.0.1:8976/callback` exactly.
-4. Run `ilo start` interactively. It repeats these details before asking for the Client ID.
+1. Typefully asks for a v2 API key from **Settings → API**.
+2. Direct X asks for a Native App with OAuth 2.0 read and write access.
+3. Direct X must register `http://127.0.0.1:8976/callback` exactly.
+4. Confirm the saved provider, handle, and alias with `ilo accounts list`.
 
-Do not invent provider charges, limits, or approval status. X controls those.
+Do not invent provider charges, limits, or approval status. Typefully and X control those. The [publishing accounts guide](https://ilo.so/docs/accounts) has the current setup and provider limits.

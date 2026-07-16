@@ -1,22 +1,30 @@
 ---
 title: "Local MCP"
-description: "Give Claude, Codex, Cursor, or another agent local X article search, reply inbox, follower research, drafts, and publishing tools over stdio."
+description: "Give an agent local X research, account-aware drafts, and reviewed publishing through Typefully or direct X over stdio."
 category: "agent"
 order: 1
 status: published
 h1: "Connect an agent to your local ilo install."
-seoTitle: "Local MCP for X: Claude, Codex and Cursor"
-seoDescription: "Connect Claude, Codex, Cursor, or another MCP client to the open source ilo CLI over local stdio."
+seoTitle: "Local MCP for X: Claude, Codex, Cursor and Agent Setup"
+seoDescription: "Connect Claude, Codex, Cursor, or another agent to ilo over local stdio for X research, account-bound drafts, scheduling, and reviewed publishing."
 ---
 
-Install ilo first, then run the guided X setup once:
+Install ilo first. Connect a publishing account if the agent will draft for a specific profile, schedule, or publish:
 
 ```sh
 npm i -g iloso
 ilo start
 ```
 
-The guided command explains how to create the required X Native App and prints `http://127.0.0.1:8976/callback` before asking for its OAuth 2.0 Client ID.
+Public follower research can run without this connection. The guided command lets you choose a Typefully v2 API key or direct X OAuth. Typefully imports every accessible X social set. Direct X setup explains how to create an X Native App and prints `http://127.0.0.1:8976/callback` before asking for its OAuth 2.0 Client ID.
+
+Check what the agent will see:
+
+```sh
+ilo accounts list
+```
+
+The [publishing accounts guide](/docs/accounts) covers multiple profiles, aliases, default switching, draft binding, and the split between publishing credentials and FxTwitter research.
 
 You can now start ilo as a local stdio MCP server:
 
@@ -38,7 +46,7 @@ claude mcp add ilo -- iloso mcp serve
 codex mcp add ilo -- iloso mcp serve
 ```
 
-Restart the client after adding ilo if it does not appear immediately. Ask the agent to check `ilo_status` before creating a draft; a connected install returns the active X username.
+Restart the client after adding ilo if it does not appear immediately. Ask the agent to check `ilo_status` before creating a draft. A connected install returns the default X username, provider, and every local publishing account.
 
 ## Claude Desktop and config-based clients
 
@@ -69,7 +77,9 @@ Install both when your client supports skills. The CLI prints the installed path
 
 | Tool | What it does |
 | --- | --- |
-| `ilo_status` | Checks the local install and connected X account. |
+| `ilo_status` | Checks the local install, default publishing account, provider, and available accounts. |
+| `ilo_list_publishing_accounts` | Lists local Typefully and direct X publishing accounts. |
+| `ilo_set_default_publishing_account` | Changes the default for new drafts without moving drafts already bound to another account. |
 | `ilo_sync_x_followers` | Imports public X followers through FxTwitter and saves resumable progress. |
 | `ilo_x_follower_sync_status` | Reports how many profiles are searchable and whether the saved import is finished. |
 | `ilo_search_x_followers` | Searches imported follower profiles, returns current matches by default, and keeps counts for current, former, and unclear matches. |
@@ -100,7 +110,7 @@ Install both when your client supports skills. The CLI prints the installed path
 | `ilo_publish_post` | Publishes a top-level post or reply after explicit confirmation. |
 | `ilo_run_scheduler` | Publishes due drafts after explicit confirmation. |
 
-Publishing tools require `confirm: true`. Monitor refreshes and inbox state changes write only to the local database. They never post to X.
+Draft, schedule, and publish tools accept an optional `account` alias, handle, or ID. Publishing tools require `confirm: true`. Monitor refreshes and inbox state changes write only to the local database. They never post to X.
 
 ## Example prompt
 
@@ -111,7 +121,7 @@ Create a local draft from this idea. Do not publish it.
 When you are ready:
 
 ```txt
-Show me the draft, ask me to confirm it, then publish it to X.
+Show me the draft, publishing account, provider, and destination. Ask me to confirm all of them, then publish it to X.
 ```
 
 The repository is MIT licensed, so you can add tools, providers, or new agent workflows.
@@ -202,24 +212,39 @@ Call `ilo_get_x_following_profile` after choosing a result. It returns the saved
 
 `ilo_create_draft` and `ilo_publish_post` accept `replyToPostId` as a numeric X post id or URL. They also accept an `images` array with up to four local JPEG, PNG, or WebP paths and optional `altText`.
 
-The MCP process must be able to read each image path. Scheduled drafts keep those paths rather than copying the files, so the files must stay in place until publishing. X may still reject a reply under its API access or conversation rules.
+The MCP process must be able to read each image path. Scheduled drafts keep those paths rather than copying the files, so the files must stay in place until publishing. Direct X supports the optional alt text. Typefully's documented v2 draft input does not, so ilo rejects a Typefully publish that contains alt text rather than dropping it. X may still reject a reply under its API access or conversation rules.
+
+## Keep account choice explicit
+
+Every new draft uses the requested `account` or the current local default. Its response includes a `publishingAccount` snapshot. That account remains attached if someone changes the default later.
+
+Ask for the account before creating work for several profiles:
+
+```txt
+List my publishing accounts. Create this as a local draft for the work account,
+then show me the saved account and provider. Do not publish it.
+```
+
+An agent can call `ilo_set_default_publishing_account` for a deliberate local switch. It can also leave the default alone and pass `account` to one draft, schedule, or publish call. An attempt to publish a bound draft through a different account fails before Typefully or X receives a request.
+
+Research account handles are separate. `ilo_search_x_followers` searches the public handle in its `handle` input. Following, article, and inbox tools use `accountHandle` as the public data namespace. These tools still use FxTwitter even when the default publishing account is connected through Typefully.
 
 ## How the local server runs
 
 Your MCP client launches `iloso mcp serve` as a child process and communicates over stdin and stdout. The process ends when the client closes it. It does not listen on a network port, expose an OAuth callback, or require a browser login to ilo.
 
-Because the CLI and MCP server share the same database, a draft created by an agent appears immediately in `ilo drafts list`. You can review, edit, schedule, or publish it from the terminal without transferring it between systems.
+Because the CLI and MCP server share the same database, a draft created by an agent appears immediately in `ilo drafts list`. You can review, schedule, or publish it from the terminal without transferring it between systems.
 
 ## Permission model
 
 The MCP client controls which agents can call ilo tools. ilo adds a second guard at the action boundary: publishing a post or reply, publishing a draft, and running due scheduled posts all require `confirm: true`. Creating or reading a draft does not.
 
-Use prompts that separate preparation from publication. For example, ask an agent to create three drafts first, review them, and only then approve one exact draft id for publishing. Before approval, check the exact text, top-level or reply destination, images, and alt text. Do not give an unattended agent standing permission to confirm every write.
+Use prompts that separate preparation from publication. For example, ask an agent to create three drafts first, review them, and only then approve one exact draft ID for publishing. Before approval, check the publishing account, provider, text, top-level or reply destination, images, and alt text. Do not give an unattended agent standing permission to confirm every write.
 
 ## Troubleshooting clients
 
 Run `iloso mcp serve` directly to confirm that the command exists. The process will wait silently for protocol input; stop it with Control-C. If a desktop client cannot find the command, replace `iloso` with the absolute path from `which iloso` and restart the client.
 
-Run `ilo x status` in the same user account that launches the MCP client. Keychain credentials are user-specific, so a service, container, or remote shell may not see credentials saved in your desktop session.
+Run `ilo accounts list` in the same operating-system user account that launches the MCP client. Keychain credentials are user-specific, so a service, container, or remote shell may not see credentials saved in your desktop session.
 
 If a tool call fails, check the returned error before retrying. Repeated provider writes can be unsafe when a network response is ambiguous; verify the account on X before asking an agent to publish again.

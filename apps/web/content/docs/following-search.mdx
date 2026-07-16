@@ -19,13 +19,13 @@ Install ilo if you have not already:
 npm i -g iloso
 ```
 
-If you have connected your own X account with `ilo start`, this command builds its following index:
+If you have connected a publishing account with `ilo start`, this command uses its X handle to build the following index:
 
 ```sh
 ilo x following sync --all
 ```
 
-You can also research a public account by passing its handle. That path does not require X OAuth:
+You can also research a public account by passing its handle. That path does not require Typefully or X OAuth:
 
 ```sh
 ilo x following sync adamwathan --all
@@ -160,7 +160,7 @@ ilo x following profile browser_builder \
   --json
 ```
 
-The first handle is the followed profile. `--account` names the source following list. Omit `--account` to use the connected X account as the source.
+The first handle is the followed profile. `--account` names the source following list. Omit `--account` to use the default publishing account's X handle as the source namespace.
 
 Profile lookup is local and makes no fresh network request. The JSON response includes coverage alongside the profile so you can see whether that record belongs to a partial or stale snapshot.
 
@@ -194,7 +194,7 @@ Repeat the tool while `sync.complete` is false. Then search the local index:
 }
 ```
 
-Omitting `accountHandle` uses the locally connected account. Omitting `resultLimit` returns every match. A useful prompt keeps the evidence requirements explicit:
+Omitting `accountHandle` uses the default publishing account's X handle. Omitting `resultLimit` returns every match. A useful prompt keeps the evidence requirements explicit:
 
 ```txt
 Index the public profiles @adamwathan follows. Tell me whether the snapshot is

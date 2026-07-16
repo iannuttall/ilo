@@ -1,12 +1,12 @@
 ---
 title: "CLI"
-description: "Find posts worth replying to, monitor X articles, search public followers, create local drafts, and publish from the terminal."
+description: "Research public X data, manage several publishing accounts, create local drafts, and publish through Typefully or direct X from the terminal."
 category: "agent"
 order: 2
 status: published
 h1: "Research, draft, and publish from the terminal."
-seoTitle: "ilo CLI: Local X Drafts, Scheduling and Publishing"
-seoDescription: "Use the open source ilo CLI to monitor X articles, build a local reply inbox, search followers, manage drafts, and publish after review."
+seoTitle: "ilo CLI: X Research, Multiple Accounts and Publishing Guide"
+seoDescription: "Use the ilo CLI to search public X audiences, monitor replies and articles, switch publishing accounts, manage local drafts, and publish after review."
 ---
 
 Install ilo from npm:
@@ -17,35 +17,43 @@ npm i -g iloso
 
 Run `ilo --help` to see the current command tree.
 
-## X account
+## Connect one or more publishing accounts
 
 ```sh
-ilo x connect
-ilo x status
-ilo x disconnect
+ilo start
+ilo accounts add typefully
+ilo accounts add x --alias work
+ilo accounts list
+ilo accounts use work
+ilo accounts remove <alias-or-handle>
 ```
 
-`ilo start` is the guided shortcut for `ilo x connect`.
+`ilo start` asks whether you want to publish through Typefully or directly through your own X developer app. Typefully is the quicker route when your X profiles already live there. A direct X connection is useful when you want to avoid another publishing service or need image alt text.
 
-Before asking for a Client ID, the guided flow shows the X developer portal, recommends a Native App with OAuth 2.0 read and write access, and prints the exact default callback URL:
+Typefully setup asks for a v2 API key from **Settings → API**. It adds every accessible Typefully social set with an X profile. Direct X setup shows the X developer portal, recommends a Native App with OAuth 2.0 read and write access, and prints the exact callback before asking for a Client ID:
 
 ```txt
 http://127.0.0.1:8976/callback
 ```
 
-Copy the OAuth 2.0 Client ID from the app's **Keys and tokens** page. A Native App uses PKCE and does not need a client secret.
+Copy the OAuth 2.0 Client ID from the app's **Keys and tokens** page. A Native App uses PKCE and does not need a client secret. `ilo x connect`, `ilo x status`, and `ilo x disconnect` remain available for direct X accounts.
 
-Your X client configuration and account metadata live in `~/.config/ilo/config.json`. OAuth tokens and the optional client secret are stored in the operating system keychain.
+Account aliases and non-secret metadata live in `~/.config/ilo/config.json`. Typefully keys, X OAuth tokens, and optional X client secrets are stored in the operating system keychain.
+
+New drafts use the current default account. Pass `--account <alias-or-handle>` to target another account for one command. A draft remembers the account it was created for, so switching the default does not move older drafts to a different X profile.
+
+The [publishing accounts guide](/docs/accounts) covers provider choice, duplicate handles, draft binding, local scheduling, account removal, and which commands still use FxTwitter.
 
 ## Publish one post
 
 ```sh
 ilo post --text "Post text"
+ilo post --account work --text "Post text for work"
 ilo post --file ./post.txt
 printf "Post from stdin" | ilo post
 ```
 
-Interactive publishing asks for confirmation. Use `--yes` only when the caller has already confirmed the post.
+Interactive publishing shows the exact handle, provider, text, destination, and media before asking for confirmation. Use `--yes` only when the caller has already confirmed that exact post and publishing account.
 
 ## Reply and attach images
 
@@ -65,6 +73,8 @@ ilo post \
 ```
 
 The same options work with `ilo drafts create`, including scheduled drafts. ilo saves absolute image paths with the draft, so the files must remain available until it publishes. Each image can be up to 5 MB.
+
+Both publishing routes accept static images. Typefully's documented v2 draft input does not expose image alt text, so ilo rejects a Typefully post that includes `--alt` instead of silently deleting the text. Use a direct X publishing account for that post.
 
 X applies its own API access and conversation rules to replies. A reply that works in the X website can still be rejected by the API.
 
@@ -143,7 +153,7 @@ The CSV has one row per company and listed profile match. It includes the classi
 
 The [following search guide](/docs/following-search) covers complete profile storage, resumable syncs, automatic snapshot refreshes, freshness, local search, exports, MCP, TypeScript, and evidence limits.
 
-Build the connected account's profile index by omitting the handle, or pass a public handle explicitly:
+Build the default publishing handle's profile index by omitting the handle, or pass a public handle explicitly:
 
 ```sh
 ilo x following sync --all
@@ -234,7 +244,7 @@ ilo x inbox archive <post-id-or-url>
 ilo x inbox restore <post-id-or-url>
 ```
 
-Import the connected account's following profiles to use `--i-follow`. The same index is searchable with `ilo x following search`. The existing follower import powers `--follows-me`:
+Import the default publishing handle's following profiles to use `--i-follow`. The same index is searchable with `ilo x following search`. The existing follower import powers `--follows-me`:
 
 ```sh
 ilo x following sync --all
@@ -254,16 +264,19 @@ ilo x inbox draft <post-id-or-url> --text "Reply to review"
 
 Drafting marks the inbox item as read. It sets the reply target on a local draft and prints `Nothing was published.` Publishing that draft still requires the normal confirmation step. A successful reply published through ilo marks the matching inbox item as replied when it can find it locally.
 
-## Drafts
+## Keep drafts attached to the right account
 
 ```sh
-ilo drafts create --text "Draft text"
+ilo drafts create --account personal --text "Draft text"
 ilo drafts list
+ilo drafts list --account personal
 ilo drafts schedule <draft-id> --at "Friday at 2pm"
 ilo drafts publish <draft-id>
 ```
 
-Schedule values can be ISO timestamps or plain phrases such as `in 30 minutes`, `tomorrow at 9am`, and `Monday at 14:00`.
+Draft creation binds the current default or explicit `--account`. Later switches do not change it. `ilo drafts publish <id> --account work` is accepted only when the draft is already bound to `work`; a mismatch fails before a provider request.
+
+An unassigned draft is allowed when no publishing account exists yet. Scheduling or publishing it binds the account at that point. Schedule values can be ISO timestamps or plain phrases such as `in 30 minutes`, `tomorrow at 9am`, and `Monday at 14:00`.
 
 ## Local scheduler
 
@@ -272,7 +285,9 @@ ilo scheduler run
 ilo scheduler watch --interval 60
 ```
 
-`run` checks once. `watch` keeps running and checks on an interval. Drafts stay in the local SQLite database until they are published or removed.
+`run` checks once. `watch` keeps running and checks on an interval. Drafts stay in the local SQLite database until they are published. The scheduler uses each draft's bound account, not whichever account is the default when the job runs.
+
+Schedules stay local for both providers. A due Typefully draft is sent with immediate publishing at that time; it does not appear as a future Typefully schedule beforehand.
 
 ## JSON output
 
@@ -280,6 +295,7 @@ Commands intended for scripts support `--json`.
 
 ```sh
 ilo x status --json
+ilo accounts list --json
 ilo drafts list --json
 ilo scheduler run --json
 ```
@@ -308,7 +324,7 @@ The packaged ilo skill teaches coding agents when to use ilo, which CLI commands
 
 ## Safe automation
 
-Publishing commands are interactive by default. A person sees the final text, reply destination, image paths, and alt text before ilo sends anything to X. Use `--yes` only in automation that already has an approval step. Monitor refreshes, inbox state changes, reply drafting, follower research, listing, and status checks do not publish anything.
+Publishing commands are interactive by default. A person sees the final account, provider, text, reply destination, image paths, and alt text before ilo sends anything to a provider. Use `--yes` only in automation that already has an approval step. Monitor refreshes, inbox state changes, reply drafting, follower research, listing, and status checks do not publish anything.
 
 For scripts, prefer JSON output and check the process exit code. Successful commands exit with code `0`; invalid input, missing credentials, and provider failures return a non-zero code with an actionable message.
 
@@ -327,4 +343,6 @@ Natural-language times use your configured local timezone. Use an ISO timestamp 
 
 ilo keeps configuration under `~/.config/ilo`, local working data in SQLite, and secrets in the system keychain. Back up the database if your draft history matters, but do not copy keychain exports into a repository or shell script.
 
-If a command cannot find the connected account, run `ilo x status`. Reconnect with `ilo x connect` after changing X app scopes or rotating the client configuration.
+If a publishing command cannot find the expected account, run `ilo accounts list`. Reconnect Typefully after rotating its key. Use `ilo x connect` after changing direct X app scopes or client configuration.
+
+Publishing setup has no effect on the research provider. Follower and following syncs, article monitors, and reply inbox refreshes continue to use public FxTwitter data. Most research commands accept an explicit public handle and do not require Typefully or direct X credentials at all.

@@ -1,12 +1,12 @@
 ---
 title: "TypeScript"
-description: "Use ilo's local X article search, reply inbox, follower research, drafting, scheduling, publishing, and MCP code inside your Node project."
+description: "Use ilo's X research, multiple publishing accounts, local drafts, scheduling, Typefully or direct X publishing, and MCP code in Node."
 category: "reference"
 order: 4
 status: published
 h1: "Use ilo as a TypeScript package."
-seoTitle: "ilo TypeScript Package: X Drafts and Publishing"
-seoDescription: "Import ilo in Node to monitor X articles, build a local reply inbox, search followers, create drafts, publish with images, or embed MCP."
+seoTitle: "ilo TypeScript: X Research and Multi-Account Publishing"
+seoDescription: "Import ilo in Node to research public X data, connect Typefully, switch publishing accounts, create bound drafts, schedule posts, or embed local MCP."
 ---
 
 The `iloso` npm package is the CLI, local MCP server, and TypeScript library. Install it in a Node 22 or newer project when your own tool or agent needs the same article monitoring, reply inbox, follower research, drafting, scheduling, and publishing functions.
@@ -24,13 +24,13 @@ Import from the package root when your application already knows which action it
 ```ts
 import { createDraft, listDrafts, scheduleDraft } from 'iloso'
 
-const draft = createDraft('A post to review before publishing')
+const draft = await createDraft('A post to review before publishing')
 await scheduleDraft(draft.id, 'tomorrow at 9am')
 
 console.log(listDrafts())
 ```
 
-Drafts and schedules use the same local SQLite database as the CLI and MCP server. A draft created in code appears in `ilo drafts list` straight away.
+Drafts and schedules use the same local SQLite database as the CLI and MCP server. A draft created in code appears in `ilo drafts list` straight away. `createDraft()` is asynchronous because it resolves and snapshots the chosen publishing account before it writes the row.
 
 ## Create a reply with images
 
@@ -39,7 +39,7 @@ Pass a reply target and up to four local JPEG, PNG, or WebP files when you creat
 ```ts
 import { createDraft } from 'iloso'
 
-const reply = createDraft('The result from three companies:', {
+const reply = await createDraft('The result from three companies:', {
   replyToPostId: 'https://x.com/example/status/123',
   images: [
     {
@@ -51,6 +51,63 @@ const reply = createDraft('The result from three companies:', {
 ```
 
 ilo normalizes the reply URL to its post id and stores absolute image paths. Keep those files available until a scheduled draft publishes. X applies its own API access and conversation rules when the reply is sent.
+
+Direct X publishing supports the optional alt text shown above. Typefully's documented v2 draft input does not expose image alt text, so a Typefully-bound publish rejects this draft rather than dropping the accessibility text.
+
+## Connect and choose publishing accounts
+
+Most applications should run the interactive `ilo start` flow once. It stores Typefully API keys or direct X OAuth credentials in the operating system keychain, where the library can read them later.
+
+Typefully can also be connected from a trusted setup process:
+
+```ts
+import {
+  connectTypefully,
+  listPublishingAccounts,
+  setDefaultPublishingAccount,
+} from 'iloso'
+
+const connection = await connectTypefully(process.env.TYPEFULLY_API_KEY ?? '')
+
+console.log(connection.accounts.map(({ alias, username }) => ({
+  alias,
+  username,
+})))
+
+await setDefaultPublishingAccount('work')
+console.log(await listPublishingAccounts())
+```
+
+`connectTypefully()` checks the key and adds every accessible Typefully social set that has an X profile. The key is saved in the operating system keychain. Do not pass a user-supplied key through logs, query strings, or a hosted ilo service.
+
+Direct X OAuth uses `buildXAuthorizeUrl()`, `exchangeXCode()`, `fetchXMe()`, and `saveXCredentials()` under the hood. The guided CLI owns the callback server and is much less code for a personal integration. Use the lower-level exports only when your application already has a deliberate OAuth UI.
+
+The [publishing accounts guide](/docs/accounts) explains provider choice, local aliases, draft binding, scheduler behaviour, and credential storage.
+
+## Bind work to one X profile
+
+Pass an alias, handle, or full account ID through `account`:
+
+```ts
+import { createDraft, publishPost, scheduleDraft } from 'iloso'
+
+const draft = await createDraft('A work account draft', {
+  account: 'work',
+})
+
+console.log(draft.publishingAccount)
+
+await scheduleDraft(draft.id, 'Friday at 2pm', {
+  account: 'work',
+})
+
+// Call only after your application confirms this exact action.
+await publishPost('A personal post', { account: 'personal' })
+```
+
+The saved `publishingAccount` contains the account ID, provider, and X username. Switching the default later does not alter it. `publishDraft(draft.id, { account: 'another-account' })` fails if the selector does not match the bound account.
+
+Pass `account: null` to `createDraft()` when you deliberately want an unassigned local draft. Scheduling or publishing it later binds the selected or default account. Leaving `account` undefined uses the current default when one exists and otherwise keeps the draft unassigned.
 
 ## Import and search public followers
 
@@ -246,11 +303,12 @@ console.log({
   text: draft.body,
   replyToPostId: draft.replyToPostId,
   images: draft.images,
+  publishingAccount: draft.publishingAccount,
 })
 // Call publishDraft(draft.id) only after your application records approval.
 ```
 
-Run `ilo start` once on the machine before publishing. The library reads the same X connection from the operating system keychain.
+Run `ilo start` once on the machine before publishing. The library reads the same Typefully or direct X credentials from the operating system keychain. An approval screen should include the provider and X username as well as the content.
 
 ## Embed the MCP server
 
@@ -266,6 +324,6 @@ Most applications should call the root functions directly. `createServer()` and 
 
 ## Public exports
 
-The root package exports the FxTwitter provider helpers, follower and following sync and search functions, article monitors and search, reply inbox actions, complete profile lookup, draft actions, static image helpers, schedule parsing, X text validation, X OAuth helpers, local configuration, and storage paths. These exports are covered by the packed-package tests, but ilo is still pre-1.0. Pin the package version when another application depends on the exact function signatures.
+The root package exports the FxTwitter provider helpers, follower and following sync and search functions, article monitors and search, reply inbox actions, publishing-account storage, Typefully setup and client helpers, draft actions, static image helpers, schedule parsing, X text validation, X OAuth helpers, local configuration, and storage paths. These exports are covered by the packed-package tests, but ilo is still pre-1.0. Pin the package version when another application depends on the exact function signatures.
 
 Use the [CLI reference](/docs/cli) for interactive commands or the [local MCP guide](/docs/mcp) to connect an agent without writing integration code.
