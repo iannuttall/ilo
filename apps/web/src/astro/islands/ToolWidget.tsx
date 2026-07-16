@@ -7,8 +7,8 @@ import {
   XThreadUnrollerTool,
   XVideoDownloaderTool,
 } from '@/components/tools/social/x-content-tools'
+import { TwitterFollowerCountTool } from '@/components/tools/social/x-follower-count-tool'
 import {
-  TwitterFollowerCountTool,
   TwitterIdTool,
   TwitterIdToUsernameTool,
   TwitterProfileAnalyticsTool,
