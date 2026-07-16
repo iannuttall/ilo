@@ -1,12 +1,12 @@
 ---
 title: "CLI"
-description: "Search public followers, create local drafts, and publish posts or replies to X from the terminal."
+description: "Find posts worth replying to, search public followers, create local drafts, and publish to X from the terminal."
 category: "agent"
 order: 2
 status: published
 h1: "Research, draft, and publish from the terminal."
 seoTitle: "ilo CLI: Local X Drafts, Scheduling and Publishing"
-seoDescription: "Use the open source ilo CLI to search public X followers, manage local drafts, schedule posts, and publish posts or replies."
+seoDescription: "Use the open source ilo CLI to build a local X reply inbox, search public followers, manage drafts, schedule posts, and publish after review."
 ---
 
 Install ilo from npm:
@@ -108,9 +108,9 @@ ilo x followers search adamwathan \
   --query "how many of my followers work at cursor|vercel|sentry"
 ```
 
-Employer searches keep `current`, `former`, and `unclear` matches separate and return the public bio used as evidence. Check the coverage line first. A partial import only answers for the profiles indexed so far, and a public bio is not a verified employment record.
+Employer searches keep `current`, `former`, and `unclear` matches separate and return the public bio used as evidence. Check the coverage lines first. If the import did not reach a confirmed end, ilo shows the reported follower total and an approximate possible gap. A public bio is not a verified employment record.
 
-The normal result uses a terminal table. `--limit` controls how many evidence rows appear for each company without changing the totals:
+The summary stays in a compact table. Matching profiles use a wide table when it fits and stacked records in a normal or narrow terminal. `--limit` controls how many evidence rows appear for each company without changing the totals:
 
 ```sh
 ilo x followers search adamwathan \
@@ -127,6 +127,48 @@ ilo x followers search adamwathan \
 ```
 
 The CSV has one row per company and profile match. It includes the classification, bio evidence, account counts, location, website, verification details, public image URLs, join date, and import coverage. Search classifies up to 10,000 candidates for each company by default. Change that cap with `--candidates`.
+
+## Build a local reply inbox
+
+Save an X advanced-search query as a monitor, then refresh it when you want new matches:
+
+```sh
+ilo x monitors add "ilo mentions" \
+  --query '"ilo" OR "ilo.so" -is:retweet'
+ilo x inbox refresh
+ilo x inbox list
+```
+
+A refresh saves matching public posts, author profiles, engagement counts, the source monitor, and the raw FxTwitter record to local SQLite. It deduplicates posts found by more than one monitor. Monitors do not run in the background yet, so rerun `ilo x inbox refresh` when you want to check them.
+
+Filter the saved inbox by monitor, local state, verified authors, or words in the post and author profile:
+
+```sh
+ilo x inbox list --monitor "ilo mentions" --unread
+ilo x inbox list --verified --query "follower search"
+ilo x inbox archive <post-id-or-url>
+ilo x inbox restore <post-id-or-url>
+```
+
+Import the connected account's following list to use `--i-follow`. The existing follower import powers `--follows-me`:
+
+```sh
+ilo x following sync --all
+ilo x followers sync <your-handle> --all
+ilo x inbox list --i-follow
+ilo x inbox list --follows-me
+```
+
+Relationship fields can be `true`, `false`, or `unknown`. A known match can be true during a partial import, but ilo only reports false after the relevant full import completes. Without that evidence, the terminal says unknown and JSON returns `null`.
+
+Inspect one item or turn it into a local reply draft:
+
+```sh
+ilo x inbox show <post-id-or-url>
+ilo x inbox draft <post-id-or-url> --text "Reply to review"
+```
+
+Drafting marks the inbox item as read. It sets the reply target on a local draft and prints `Nothing was published.` Publishing that draft still requires the normal confirmation step. A successful reply published through ilo marks the matching inbox item as replied when it can find it locally.
 
 ## Drafts
 
@@ -158,6 +200,12 @@ ilo drafts list --json
 ilo scheduler run --json
 ```
 
+## Updates
+
+When a newer npm release is available, an installed global CLI can offer to update itself before a normal interactive command. ilo detects npm, pnpm, Bun, or Yarn and shows the exact command before running it.
+
+The updater never prompts in CI, a non-interactive shell, JSON output, help, version checks, or the MCP server. Set `NO_UPDATE_NOTIFIER=1` to disable the check for interactive commands too.
+
 ## Local MCP
 
 ```sh
@@ -176,7 +224,7 @@ The packaged ilo skill teaches coding agents when to use ilo, which CLI commands
 
 ## Safe automation
 
-Publishing commands are interactive by default. A person sees the final text, reply destination, image paths, and alt text before ilo sends anything to X. Use `--yes` only in automation that already has an approval step. Draft creation, follower research, listing, and status checks do not publish anything.
+Publishing commands are interactive by default. A person sees the final text, reply destination, image paths, and alt text before ilo sends anything to X. Use `--yes` only in automation that already has an approval step. Monitor refreshes, inbox state changes, reply drafting, follower research, listing, and status checks do not publish anything.
 
 For scripts, prefer JSON output and check the process exit code. Successful commands exit with code `0`; invalid input, missing credentials, and provider failures return a non-zero code with an actionable message.
 

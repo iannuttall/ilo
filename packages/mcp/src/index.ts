@@ -90,8 +90,8 @@ export const registerIloTools = (server: McpServer) => {
         const sync = await syncXFollowers({ handle, maxPages, restart })
         return success(
           sync.complete
-            ? `Indexed ${sync.importedProfiles} followers for @${sync.handle}.`
-            : `Indexed ${sync.importedProfiles} followers for @${sync.handle}; more pages remain.`,
+            ? `${sync.importedProfiles} follower profiles are searchable for @${sync.handle}; the full available list was imported.`
+            : `${sync.importedProfiles} follower profiles are searchable for @${sync.handle}; the import has not reached a confirmed end.`,
           { sync },
         )
       } catch (error) {
@@ -118,7 +118,7 @@ export const registerIloTools = (server: McpServer) => {
         const sync = getXFollowersStatus({ handle })
         return success(
           sync
-            ? `${sync.importedProfiles} followers indexed for @${sync.handle} (${sync.complete ? 'complete' : 'partial'}).`
+            ? `${sync.importedProfiles} follower profiles are searchable for @${sync.handle}; ${sync.complete ? 'the full available list was imported' : 'the import has not reached a confirmed end'}.`
             : 'No follower data has been indexed for this account.',
           { sync },
         )
@@ -158,10 +158,10 @@ export const registerIloTools = (server: McpServer) => {
           .map((group) => `${group.term}: ${group.current} current`)
           .join(', ')
         const coverage = search.coverage.complete
-          ? 'complete import'
-          : 'partial import'
+          ? 'full available list imported'
+          : 'import has not reached a confirmed end'
         return success(
-          `Searched ${search.coverage.importedProfiles} followers (${coverage}). ${counts}.`,
+          `Searched ${search.coverage.importedProfiles} follower profiles (${coverage}). ${counts}.`,
           { search },
         )
       } catch (error) {

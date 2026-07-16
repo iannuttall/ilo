@@ -94,6 +94,12 @@ Safe current claims include:
 - Follower search returns the matched public bio evidence and labels employer
   matches as current, former, or unclear. The CLI can export matching public
   profile fields and import coverage to CSV.
+- The CLI, MCP server, and TypeScript package can save X advanced-search
+  monitors, refresh them on demand into a local reply inbox, filter saved
+  posts, inspect public author and post evidence, and create local reply
+  drafts.
+- Inbox relationship fields are true, false, or unknown. Do not turn an
+  incomplete or missing follower or following import into a false answer.
 - The CLI and MCP server can create drafts, schedule them, and publish
   top-level posts or replies to X with up to four static images.
 - The agent skill teaches the ilo workflow and confirmation rules.

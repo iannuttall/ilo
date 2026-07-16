@@ -1,6 +1,6 @@
 ---
 title: "Local MCP"
-description: "Give Claude, Codex, Cursor, or another agent local ilo tools over stdio."
+description: "Give Claude, Codex, Cursor, or another agent a local X reply inbox, follower search, drafts, and publishing tools over stdio."
 category: "agent"
 order: 1
 status: published
@@ -71,9 +71,19 @@ Install both when your client supports skills. The CLI prints the installed path
 | --- | --- |
 | `ilo_status` | Checks the local install and connected X account. |
 | `ilo_sync_x_followers` | Imports public X followers through FxTwitter and saves resumable progress. |
-| `ilo_x_follower_sync_status` | Reports whether a local follower import is partial or complete. |
+| `ilo_x_follower_sync_status` | Reports how many profiles are searchable and whether the import reached a confirmed end. |
 | `ilo_search_x_followers` | Searches imported follower profiles and returns public bio evidence. |
 | `ilo_get_x_follower_profile` | Reads the complete stored public FxTwitter record for one imported follower. |
+| `ilo_create_x_monitor` | Saves an X advanced-search query as a local inbox monitor. |
+| `ilo_list_x_monitors` | Lists local monitors and their latest refresh state. |
+| `ilo_set_x_monitor_enabled` | Pauses or resumes one monitor. |
+| `ilo_delete_x_monitor` | Deletes one local monitor. |
+| `ilo_refresh_x_inbox` | Runs active monitors and saves new matching posts locally. |
+| `ilo_list_x_inbox` | Filters saved posts by state, monitor, verification, relationship, or local FTS5 query. |
+| `ilo_get_x_inbox_item` | Reads one saved post, author profile, monitor match, relationship state, and raw provider record. |
+| `ilo_update_x_inbox_item` | Marks a local inbox item read, unread, archived, restored, replied, or unreplied. |
+| `ilo_sync_x_following` | Imports public followed accounts for the inbox's `iFollow` relationship. |
+| `ilo_x_following_sync_status` | Checks the local following import used by inbox filters. |
 | `ilo_create_draft` | Saves a top-level post or reply draft, with optional static images, to the local database. |
 | `ilo_list_drafts` | Lists local drafts and their state. |
 | `ilo_schedule_draft` | Schedules a draft using an ISO time or plain language. |
@@ -81,7 +91,7 @@ Install both when your client supports skills. The CLI prints the installed path
 | `ilo_publish_post` | Publishes a top-level post or reply after explicit confirmation. |
 | `ilo_run_scheduler` | Publishes due drafts after explicit confirmation. |
 
-Publishing tools require `confirm: true`. Read-only and draft-creation tools do not.
+Publishing tools require `confirm: true`. Monitor refreshes and inbox state changes write only to the local database. They never post to X.
 
 ## Example prompt
 
@@ -97,18 +107,34 @@ Show me the draft, ask me to confirm it, then publish it to X.
 
 The repository is MIT licensed, so you can add tools, providers, or new agent workflows.
 
+## Reply inbox
+
+Ask an agent to save a focused X search, refresh it, and show the strongest matches without publishing anything:
+
+```txt
+Create a monitor called "ilo mentions" for `"ilo" OR "ilo.so" -is:retweet`. Refresh it, then show unread posts from verified authors. Do not draft or publish yet.
+```
+
+Monitors are saved X advanced-search queries. A refresh runs on demand, deduplicates posts across monitors, and stores public post, author, engagement, and raw FxTwitter evidence locally. ilo does not run monitor refreshes in the background yet.
+
+`ilo_list_x_inbox` can filter by local state, monitor id, verified author, post or author text, `followsMe`, and `iFollow`. Relationship values are tri-state. A true value means the author was found in the relevant local import; false is only available after that import completes; `null` means ilo does not have enough follower or following data to answer.
+
+Use `ilo_sync_x_following` for `iFollow` evidence and `ilo_sync_x_followers` on the account itself for `followsMe` evidence. Do not describe an unknown relationship as false.
+
+After the user chooses a post, an agent can call `ilo_get_x_inbox_item`, create a reply with `ilo_create_draft` and `replyToPostId`, then stop for review. Creating the draft does not publish. A later `ilo_publish_draft` call still requires `confirm: true` for that exact draft.
+
 ## Follower research
 
 Follower research uses public FxTwitter data and does not require a connected X account. Ask the agent to import a bounded number of pages first:
 
 ```txt
-Index 20 pages of @adamwathan's public followers, then tell me whether the import is partial or complete.
+Index 20 pages of @adamwathan's public followers, then tell me whether the import reached a confirmed end and how many profiles are searchable.
 ```
 
 The sync is resumable. Large accounts need repeated calls. Once some profiles are indexed, an agent can search them without another network request:
 
 ```txt
-Among the indexed followers of @adamwathan, how many appear to work at Cursor, Vercel, or Sentry? Separate current, former, and unclear matches and show the bio evidence.
+Among the searchable followers of @adamwathan, how many appear to work at Cursor, Vercel, or Sentry? Separate current, former, and unclear matches, show the bio evidence, and state any possible coverage gap.
 ```
 
 After finding a match, an agent can inspect all public profile data saved during the import:

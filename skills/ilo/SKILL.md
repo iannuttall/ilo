@@ -1,6 +1,6 @@
 ---
 name: ilo
-description: Use ilo for local X follower research, drafting, account setup, scheduling, publishing, and agent workflows. Triggers when a user asks to search followers, draft, reply, attach images, queue, schedule, publish, or inspect social posts with the ilo CLI or local MCP server.
+description: Use ilo for a local X reply inbox, search monitors, follower research, drafting, account setup, scheduling, publishing, and agent workflows. Triggers when a user asks to monitor X searches, find posts worth replying to, filter authors by relationship or verification, search followers, draft, reply, attach images, queue, schedule, publish, or inspect social posts with the ilo CLI or local MCP server.
 ---
 
 # ilo
@@ -24,6 +24,16 @@ Use the local MCP tools when available:
 - `ilo_x_follower_sync_status`
 - `ilo_search_x_followers`
 - `ilo_get_x_follower_profile`
+- `ilo_create_x_monitor`
+- `ilo_list_x_monitors`
+- `ilo_set_x_monitor_enabled`
+- `ilo_delete_x_monitor`
+- `ilo_refresh_x_inbox`
+- `ilo_list_x_inbox`
+- `ilo_get_x_inbox_item`
+- `ilo_update_x_inbox_item`
+- `ilo_sync_x_following`
+- `ilo_x_following_sync_status`
 - `ilo_create_draft`
 - `ilo_list_drafts`
 - `ilo_schedule_draft`
@@ -43,6 +53,15 @@ ilo x followers status <handle> --json
 ilo x followers profile <handle> <follower-handle> --json
 ilo x followers search <handle> --query "works at cursor|vercel|sentry" --json
 ilo x followers search <handle> --query "works at cursor|vercel|sentry" --csv ./matches.csv
+ilo x monitors add "product mentions" --query '"product" OR "product.com" -is:retweet' --json
+ilo x monitors list --json
+ilo x inbox refresh --json
+ilo x inbox list --unread --verified --json
+ilo x following sync --all --json
+ilo x inbox list --follows-me --json
+ilo x inbox list --i-follow --json
+ilo x inbox show <post-id-or-url> --json
+ilo x inbox draft <post-id-or-url> --text "Reply text" --json
 ilo drafts create --text "Draft text" --json
 ilo drafts create --reply-to <post-id-or-url> --text "Reply text" --image ./chart.png --alt "Chart description" --json
 ilo drafts list --json
@@ -68,6 +87,16 @@ Use the CLI `--background` mode for an unattended full import. Use `ilo_get_x_fo
 Search uses the local SQLite FTS5 index. For employer questions, report `current` as the conservative count and keep `former` and `unclear` separate. Include the returned public bio evidence. Do not present a partial import or an ambiguous bio as a complete employment record.
 
 Follower research does not require a connected X account. Publishing does.
+
+## Reply inbox
+
+Monitors are saved X advanced-search queries. Refresh them on demand with `ilo_refresh_x_inbox` or `ilo x inbox refresh`; ilo does not run an always-on monitor process yet. A refresh saves public post, author, engagement, monitor, and raw provider evidence locally. It does not publish.
+
+Use inbox filters to narrow results before proposing replies. `verified` is observed on the stored public author profile. `followsMe` and `iFollow` are tri-state: `true` is a known imported relationship, `false` is only reliable after the relevant full follower or following import, and `null` means unknown. Never turn `null` into false.
+
+Use the account's follower import for `followsMe` and its following import for `iFollow`. A partial import can prove a relationship it contains, but it cannot prove an absent relationship.
+
+Inspect the complete inbox item before drafting. Creating a reply draft and changing read, archive, or replied state are local actions and do not need publishing confirmation. Still show the exact reply target, text, images, and alt text before asking to publish the draft.
 
 ## Replies and images
 

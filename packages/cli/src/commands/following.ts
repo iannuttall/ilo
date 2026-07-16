@@ -77,11 +77,11 @@ export const followingCommand = defineCommand({
         if (args.json) return printJson(state)
         if (state.complete) {
           return printLine(
-            `Following sync complete for @${state.handle}: ${state.importedProfiles} profiles indexed.`,
+            `Following sync complete for @${state.handle}: ${state.importedProfiles.toLocaleString('en-GB')} followed accounts are available to inbox filters.`,
           )
         }
         return printLine(
-          `Saved progress for @${state.handle}. Run the same command again to continue.`,
+          `Saved ${state.importedProfiles.toLocaleString('en-GB')} followed accounts for @${state.handle}. Run the same command again to continue.`,
         )
       },
     }),
@@ -106,13 +106,35 @@ export const followingCommand = defineCommand({
         const state = getXFollowingStatus({ handle })
         if (args.json) return printJson({ sync: state })
         if (!state) return printLine(`No following data for @${handle}.`)
-        const coverage = state.expectedFollowing
-          ? `${state.importedProfiles} of about ${state.expectedFollowing}`
-          : String(state.importedProfiles)
+        printLine(`Following data for @${state.handle}`)
         printLine(
-          `@${state.handle}: ${coverage} profiles indexed (${state.complete ? 'complete' : 'partial'}).`,
+          `${state.importedProfiles.toLocaleString('en-GB')} followed accounts are available to inbox filters${state.complete ? '.' : ' so far.'}`,
         )
-        if (state.lastError) printLine(`Last import error: ${state.lastError}`)
+        if (state.complete) {
+          printLine('The full available following list was imported.')
+        } else if (state.lastError === 'fxtwitter_following_sync_no_progress') {
+          printLine('Import stopped after repeated duplicate pages.')
+        } else if (state.lastError === 'fxtwitter_following_cursor_stalled') {
+          printLine('Import stopped because its page cursor did not move.')
+        } else {
+          if (state.expectedFollowing !== null) {
+            printLine(
+              `X reports about ${state.expectedFollowing.toLocaleString('en-GB')} followed accounts.`,
+            )
+          }
+          printLine(
+            `Run ilo x following sync ${state.handle} --all to continue.`,
+          )
+        }
+        if (
+          state.lastError &&
+          ![
+            'fxtwitter_following_sync_no_progress',
+            'fxtwitter_following_cursor_stalled',
+          ].includes(state.lastError)
+        ) {
+          printLine(`Last import error: ${state.lastError}`)
+        }
       },
     }),
   },

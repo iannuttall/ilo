@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path'
 import type { FollowerSearchMatch, FollowerSearchResult } from '@ilo/core'
 import Table from 'cli-table3'
 import pc from 'picocolors'
+import { terminalColumns, wrapTerminalText } from '../terminal.js'
 
 const number = new Intl.NumberFormat('en-GB')
 
@@ -123,24 +124,6 @@ const renderWideEvidence = (
   return evidence
 }
 
-const wrapText = (value: string, width: number) => {
-  const words = value.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean)
-  const lines: string[] = []
-  let line = ''
-  for (const word of words) {
-    if (!line) {
-      line = word
-    } else if (line.length + word.length + 1 <= width) {
-      line += ` ${word}`
-    } else {
-      lines.push(line)
-      line = word
-    }
-  }
-  if (line) lines.push(line)
-  return lines.join('\n')
-}
-
 const renderStackedEvidence = (
   result: FollowerSearchResult,
   displayLimit: number,
@@ -154,7 +137,7 @@ const renderStackedEvidence = (
         [
           `${pc.bold(group.term)} ${pc.dim('·')} ${classification(match.match)}`,
           `${match.name} ${pc.cyan(`@${match.handle}`)} ${pc.dim('·')} ${followerCount(match.followers)} ${pc.dim('followers')}`,
-          wrapText(match.evidence, contentWidth),
+          wrapTerminalText(match.evidence, contentWidth),
           pc.dim(match.profileUrl),
         ].join('\n'),
       )
@@ -190,14 +173,15 @@ export const renderFollowerSearch = (
     ])
   }
 
-  const columns = Math.max(40, requestedColumns)
+  const columns = terminalColumns(requestedColumns)
   const matchingProfiles = result.groups.reduce(
     (total, group) =>
       total + Math.min(displayLimit, group.results.length),
     0,
   )
   const coverage = followerCoverageLines(result.coverage, result.handle).flatMap(
-    (line) => wrapText(line, Math.max(24, columns - 4)).split('\n'),
+    (line) =>
+      wrapTerminalText(line, Math.max(24, columns - 4)).split('\n'),
   )
   const sections = [
     pc.bold(`Follower search for @${result.handle}`),

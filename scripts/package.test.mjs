@@ -29,6 +29,10 @@ test('public API can be imported', async () => {
   assert.equal(typeof module.searchXFollowers, 'function')
   assert.equal(typeof module.getXFollowerProfile, 'function')
   assert.equal(typeof module.fetchFxTwitterFollowers, 'function')
+  assert.equal(typeof module.fetchFxTwitterSearch, 'function')
+  assert.equal(typeof module.createXMonitor, 'function')
+  assert.equal(typeof module.listXInbox, 'function')
+  assert.equal(typeof module.syncXFollowing, 'function')
   assert.equal(typeof module.normalizeXPostId, 'function')
 })
 
@@ -67,7 +71,16 @@ test('CLI starts and prints its command surface', () => {
   assert.match(start.stdout, /http:\/\/127\.0\.0\.1:8976\/callback/)
 })
 
-test('CLI exposes follower research, replies, and images', () => {
+test('CLI exposes follower research, inbox, replies, and images', () => {
+  const x = spawnSync(process.execPath, ['dist/cli.js', 'x', '--help'], {
+    cwd: new URL('..', import.meta.url),
+    encoding: 'utf8',
+  })
+  assert.equal(x.status, 0, x.stderr)
+  assert.match(x.stdout, /following/)
+  assert.match(x.stdout, /monitors/)
+  assert.match(x.stdout, /inbox/)
+
   const followers = spawnSync(
     process.execPath,
     ['dist/cli.js', 'x', 'followers', '--help'],
@@ -92,6 +105,19 @@ test('CLI exposes follower research, replies, and images', () => {
   assert.equal(followerSync.status, 0, followerSync.stderr)
   assert.match(followerSync.stdout, /--background/)
 
+  const inbox = spawnSync(
+    process.execPath,
+    ['dist/cli.js', 'x', 'inbox', 'list', '--help'],
+    {
+      cwd: new URL('..', import.meta.url),
+      encoding: 'utf8',
+    },
+  )
+  assert.equal(inbox.status, 0, inbox.stderr)
+  assert.match(inbox.stdout, /--verified/)
+  assert.match(inbox.stdout, /--follows-me/)
+  assert.match(inbox.stdout, /--i-follow/)
+
   const post = spawnSync(process.execPath, ['dist/cli.js', 'post', '--help'], {
     cwd: new URL('..', import.meta.url),
     encoding: 'utf8',
@@ -99,6 +125,124 @@ test('CLI exposes follower research, replies, and images', () => {
   assert.equal(post.status, 0, post.stderr)
   assert.match(post.stdout, /--reply-to/)
   assert.match(post.stdout, /--image/)
+})
+
+test('CLI and public library share the local X inbox', async () => {
+  const iloHome = await mkdtemp(join(tmpdir(), 'ilo-package-inbox-'))
+  const databasePath = join(iloHome, 'ilo.sqlite')
+  try {
+    const module = await import('../dist/index.js')
+    const monitor = module.createXMonitor({
+      accountHandle: 'ilodotso',
+      name: 'ilo mentions',
+      query: '"ilo" OR "ilo.so"',
+      databasePath,
+    })
+    await module.refreshXMonitor(
+      { id: monitor.id, databasePath },
+      {
+        search: async () => ({
+          posts: [
+            {
+              type: 'status',
+              id: '123456789',
+              url: 'https://x.com/adamwathan/status/123456789',
+              text: 'Is there a tool that can search my followers?',
+              created_at: 'Thu Jul 16 08:00:00 +0000 2026',
+              likes: 125,
+              reposts: 12,
+              quotes: 3,
+              replies: 42,
+              views: 20_000,
+              author: {
+                id: 'adam-id',
+                name: 'Adam Wathan',
+                screen_name: 'adamwathan',
+                description: 'Building things',
+                followers: 294_202,
+                verification: { verified: true, type: 'blue' },
+              },
+            },
+          ],
+          nextCursor: null,
+        }),
+      },
+    )
+
+    const list = spawnSync(
+      process.execPath,
+      [
+        'dist/cli.js',
+        'x',
+        'inbox',
+        'list',
+        '--account',
+        'ilodotso',
+        '--json',
+      ],
+      {
+        cwd: new URL('..', import.meta.url),
+        encoding: 'utf8',
+        env: { ...process.env, ILO_HOME: iloHome },
+      },
+    )
+    assert.equal(list.status, 0, list.stderr)
+    const inbox = JSON.parse(list.stdout)
+    assert.equal(inbox.items.length, 1)
+    assert.equal(inbox.items[0].author.handle, 'adamwathan')
+    assert.equal(inbox.items[0].author.verified, true)
+    assert.equal(inbox.items[0].relationship.followsMe, null)
+    assert.equal(inbox.items[0].relationship.iFollow, null)
+
+    const draft = spawnSync(
+      process.execPath,
+      [
+        'dist/cli.js',
+        'x',
+        'inbox',
+        'draft',
+        '123456789',
+        '--account',
+        'ilodotso',
+        '--text',
+        'A local reply draft',
+        '--json',
+      ],
+      {
+        cwd: new URL('..', import.meta.url),
+        encoding: 'utf8',
+        env: { ...process.env, ILO_HOME: iloHome },
+      },
+    )
+    assert.equal(draft.status, 0, draft.stderr)
+    const drafted = JSON.parse(draft.stdout)
+    assert.equal(drafted.draft.replyToPostId, '123456789')
+    assert.equal(drafted.draft.status, 'draft')
+    assert.equal(drafted.draft.publishedPostId, null)
+
+    const archive = spawnSync(
+      process.execPath,
+      [
+        'dist/cli.js',
+        'x',
+        'inbox',
+        'archive',
+        '123456789',
+        '--account',
+        'ilodotso',
+        '--json',
+      ],
+      {
+        cwd: new URL('..', import.meta.url),
+        encoding: 'utf8',
+        env: { ...process.env, ILO_HOME: iloHome },
+      },
+    )
+    assert.equal(archive.status, 0, archive.stderr)
+    assert.ok(JSON.parse(archive.stdout).item.state.archivedAt)
+  } finally {
+    await rm(iloHome, { recursive: true, force: true })
+  }
 })
 
 test('CLI stores repeated image options on a reply draft', async () => {

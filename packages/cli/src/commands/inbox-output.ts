@@ -1,6 +1,7 @@
 import type { XInboxItem } from '@ilo/core'
 import Table from 'cli-table3'
 import pc from 'picocolors'
+import { terminalColumns, wrapTerminalText } from '../terminal.js'
 
 const number = new Intl.NumberFormat('en-GB', { notation: 'compact' })
 
@@ -25,12 +26,15 @@ const relationshipSignals = (item: XInboxItem) => {
   if (item.relationship.followsMe === true)
     signals.push(pc.green('follows you'))
   if (item.relationship.followsMe === false)
-    signals.push(pc.dim('not following'))
-  if (item.relationship.followsMe === null) signals.push(pc.dim('follows: ?'))
+    signals.push(pc.dim("doesn't follow you"))
+  if (item.relationship.followsMe === null)
+    signals.push(pc.dim('follows you: unknown'))
   if (item.relationship.iFollow === true) signals.push(pc.green('you follow'))
-  if (item.relationship.iFollow === false) signals.push(pc.dim('not followed'))
-  if (item.relationship.iFollow === null) signals.push(pc.dim('you follow: ?'))
-  return signals.join('\n')
+  if (item.relationship.iFollow === false)
+    signals.push(pc.dim("you don't follow"))
+  if (item.relationship.iFollow === null)
+    signals.push(pc.dim('you follow: unknown'))
+  return signals
 }
 
 const engagement = (item: XInboxItem) =>
@@ -42,7 +46,8 @@ const engagement = (item: XInboxItem) =>
     .filter(Boolean)
     .join(' · ')
 
-export const renderXInbox = (accountHandle: string, items: XInboxItem[]) => {
+const renderWideInbox = (items: XInboxItem[], columns: number) => {
+  const targetWidth = Math.min(columns - 4, 156)
   const table = new Table({
     head: [
       pc.bold('State'),
@@ -51,7 +56,7 @@ export const renderXInbox = (accountHandle: string, items: XInboxItem[]) => {
       pc.bold('Monitor'),
       pc.bold('Post'),
     ],
-    colWidths: [10, 25, 20, 20, 50],
+    colWidths: [10, 24, 22, 18, targetWidth - 80],
     wordWrap: true,
     style: { head: [], border: [] },
   })
@@ -63,15 +68,51 @@ export const renderXInbox = (accountHandle: string, items: XInboxItem[]) => {
     table.push([
       itemState(item),
       `${item.author.name}\n${pc.cyan(`@${item.author.handle}`)}${followers}`,
-      relationshipSignals(item),
+      relationshipSignals(item).join('\n'),
       item.monitors.map((monitor) => monitor.name).join('\n'),
       `${item.text || pc.dim('(no text)')}\n${pc.dim(`${relativeTime(item.createdAt)} · ${engagement(item)}`)}\n${pc.dim(item.url)}`,
     ])
   }
+  return table.toString()
+}
+
+const renderStackedInbox = (items: XInboxItem[], columns: number) => {
+  const contentWidth = Math.max(24, columns - 4)
+  const divider = pc.dim('─'.repeat(Math.min(contentWidth, 88)))
+  return items
+    .map((item) => {
+      const followers =
+        item.author.followers === null
+          ? pc.dim('followers unknown')
+          : `${number.format(item.author.followers)} ${pc.dim('followers')}`
+      return [
+        `${itemState(item)} ${pc.dim('·')} ${relativeTime(item.createdAt)} ${pc.dim('·')} ${item.monitors.map((monitor) => monitor.name).join(', ')}`,
+        `${item.author.name} ${pc.cyan(`@${item.author.handle}`)} ${pc.dim('·')} ${followers}`,
+        relationshipSignals(item).join(pc.dim(' · ')),
+        wrapTerminalText(item.text || '(no text)', contentWidth),
+        pc.dim(engagement(item)),
+        pc.dim(item.url),
+      ]
+        .filter(Boolean)
+        .join('\n')
+    })
+    .join(`\n${divider}\n`)
+}
+
+export const renderXInbox = (
+  accountHandle: string,
+  items: XInboxItem[],
+  requestedColumns = process.stdout.columns ?? 120,
+) => {
+  const columns = terminalColumns(requestedColumns)
+  const output =
+    columns >= 140
+      ? renderWideInbox(items, columns)
+      : renderStackedInbox(items, columns)
   return [
     pc.bold(`X inbox for @${accountHandle}`),
     pc.dim(`${items.length} item${items.length === 1 ? '' : 's'}`),
     '',
-    table.toString(),
+    output,
   ].join('\n')
 }

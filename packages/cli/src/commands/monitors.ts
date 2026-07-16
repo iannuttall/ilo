@@ -8,6 +8,7 @@ import {
 import { defineCommand } from 'citty'
 import Table from 'cli-table3'
 import pc from 'picocolors'
+import { terminalColumns, wrapTerminalText } from '../terminal.js'
 import { printJson, printLine } from '../utils.js'
 import { resolveXAccountHandle } from './x-account.js'
 
@@ -21,7 +22,8 @@ const lastChecked = (monitor: XMonitor) => {
   return new Date(monitor.lastCheckedAt).toLocaleString('en-GB')
 }
 
-const renderMonitors = (monitors: XMonitor[]) => {
+const renderWideMonitors = (monitors: XMonitor[], columns: number) => {
+  const targetWidth = Math.min(columns - 4, 150)
   const table = new Table({
     head: [
       pc.bold('ID'),
@@ -30,7 +32,7 @@ const renderMonitors = (monitors: XMonitor[]) => {
       pc.bold('Query'),
       pc.bold('Last checked'),
     ],
-    colWidths: [10, 10, 24, 52, 22],
+    colWidths: [10, 10, 22, targetWidth - 70, 22],
     wordWrap: true,
     style: { head: [], border: [] },
   })
@@ -46,6 +48,33 @@ const renderMonitors = (monitors: XMonitor[]) => {
     ])
   }
   return table.toString()
+}
+
+const renderStackedMonitors = (monitors: XMonitor[], columns: number) => {
+  const contentWidth = Math.max(24, columns - 4)
+  const divider = pc.dim('─'.repeat(Math.min(contentWidth, 88)))
+  return monitors
+    .map((monitor) =>
+      [
+        `${monitor.enabled ? pc.green('active') : pc.dim('paused')} ${pc.dim('·')} ${pc.bold(monitor.name)} ${pc.dim('·')} ${monitor.id.slice(0, 8)}`,
+        wrapTerminalText(monitor.query, contentWidth),
+        pc.dim(`Last checked: ${lastChecked(monitor)}`),
+        monitor.lastError ? pc.red(monitor.lastError) : '',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    )
+    .join(`\n${divider}\n`)
+}
+
+export const renderMonitors = (
+  monitors: XMonitor[],
+  requestedColumns = process.stdout.columns ?? 120,
+) => {
+  const columns = terminalColumns(requestedColumns)
+  return columns >= 132
+    ? renderWideMonitors(monitors, columns)
+    : renderStackedMonitors(monitors, columns)
 }
 
 export const resolveMonitor = (monitors: XMonitor[], identifier: string) => {

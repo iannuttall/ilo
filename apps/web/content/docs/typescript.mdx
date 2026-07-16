@@ -1,15 +1,15 @@
 ---
 title: "TypeScript"
-description: "Use ilo's follower search, drafting, scheduling, publishing, and MCP code inside your own Node project."
+description: "Use ilo's local X inbox, follower search, drafting, scheduling, publishing, and MCP code inside your own Node project."
 category: "reference"
 order: 1
 status: published
 h1: "Use ilo as a TypeScript package."
 seoTitle: "ilo TypeScript Package: X Drafts and Publishing"
-seoDescription: "Import ilo in a Node project to search public X followers, create drafts, schedule posts or replies, publish with images, or embed local MCP."
+seoDescription: "Import ilo in a Node project to build a local X reply inbox, search public followers, create drafts, schedule replies, publish with images, or embed MCP."
 ---
 
-The `iloso` npm package is the CLI, local MCP server, and TypeScript library. Install it in a Node 22 or newer project when your own tool or agent needs the same follower research, drafting, scheduling, and publishing functions.
+The `iloso` npm package is the CLI, local MCP server, and TypeScript library. Install it in a Node 22 or newer project when your own tool or agent needs the same reply inbox, follower research, drafting, scheduling, and publishing functions.
 
 ```sh
 npm install iloso
@@ -85,7 +85,52 @@ console.log(profile.profile.providerData)
 
 Call `syncAllXFollowers({ handle: 'adamwathan' })` when the process should continue until FxTwitter reports the end of the list. It checkpoints every page. `getXFollowerProfile()` returns the useful stored fields plus the raw public FxTwitter object without another network request.
 
-The search result says whether coverage is partial or complete. Each group includes conservative current, former, and unclear counts plus the public profile evidence. Search uses SQLite FTS5, so concrete names, handles, phrases, and locations work better than abstract semantic questions.
+The search result includes `coverage.complete`, the number of searchable profiles, X's reported follower total, and the last sync error when one exists. Each group includes conservative current, former, and unclear counts plus the public profile evidence. Search uses SQLite FTS5, so concrete names, handles, phrases, and locations work better than abstract semantic questions.
+
+## Build a local reply inbox
+
+Save X advanced-search queries as monitors and refresh them when your application wants new posts:
+
+```ts
+import {
+  createXMonitor,
+  listXInbox,
+  refreshXMonitor,
+  syncAllXFollowing,
+  updateXInboxItem,
+} from 'iloso'
+
+const monitor = createXMonitor({
+  accountHandle: 'ilodotso',
+  name: 'ilo mentions',
+  query: '"ilo" OR "ilo.so" -is:retweet',
+})
+
+await refreshXMonitor({ id: monitor.id, maxPages: 3 })
+await syncAllXFollowing({ handle: 'ilodotso' })
+
+const items = listXInbox({
+  accountHandle: 'ilodotso',
+  status: 'unread',
+  verified: true,
+  iFollow: true,
+  limit: 20,
+})
+
+if (items[0]) {
+  updateXInboxItem({
+    accountHandle: 'ilodotso',
+    postId: items[0].postId,
+    action: 'read',
+  })
+}
+```
+
+Refreshes are on demand and never publish. Saved items include public post text, engagement counts, author fields, monitor evidence, local read/archive/replied state, and the raw FxTwitter record. `listXInbox()` can also search saved post and author text through local SQLite FTS5.
+
+`followsMe` and `iFollow` are `boolean | null`. A matching imported relationship can return `true` before a sync finishes. A missing relationship only becomes `false` after the relevant follower or following sync completes; otherwise it stays `null`.
+
+Use `getXInboxItem()` to inspect one result. To prepare a response, pass its `postId` to `createDraft()` as `replyToPostId`. Draft creation remains local and does not need publishing confirmation.
 
 ## Validate X post text
 
@@ -135,6 +180,6 @@ Most applications should call the root functions directly. `createServer()` and 
 
 ## Public exports
 
-The root package exports the FxTwitter provider helpers, follower sync, profile lookup and search, draft actions, static image helpers, schedule parsing, X text validation, X OAuth helpers, local configuration, and storage paths. These exports are covered by the packed-package tests, but ilo is still pre-1.0. Pin the package version when another application depends on the exact function signatures.
+The root package exports the FxTwitter provider helpers, follower and following syncs, monitor and inbox actions, profile lookup and search, draft actions, static image helpers, schedule parsing, X text validation, X OAuth helpers, local configuration, and storage paths. These exports are covered by the packed-package tests, but ilo is still pre-1.0. Pin the package version when another application depends on the exact function signatures.
 
 Use the [CLI reference](/docs/cli) for interactive commands or the [local MCP guide](/docs/mcp) to connect an agent without writing integration code.

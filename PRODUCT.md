@@ -46,6 +46,17 @@ it helps them choose or complete the next action.
 - Search imported follower names, handles, bios, and locations with SQLite
   FTS5, including evidence-backed current, former, and unclear employer
   matches and CSV export of the matching public profile fields.
+- Save X advanced-search queries as local monitors and refresh them on demand
+  into a deduplicated reply inbox.
+- Filter saved inbox posts by monitor, local state, verified author, post or
+  author text, whether the author follows the account, and whether the account
+  follows the author.
+- Import the public following list used by inbox relationship filters. Keep
+  follower and following relationships unknown until the local imports can
+  support a true or false answer.
+- Inspect the stored public post, author, engagement, and raw FxTwitter data;
+  mark items read, archived, or replied; and create a local reply draft without
+  publishing it.
 - Use the same actions through local stdio MCP.
 - Import the same research, draft, scheduling, publishing, and MCP functions
   from the `iloso` TypeScript package.
@@ -62,6 +73,7 @@ history or produces every report automatically.
 
 - Restore the strongest legacy ilo analytics as local reports.
 - Import public profile and post history for repeatable analysis.
+- Add scheduled monitor refreshes and spam heuristics to the local reply inbox.
 - Add animated GIF and video uploads, threads, schedule cancellation, retries,
   and stronger scheduler installation.
 - Add Bluesky publishing, then LinkedIn.

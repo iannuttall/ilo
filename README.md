@@ -1,8 +1,8 @@
 # ilo
 
-Agent-first X performance monitoring, drafting, scheduling, and publishing.
+Local X research, reply triage, drafting, scheduling, and publishing.
 
-Give your agent the public posts and performance data you care about, find the patterns worth repeating, then draft and publish through ilo's CLI, local MCP server, agent skill, or TypeScript package.
+Search public follower profiles, collect posts through focused monitors, find the people and conversations worth your time, then draft and publish after review.
 
 ## Install
 
@@ -44,7 +44,20 @@ ilo x followers search adamwathan --query "works at cursor|vercel|sentry"
 ilo x followers search adamwathan --query "works at cursor|vercel|sentry" --csv ./matches.csv
 ```
 
-The background command continues the full resumable import after the terminal closes. Profile lookup returns the stored public fields and raw FxTwitter record. Search uses SQLite FTS5 and returns a terminal table with public bio evidence and current, former, and unclear matches. The CSV export includes the matching public profile fields and import coverage. Check whether the import is partial before treating a count as complete.
+The background command continues the full resumable import after the terminal closes. Profile lookup returns the stored public fields and raw FxTwitter record. Search uses SQLite FTS5 and returns public bio evidence with current, former, and unclear matches. The CSV export includes the matching public profile fields and import coverage. Check whether the import reached a confirmed end before treating a count as complete.
+
+Save searches for posts worth replying to, then triage the matches locally:
+
+```sh
+ilo x monitors add "ilo mentions" --query '"ilo" OR "ilo.so" -is:retweet'
+ilo x inbox refresh
+ilo x inbox list --verified --follows-me
+ilo x following sync --all
+ilo x inbox list --i-follow
+ilo x inbox draft <post-id-or-url> --text "Reply to review"
+```
+
+The inbox stores public post, author, engagement, and monitor evidence in the same local SQLite database. Refreshes run only when asked. Follower and following imports power the relationship filters; until ilo has enough data, those values stay unknown. `ilo x inbox draft` creates a local reply draft and never publishes it.
 
 ## Add local MCP
 
@@ -111,7 +124,7 @@ pnpm build
 
 ## Roadmap
 
-X publishing, replies, static images, follower search, and scheduling are first. Bluesky and LinkedIn are the next provider targets. Public post-history imports and automated performance reports come next.
+The local reply inbox, follower search, X publishing, replies, static images, and scheduling ship today. Local post-history reports, scheduled monitor refreshes, and spam heuristics come next, followed by Bluesky and LinkedIn publishing.
 
 ## License and support
 
