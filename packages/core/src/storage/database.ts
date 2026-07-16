@@ -67,10 +67,7 @@ const mapDraft = (row: DraftRow, images: DraftImage[] = []): Draft => ({
   lastError: row.last_error,
 })
 
-const loadDraftImages = (
-  db: Database,
-  draftId: string,
-): DraftImage[] =>
+const loadDraftImages = (db: Database, draftId: string): DraftImage[] =>
   (
     db
       .prepare(

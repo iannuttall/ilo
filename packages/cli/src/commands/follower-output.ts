@@ -40,9 +40,7 @@ export const followerCoverageLines = (
   const lines = [`${imported} follower profiles are searchable so far.`]
   const expected = coverage.expectedFollowers
   const missing =
-    expected === null
-      ? null
-      : Math.max(0, expected - coverage.importedProfiles)
+    expected === null ? null : Math.max(0, expected - coverage.importedProfiles)
 
   if (coverage.lastError === 'fxtwitter_follower_sync_no_progress') {
     const stopped = ['Import stopped after repeated duplicate pages.']
@@ -175,13 +173,14 @@ export const renderFollowerSearch = (
 
   const columns = terminalColumns(requestedColumns)
   const matchingProfiles = result.groups.reduce(
-    (total, group) =>
-      total + Math.min(displayLimit, group.results.length),
+    (total, group) => total + Math.min(displayLimit, group.results.length),
     0,
   )
-  const coverage = followerCoverageLines(result.coverage, result.handle).flatMap(
-    (line) =>
-      wrapTerminalText(line, Math.max(24, columns - 4)).split('\n'),
+  const coverage = followerCoverageLines(
+    result.coverage,
+    result.handle,
+  ).flatMap((line) =>
+    wrapTerminalText(line, Math.max(24, columns - 4)).split('\n'),
   )
   const sections = [
     pc.bold(`Follower search for @${result.handle}`),

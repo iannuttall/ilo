@@ -83,5 +83,8 @@ test('uses stacked monitors in a normal-width terminal', () => {
   assert.match(output, /active · ilo mentions · 12345678/)
   assert.match(output, /"ilo" OR "ilo\.so" -is:retweet/)
   assert.doesNotMatch(output, /Status\s+│\s+Name/)
-  assert.ok(output.split('\n').every((line) => line.length <= 96), output)
+  assert.ok(
+    output.split('\n').every((line) => line.length <= 96),
+    output,
+  )
 })

@@ -171,15 +171,7 @@ test('CLI and public library share the local X inbox', async () => {
 
     const list = spawnSync(
       process.execPath,
-      [
-        'dist/cli.js',
-        'x',
-        'inbox',
-        'list',
-        '--account',
-        'ilodotso',
-        '--json',
-      ],
+      ['dist/cli.js', 'x', 'inbox', 'list', '--account', 'ilodotso', '--json'],
       {
         cwd: new URL('..', import.meta.url),
         encoding: 'utf8',
