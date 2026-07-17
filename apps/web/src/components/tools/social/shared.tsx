@@ -86,11 +86,10 @@ type ToolError = { error: true; error_message?: string }
 
 const toolErrorMessages: Record<string, string> = {
   fx_not_found: 'No public profile or post matched that input.',
-  fx_rate_limited:
-    'The public data source is busy. Wait a minute and try again.',
-  fx_unavailable: 'The public data source is unavailable right now.',
-  fx_upstream_down: 'The public data source is down right now.',
-  fx_bad_body: 'The public data source returned an unreadable response.',
+  fx_rate_limited: 'The lookup is busy. Wait a minute and try again.',
+  fx_unavailable: 'The lookup is unavailable right now.',
+  fx_upstream_down: 'The lookup is unavailable right now.',
+  fx_bad_body: 'The lookup returned an unreadable response.',
 }
 
 const formatToolError = (message: string | undefined) => {

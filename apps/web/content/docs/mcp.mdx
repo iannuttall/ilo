@@ -24,7 +24,7 @@ Check what the agent will see:
 ilo accounts list
 ```
 
-The [publishing accounts guide](/docs/accounts) covers multiple profiles, aliases, default switching, draft binding, and the split between publishing credentials and FxTwitter research.
+The [publishing accounts guide](/docs/accounts) covers multiple profiles, aliases, default switching, draft binding, and the separation between publishing accounts and research handles.
 
 You can now start ilo as a local stdio MCP server:
 
@@ -80,29 +80,29 @@ Install both when your client supports skills. The CLI prints the installed path
 | `ilo_status` | Checks the local install, default publishing account, provider, and available accounts. |
 | `ilo_list_publishing_accounts` | Lists local Typefully and direct X publishing accounts. |
 | `ilo_set_default_publishing_account` | Changes the default for new drafts without moving drafts already bound to another account. |
-| `ilo_sync_x_followers` | Imports public X followers through FxTwitter and saves resumable progress. |
+| `ilo_sync_x_followers` | Imports public X follower profiles and saves resumable progress. |
 | `ilo_x_follower_sync_status` | Reports how many profiles are searchable and whether the saved import is finished. |
 | `ilo_search_x_followers` | Searches imported follower profiles, returns current matches by default, and keeps counts for current, former, and unclear matches. |
-| `ilo_get_x_follower_profile` | Reads the complete stored public FxTwitter record for one imported follower. |
+| `ilo_get_x_follower_profile` | Reads the complete stored public profile record for one imported follower. |
 | `ilo_create_x_article_monitor` | Saves an X handle as a local article monitor. |
 | `ilo_list_x_article_monitors` | Lists article monitors and their saved history state. |
 | `ilo_set_x_article_monitor_enabled` | Pauses or resumes one article monitor. |
 | `ilo_delete_x_article_monitor` | Deletes an article monitor and articles saved only by it. |
 | `ilo_refresh_x_articles` | Fetches new articles and continues unfinished history imports. |
 | `ilo_search_x_articles` | Searches saved article titles, previews, and full text with local FTS5. |
-| `ilo_get_x_article` | Reads one complete saved article and its raw provider record. |
+| `ilo_get_x_article` | Reads one complete saved article and its complete public record. |
 | `ilo_create_x_monitor` | Saves an X advanced-search query as a local inbox monitor. |
 | `ilo_list_x_monitors` | Lists local monitors and their latest refresh state. |
 | `ilo_set_x_monitor_enabled` | Pauses or resumes one monitor. |
 | `ilo_delete_x_monitor` | Deletes one local monitor. |
 | `ilo_refresh_x_inbox` | Runs active monitors and saves new matching posts locally. |
 | `ilo_list_x_inbox` | Filters saved posts by state, monitor, verification, relationship, or local FTS5 query. |
-| `ilo_get_x_inbox_item` | Reads one saved post, author profile, monitor match, relationship state, and raw provider record. |
+| `ilo_get_x_inbox_item` | Reads one saved post, author profile, monitor match, relationship state, and complete public record. |
 | `ilo_update_x_inbox_item` | Marks a local inbox item read, unread, archived, restored, replied, or unreplied. |
 | `ilo_sync_x_following` | Builds or refreshes a resumable local index of complete public profiles an account follows. |
 | `ilo_x_following_sync_status` | Checks following-profile coverage, completion and its reason, age, freshness, cursor, and errors. |
 | `ilo_search_x_following` | Searches saved following names, handles, bios, locations, and aliases with local FTS5. |
-| `ilo_get_x_following_profile` | Reads one complete stored profile and raw provider object from a following index. |
+| `ilo_get_x_following_profile` | Reads one complete stored profile record from a following index. |
 | `ilo_create_draft` | Saves a top-level post or reply draft, with optional static images, to the local database. |
 | `ilo_list_drafts` | Lists local drafts and their state. |
 | `ilo_schedule_draft` | Schedules a draft using an ISO time or plain language. |
@@ -136,7 +136,7 @@ Monitor articles from @swyx and @karpathy. Refresh both, then find articles abou
 
 Article refreshes run on demand. ilo saves each timeline cursor and resumes unfinished history on later calls. New timeline entries are hydrated from their public X status so the local FTS5 index contains the complete article body rather than its short preview.
 
-`ilo_search_x_articles` returns compact evidence excerpts. Call `ilo_get_x_article` after choosing a result to read its full stored text and raw provider record. Neither action publishes or changes anything on X.
+`ilo_search_x_articles` returns compact evidence excerpts. Call `ilo_get_x_article` after choosing a result to read its full stored text and complete public record. Neither action publishes or changes anything on X.
 
 ## Reply inbox
 
@@ -146,7 +146,7 @@ Ask an agent to save a focused X search, refresh it, and show the strongest matc
 Create a monitor called "ilo mentions" for `"ilo" OR "ilo.so" -is:retweet`. Refresh it, then show unread posts from verified authors. Do not draft or publish yet.
 ```
 
-Monitors are saved X advanced-search queries. A refresh runs on demand, deduplicates posts across monitors, and stores public post, author, engagement, and raw FxTwitter evidence locally. ilo does not run monitor refreshes in the background yet.
+Monitors are saved X advanced-search queries. A refresh runs on demand, deduplicates posts across monitors, and stores public post, author, and engagement data locally. ilo does not run monitor refreshes in the background yet.
 
 `ilo_list_x_inbox` can filter by local state, monitor id, verified author, post or author text, `followsMe`, and `iFollow`. Relationship values are tri-state. A true value means the author was found in the relevant local import; false is only available after that import completes; `null` means ilo does not have enough follower or following data to answer.
 
@@ -158,7 +158,7 @@ After the user chooses a post, an agent can call `ilo_get_x_inbox_item`, create 
 
 The [audience research guide](/docs/audience-research) covers the full import, search, coverage, classification, and profile workflow shared by MCP, the CLI, and TypeScript.
 
-Follower research uses public FxTwitter data and does not require a connected X account. Ask the agent to import a bounded number of pages first:
+Follower research uses public X data and does not require a connected publishing account. Ask the agent to import a bounded number of pages first:
 
 ```txt
 Index 20 pages of @adamwathan's public followers, then tell me whether the saved import is finished and how many profiles are searchable.
@@ -176,7 +176,7 @@ After finding a match, an agent can inspect all public profile data saved during
 Show me the complete stored profile for @leerob from @adamwathan's follower index.
 ```
 
-That lookup includes the public bio, location, website, join date, account counts, avatar, banner, verification details, and raw FxTwitter object. It does not make a fresh network request.
+That lookup includes the public bio, location, website, join date, account counts, avatar, banner, verification details, and complete stored public record. It does not make a fresh network request.
 
 The search tool uses SQLite FTS5 rather than an embedding model. It works best with concrete names, handles, places, and phrases. The tool normalizes common company handles such as `@getsentry`, but it does not invent synonyms or verify claims in a profile bio.
 
@@ -206,7 +206,7 @@ coverage in the answer.
 
 `ilo_search_x_following` searches names, handles, bios, locations, and aliases with SQLite FTS5. It returns every match when `resultLimit` is omitted. The tool does not infer synonyms, verify profile claims, or turn an unfinished snapshot into proof that a missing profile is not followed.
 
-Call `ilo_get_x_following_profile` after choosing a result. It returns the saved bio, location, website, account counts, join date, verification, images, protected state, fetch time, raw provider object, and snapshot coverage without refetching the account.
+Call `ilo_get_x_following_profile` after choosing a result. It returns the saved bio, location, website, account counts, join date, verification, images, protected state, fetch time, complete public record, and snapshot coverage without refetching the account.
 
 ## Reply and image inputs
 
@@ -227,7 +227,7 @@ then show me the saved account and provider. Do not publish it.
 
 An agent can call `ilo_set_default_publishing_account` for a deliberate local switch. It can also leave the default alone and pass `account` to one draft, schedule, or publish call. An attempt to publish a bound draft through a different account fails before Typefully or X receives a request.
 
-Research account handles are separate. `ilo_search_x_followers` searches the public handle in its `handle` input. Following, article, and inbox tools use `accountHandle` as the public data namespace. These tools still use FxTwitter even when the default publishing account is connected through Typefully.
+Research account handles are separate. `ilo_search_x_followers` searches the public handle in its `handle` input. Following, article, and inbox tools use `accountHandle` as the local data namespace. These tools work the same way whether the default publishing account uses Typefully or direct X.
 
 ## How the local server runs
 

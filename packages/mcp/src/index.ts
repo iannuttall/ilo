@@ -294,7 +294,7 @@ export const registerIloTools = (server: McpServer) => {
     'ilo_get_x_follower_profile',
     {
       description:
-        'Read the complete public FxTwitter record stored for one imported follower, including bio, location, website, account counts, join date, verification, images, and raw provider data',
+        'Read the complete public profile record stored for one imported follower, including bio, location, website, account counts, join date, verification, and images',
       inputSchema: {
         handle: z.string().trim().min(1).max(100),
         followerHandle: z.string().trim().min(1).max(100),

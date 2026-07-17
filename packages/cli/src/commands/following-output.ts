@@ -45,7 +45,7 @@ export const followingCoverageLines = (
     lines.push(
       coverage.completionReason === 'reported_count_confirmed'
         ? "The import matched X's reported total and repeated pages added nothing new."
-        : 'The provider reached the end of the available following list.',
+        : 'ilo reached the end of the available following list.',
     )
   } else if (coverage.lastError === 'fxtwitter_following_sync_no_progress') {
     lines.push(

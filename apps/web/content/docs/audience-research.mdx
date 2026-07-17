@@ -38,10 +38,10 @@ Use one of the full import modes when the question needs the broadest available 
 | Import mode | Command | When it fits |
 | --- | --- | --- |
 | Bounded foreground import | `ilo x followers sync adamwathan --pages 20` | You want a sample now and may continue later. |
-| Full foreground import | `ilo x followers sync adamwathan --all` | The terminal can stay open until the provider reports the end. |
+| Full foreground import | `ilo x followers sync adamwathan --all` | The terminal can stay open until ilo reaches the end of the available list. |
 | Full background import | `ilo x followers sync adamwathan --background` | The account is large and you want a detached local process. |
 
-`--pages` accepts 1 to 10,000 pages. A page request asks for up to 100 profiles, but the provider can return fewer or repeat profiles, so page count is not the same thing as unique profile count.
+`--pages` accepts 1 to 10,000 pages. A page request asks for up to 100 profiles, but a response can contain fewer or repeat profiles, so page count is not the same thing as unique profile count.
 
 The background command prints its process ID and log path. Check it without opening the log:
 
@@ -52,7 +52,7 @@ ilo x followers status adamwathan --json
 
 The normal status explains how many profiles are searchable, whether the import reached a confirmed end, and how to resume it. JSON includes the saved cursor, pages fetched, timestamps, latest error, X's reported follower total, and background job details.
 
-A complete import means the public provider returned no next cursor. ilo calls this the full available follower list. It may still contain fewer profiles than X's headline follower count because profiles unavailable through the public response may not appear. Treat `expectedFollowers` as an approximate comparison, not a promised row count.
+A complete import means ilo reached the end of the available follower list. It may still contain fewer profiles than X's headline follower count because unavailable profiles may not appear. Treat `expectedFollowers` as an approximate comparison, not a promised row count.
 
 ## Search the local follower index
 
@@ -137,11 +137,11 @@ ilo x followers search adamwathan \
   --csv ./adam-company-followers.csv
 ```
 
-The CSV has one row for each selected profile match. It contains the company term, classification, bio evidence, name, handle, location, website, public account counts, verification details, profile images, join date, fetch time, and source import coverage. Current profiles are exported by default. Add `--include-former` or `--include-unclear` when those rows belong in the file.
+The CSV has one row for each selected profile match. It contains the company term, classification, bio evidence, name, handle, location, website, public account counts, verification details, profile images, join date, fetch time, and import coverage. Current profiles are exported by default. Add `--include-former` or `--include-unclear` when those rows belong in the file.
 
 ## Inspect the complete stored profile
 
-Search returns the useful comparison fields. Read one profile when you need its complete structured record and raw public provider object:
+Search returns the useful comparison fields. Read one profile when you need its complete stored public record:
 
 ```sh
 ilo x followers profile adamwathan leerob
@@ -270,13 +270,13 @@ if (search.groups[0]?.results[0]) {
 console.log({ syncComplete: status?.complete ?? false })
 ```
 
-Use `syncAllXFollowers({ handle: 'adamwathan' })` when a foreground Node process should continue until the provider returns a confirmed end. That call can run for a long time on a large account and checkpoints every page. `syncXFollowers()` is the calmer choice for a request handler or agent loop because you control its page budget.
+Use `syncAllXFollowers({ handle: 'adamwathan' })` when a foreground Node process should continue until ilo reaches the end of the available list. That call can run for a long time on a large account and checkpoints every page. `syncXFollowers()` is the calmer choice for a request handler or agent loop because you control its page budget.
 
 Every function accepts `databasePath` when your application needs an isolated SQLite file. The root [TypeScript package guide](/docs/typescript) covers installation, versioning, and the other public exports.
 
 ## State what the result can prove
 
-Strong audience research keeps the observed data separate from the interpretation. Report how many profiles were indexed, whether the provider returned a confirmed end, which classifications were included, and whether any term hit the candidate cap.
+Strong audience research keeps the observed data separate from the interpretation. Report how many profiles were indexed, whether the import reached a confirmed end, which classifications were included, and whether any term hit the candidate cap.
 
 For example, "15 indexed profiles contain bio wording that ilo classified as current Cursor employment" is supportable when the result shows that count and evidence. "Cursor employs 15 of this person's followers" is too strong. The follower list may be partial, the bio may be stale, and a follower profile is not an employment record.
 

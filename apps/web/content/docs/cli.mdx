@@ -42,7 +42,7 @@ Account aliases and non-secret metadata live in `~/.config/ilo/config.json`. Typ
 
 New drafts use the current default account. Pass `--account <alias-or-handle>` to target another account for one command. A draft remembers the account it was created for, so switching the default does not move older drafts to a different X profile.
 
-The [publishing accounts guide](/docs/accounts) covers provider choice, duplicate handles, draft binding, local scheduling, account removal, and which commands still use FxTwitter.
+The [publishing accounts guide](/docs/accounts) covers provider choice, duplicate handles, draft binding, local scheduling, account removal, and how publishing accounts relate to research handles.
 
 ## Publish one post
 
@@ -82,14 +82,14 @@ X applies its own API access and conversation rules to replies. A reply that wor
 
 The [audience research guide](/docs/audience-research) walks through import coverage, classifications, freshness, complete profile records, and exports across the CLI, MCP, and TypeScript package.
 
-Import public follower profiles through FxTwitter. The default command reads 20 pages and saves progress, so rerunning it resumes a large import:
+Import public follower profiles. The default command reads 20 pages and saves progress, so rerunning it resumes a large import:
 
 ```sh
 ilo x followers sync adamwathan --pages 20
 ilo x followers status adamwathan
 ```
 
-Use `--all` to continue until FxTwitter reports the end of the list, or until the saved profiles match X's reported total and repeated pages add nothing new:
+Use `--all` to continue until ilo reaches the end of the available list, or until the saved profiles match X's reported total and repeated pages add nothing new:
 
 ```sh
 ilo x followers sync adamwathan --all
@@ -104,14 +104,14 @@ ilo x followers status adamwathan
 
 The start command prints the progress log path. The status command shows the background PID while it is running. Every page is committed to local SQLite, so a stopped job can resume without starting over.
 
-Read the complete public FxTwitter record stored for one imported follower:
+Read the complete public profile record stored for one imported follower:
 
 ```sh
 ilo x followers profile adamwathan leerob
 ilo x followers profile adamwathan leerob --json
 ```
 
-The JSON result includes the public bio, location, website, join date, account counts, avatar, banner, verification details, and raw provider object. Older rows imported before these fields were added need a `--restart` sync to fill them in.
+The JSON result includes the public bio, location, website, join date, account counts, avatar, banner, verification details, and complete stored public record. Older rows imported before these fields were added need a `--restart` sync to fill them in.
 
 Search the local names, handles, bios, and locations with SQLite FTS5:
 
@@ -172,7 +172,7 @@ ilo x following search adamwathan \
 
 The search command never starts a sync. If no complete profiles are indexed, it tells you which sync command to run. Search returns every local match unless you pass `--limit`, and the output keeps the exact total visible when a display limit is active.
 
-Export every match and its source coverage to CSV:
+Export every match and its import coverage to CSV:
 
 ```sh
 ilo x following search adamwathan \
@@ -189,7 +189,7 @@ ilo x following profile browser_builder --account adamwathan
 ilo x following profile browser_builder --account adamwathan --json
 ```
 
-Status and search report whether the provider returned the end of the available list or repeated pages confirmed X's reported total. They also report whether the snapshot is more than 24 hours old. A partial result can prove which profiles were found, but not that an absent profile is not followed.
+Status and search report whether ilo reached the end of the available list or repeated pages confirmed X's reported total. They also report whether the snapshot is more than 24 hours old. A partial result can prove which profiles were found, but not that an absent profile is not followed.
 
 ## Monitor X articles
 
@@ -213,7 +213,7 @@ ilo x articles search --from swyx
 ilo x articles search --query "agents" --limit 10 --json
 ```
 
-Search returns every match unless you pass `--limit`. Normal output shows an evidence excerpt and the X link. JSON search results stay compact too. Read the full stored body and raw provider record when you choose an article:
+Search returns every match unless you pass `--limit`. Normal output shows an evidence excerpt and the X link. JSON search results stay compact too. Read the full stored body and complete public record when you choose an article:
 
 ```sh
 ilo x articles show <post-id-or-url>
@@ -233,7 +233,7 @@ ilo x inbox refresh
 ilo x inbox list
 ```
 
-A refresh saves matching public posts, author profiles, engagement counts, the source monitor, and the raw FxTwitter record to local SQLite. It deduplicates posts found by more than one monitor. Monitors do not run in the background yet, so rerun `ilo x inbox refresh` when you want to check them.
+A refresh saves matching public posts, author profiles, engagement counts, the matching monitor, and the complete public post record to local SQLite. It deduplicates posts found by more than one monitor. Monitors do not run in the background yet, so rerun `ilo x inbox refresh` when you want to check them.
 
 Filter the saved inbox by monitor, local state, verified authors, or words in the post and author profile:
 
@@ -274,7 +274,7 @@ ilo drafts schedule <draft-id> --at "Friday at 2pm"
 ilo drafts publish <draft-id>
 ```
 
-Draft creation binds the current default or explicit `--account`. Later switches do not change it. `ilo drafts publish <id> --account work` is accepted only when the draft is already bound to `work`; a mismatch fails before a provider request.
+Draft creation binds the current default or explicit `--account`. Later switches do not change it. `ilo drafts publish <id> --account work` is accepted only when the draft is already bound to `work`; a mismatch fails before a publishing request.
 
 An unassigned draft is allowed when no publishing account exists yet. Scheduling or publishing it binds the account at that point. Schedule values can be ISO timestamps or plain phrases such as `in 30 minutes`, `tomorrow at 9am`, and `Monday at 14:00`.
 
@@ -326,7 +326,7 @@ The packaged ilo skill teaches coding agents when to use ilo, which CLI commands
 
 Publishing commands are interactive by default. A person sees the final account, provider, text, reply destination, image paths, and alt text before ilo sends anything to a provider. Use `--yes` only in automation that already has an approval step. Monitor refreshes, inbox state changes, reply drafting, follower research, listing, and status checks do not publish anything.
 
-For scripts, prefer JSON output and check the process exit code. Successful commands exit with code `0`; invalid input, missing credentials, and provider failures return a non-zero code with an actionable message.
+For scripts, prefer JSON output and check the process exit code. Successful commands exit with code `0`; invalid input, missing credentials, and request failures return a non-zero code with an actionable message.
 
 ```sh
 draft_id=$(ilo drafts create --text "Review this first" --json | jq -r .id)
@@ -345,4 +345,4 @@ ilo keeps configuration under `~/.config/ilo`, local working data in SQLite, and
 
 If a publishing command cannot find the expected account, run `ilo accounts list`. Reconnect Typefully after rotating its key. Use `ilo x connect` after changing direct X app scopes or client configuration.
 
-Publishing setup has no effect on the research provider. Follower and following syncs, article monitors, and reply inbox refreshes continue to use public FxTwitter data. Most research commands accept an explicit public handle and do not require Typefully or direct X credentials at all.
+Publishing setup has no effect on research. Follower and following syncs, article monitors, and reply inbox refreshes fetch public X data independently. Most research commands accept an explicit public handle and do not require Typefully or direct X credentials at all.

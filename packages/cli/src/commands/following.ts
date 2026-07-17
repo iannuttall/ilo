@@ -280,12 +280,13 @@ export const followingCommand = defineCommand({
         },
         account: {
           type: 'string',
-          description: 'Source X handle. Defaults to the connected account.',
+          description: 'X handle. Defaults to the connected account.',
         },
         json: {
           type: 'boolean',
           default: false,
-          description: 'Print structured JSON including raw provider data.',
+          description:
+            'Print structured JSON including the complete stored public record.',
         },
       },
       run: async ({ args }) => {

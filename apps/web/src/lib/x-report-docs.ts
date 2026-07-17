@@ -334,15 +334,15 @@ ilo x inbox list --monitor "${threadMonitorName}" --all --limit 500 --json`,
       ],
     },
     typescript: {
-      summary: `The \`iloso\` package has no one-call ${report.title.toLowerCase()} function yet. Node applications can collect public profile and post rows with the exported FxTwitter helpers or use the same local monitor functions as the CLI.`,
+      summary: `The \`iloso\` package has no one-call ${report.title.toLowerCase()} function yet. Node applications can collect public profile and post rows with the exported public X helpers or use the same local monitor functions as the CLI.`,
       steps: [
-        `Call \`fetchFxTwitterProfile(handle)\` for current profile evidence. Page through \`fetchFxTwitterSearch(...)\` with the query \`${authoredQuery}\` and stop at a documented date, row, or page boundary.`,
+        `Call \`fetchPublicXProfile(handle)\` for current profile evidence. Page through \`fetchPublicXSearch(...)\` with the query \`${authoredQuery}\` and stop at a documented date, row, or page boundary.`,
         ...(needsThreadEvidence
           ? [
               `Collect \`${authoredRepliesQuery}\` as a second bounded sample for thread classification. Keep its rows separate from the original-post sample.`,
             ]
           : []),
-        'Persist the collection time, cursor state, source URLs, and missing metric fields with the rows. A public search result is a bounded sample unless the source confirms the requested history ended. Use `fetchFxTwitterStatus(postId)` for a new dated metric snapshot of a selected post.',
+        'Persist the collection time, cursor state, post URLs, and missing metric fields with the rows. A public search result is a bounded sample unless ilo confirms the requested history ended. Use `fetchPublicXStatus(postId)` for a new dated metric snapshot of a selected post.',
         'The direct paging example below owns its cursor for that run. If the application uses `createXMonitor()` and `refreshXMonitor()` instead, apply the same monitor lifecycle as the CLI: names are unique, the first refresh is bounded, and a truncated first refresh does not resume old pages later.',
         ...collectionNotes,
         `${focus} Implement the calculations in your application and keep the source rows beside the result so another person or agent can inspect them.`,
@@ -351,16 +351,16 @@ ilo x inbox list --monitor "${threadMonitorName}" --all --limit 500 --json`,
         {
           label: 'Collect a bounded public profile and post sample',
           code: `import {
-  fetchFxTwitterProfile,
-  fetchFxTwitterSearch,
-  fetchFxTwitterStatus,
-  type FxTwitterStatus,
+  fetchPublicXProfile,
+  fetchPublicXSearch,
+  fetchPublicXStatus,
+  type PublicXStatus,
 } from 'iloso'
 
 const handle = 'example'
-const profile = await fetchFxTwitterProfile(handle)
+const profile = await fetchPublicXProfile(handle)
 async function collectSearchSample(query: string) {
-  const postsById = new Map<string, FxTwitterStatus>()
+  const postsById = new Map<string, PublicXStatus>()
   const seenCursors = new Set<string>()
   let cursor: string | null = null
   let sourcePaginationEnded = false
@@ -370,7 +370,7 @@ async function collectSearchSample(query: string) {
       if (seenCursors.has(cursor)) throw new Error('search cursor repeated')
       seenCursors.add(cursor)
     }
-    const page = await fetchFxTwitterSearch({ query, count: 100, cursor })
+    const page = await fetchPublicXSearch({ query, count: 100, cursor })
     for (const post of page.posts) {
       if (postsById.size >= 500) break
       postsById.set(post.id, post)
@@ -400,7 +400,7 @@ ${
     : 'const authoredReplySample = null'
 }
 const selectedPostSnapshot = originalPostSample.posts[0]
-  ? await fetchFxTwitterStatus(originalPostSample.posts[0].id)
+  ? await fetchPublicXStatus(originalPostSample.posts[0].id)
   : null
 
 console.log({

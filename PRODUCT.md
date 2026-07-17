@@ -49,10 +49,10 @@ it helps them choose or complete the next action.
   optional alt text. Typefully publishing rejects images with alt text because
   its documented v2 draft input does not expose that field.
 - Run the scheduler once or as a local watcher.
-- Import public X follower profiles through FxTwitter into local SQLite, with
+- Import public X follower profiles into local SQLite, with
   resumable foreground and background full-list syncs.
 - Retain each imported profile's public bio, location, website, join date,
-  account counts, images, verification details, and raw FxTwitter record.
+  account counts, images, verification details, and complete public record.
 - Search imported follower names, handles, bios, and locations with SQLite
   FTS5, including evidence-backed current, former, and unclear employer
   counts. List current matches by default, allow former and unclear matches to
@@ -72,8 +72,8 @@ it helps them choose or complete the next action.
 - Save selected X handles as local article monitors. Refresh them on demand,
   resume unfinished history imports, fetch each new article's full text, and
   search the local title, preview, and body index with SQLite FTS5.
-- Read one saved article with its full public text and raw FxTwitter record.
-- Inspect the stored public post, author, engagement, and raw FxTwitter data;
+- Read one saved article with its full public text and complete public record.
+- Inspect the stored public post, author, engagement, and complete public data;
   mark items read, archived, or replied; and create a local reply draft without
   publishing it.
 - Use the same actions through local stdio MCP.
@@ -88,8 +88,8 @@ The report library is useful today, but automated local account-history reports
 have not shipped yet. Do not write as if the CLI already imports a full post
 history or produces every report automatically.
 
-All current research reads use public FxTwitter data, whether publishing is
-connected through Typefully, direct X OAuth, or not connected at all. The
+All current research reads use public X data, whether publishing is connected
+through Typefully, direct X OAuth, or not connected at all. The
 Typefully connection is a publishing transport in the current release. Native
 Typefully analytics ingestion has not shipped yet.
 

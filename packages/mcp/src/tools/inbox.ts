@@ -144,7 +144,7 @@ export const registerInboxTools = (server: McpServer) => {
     'ilo_refresh_x_inbox',
     {
       description:
-        'Run local X monitors through FxTwitter and save new matching posts to the local inbox. This never publishes anything.',
+        'Refresh local X monitors and save new matching public posts to the local inbox. This never publishes anything.',
       inputSchema: {
         accountHandle,
         monitorId: z.string().uuid().optional(),
@@ -239,7 +239,7 @@ export const registerInboxTools = (server: McpServer) => {
     'ilo_get_x_inbox_item',
     {
       description:
-        'Inspect one local X inbox item, including its complete raw FxTwitter post and author record',
+        'Inspect one local X inbox item, including its complete public post and author record',
       inputSchema: {
         accountHandle,
         postId: z.string().trim().min(1).max(500),

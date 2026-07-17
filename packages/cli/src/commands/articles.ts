@@ -58,7 +58,7 @@ const monitorArgs = {
   monitor: {
     type: 'positional' as const,
     required: true,
-    description: 'Source handle, UUID, or unique UUID prefix.',
+    description: 'Monitored handle, UUID, or unique UUID prefix.',
   },
   account: accountArg,
   json: {
@@ -161,7 +161,8 @@ export const articlesCommand = defineCommand({
         monitor: {
           type: 'positional',
           required: false,
-          description: 'Only refresh this source handle, UUID, or UUID prefix.',
+          description:
+            'Only refresh this monitored handle, UUID, or UUID prefix.',
         },
         pages: {
           type: 'string',
@@ -309,7 +310,8 @@ export const articlesCommand = defineCommand({
         json: {
           type: 'boolean',
           default: false,
-          description: 'Print structured JSON including raw provider data.',
+          description:
+            'Print structured JSON including the complete stored public record.',
         },
       },
       run: async ({ args }) => {

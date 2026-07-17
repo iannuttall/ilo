@@ -11,7 +11,7 @@ seoDescription: "Connect several X profiles to ilo through Typefully or direct X
 
 ilo can publish through Typefully or through your own X developer app. Both routes support multiple X profiles. Pick the one that is less painful for your setup, then use the same drafts, scheduler, CLI commands, MCP tools, and TypeScript functions.
 
-This choice only affects publishing. Follower research, following search, article monitoring, and the reply inbox still read public data through FxTwitter and save it in your local SQLite database. Connecting Typefully does not import Typefully analytics yet.
+This choice only affects publishing. Follower research, following search, article monitoring, and the reply inbox fetch public X data and save the results in your local SQLite database. Connecting Typefully does not import Typefully analytics yet.
 
 ## Choose how ilo should publish
 
@@ -98,7 +98,7 @@ ilo accounts use @ilodotso
 
 Use an alias when a handle is connected through more than one provider. A bare handle is rejected as ambiguous if ilo cannot identify one safe target.
 
-The default does two jobs. It chooses the publishing account for new drafts, and its X handle becomes the default local namespace for commands such as `ilo x articles refresh` or `ilo x following sync`. Those research commands still fetch public FxTwitter data. No Typefully or X OAuth read endpoint is involved.
+The default does two jobs. It chooses the publishing account for new drafts, and its X handle becomes the default local namespace for commands such as `ilo x articles refresh` or `ilo x following sync`. Research runs independently of the chosen publishing route.
 
 ## Choose an account for one draft or post
 
@@ -203,6 +203,6 @@ The [local MCP setup](/docs/mcp) has agent prompts and the full tool list. The [
 
 Drafts, schedules, research indexes, inbox state, and publish attempts stay in local SQLite. Non-secret aliases and account metadata live in `~/.config/ilo/config.json`. Typefully keys, X OAuth tokens, and optional X client secrets stay in the operating system keychain.
 
-Approved Typefully posts and their media go to Typefully for publishing. Approved direct X posts and their media go straight to X. Research commands request the public FxTwitter data needed for the command you ran. ilo has no hosted account or draft service in the middle.
+Approved Typefully posts and their media go to Typefully for publishing. Approved direct X posts and their media go straight to X. Research commands request only the public X data needed for the command you ran. ilo has no hosted account or draft service in the middle.
 
 If setup succeeds but publishing fails, start with `ilo accounts list`. Confirm the expected alias and provider, then check the provider itself for expired access, a paused plan, missing write permission, or a rate limit. The CLI returns provider errors without switching to another account behind your back.

@@ -30,7 +30,7 @@ const completionText = (sync: {
   if (!sync.complete) return 'the saved import is unfinished'
   return sync.completionReason === 'reported_count_confirmed'
     ? "X's reported total was confirmed across repeated pages"
-    : 'the provider reached the end of the available list'
+    : 'ilo reached the end of the available list'
 }
 
 export const registerFollowingTools = (server: McpServer) => {
@@ -145,7 +145,7 @@ export const registerFollowingTools = (server: McpServer) => {
     'ilo_get_x_following_profile',
     {
       description:
-        'Read one complete public profile from an X account following index, including bio, location, website, account counts, join date, verification, images, and raw provider data',
+        'Read one complete public profile from an X account following index, including bio, location, website, account counts, join date, verification, images, and its complete stored record',
       inputSchema: {
         accountHandle,
         followedHandle: z.string().trim().min(1).max(100),

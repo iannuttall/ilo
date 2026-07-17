@@ -22,24 +22,40 @@ export {
 } from './providers/x/client.js'
 export type {
   FxTwitterArticle,
+  FxTwitterArticle as PublicXArticle,
   FxTwitterArticleBlock,
+  FxTwitterArticleBlock as PublicXArticleBlock,
   FxTwitterArticleEntity,
+  FxTwitterArticleEntity as PublicXArticleEntity,
   FxTwitterClientOptions,
+  FxTwitterClientOptions as PublicXClientOptions,
   FxTwitterFollowersPage,
+  FxTwitterFollowersPage as PublicXFollowersPage,
   FxTwitterReplyingTo,
+  FxTwitterReplyingTo as PublicXReplyingTo,
   FxTwitterSearchFeed,
+  FxTwitterSearchFeed as PublicXSearchFeed,
   FxTwitterSearchPage,
+  FxTwitterSearchPage as PublicXSearchPage,
   FxTwitterStatus,
+  FxTwitterStatus as PublicXStatus,
   FxTwitterUser,
+  FxTwitterUser as PublicXUser,
 } from './providers/x/fxtwitter.js'
 export {
   FxTwitterError,
   fetchFxTwitterArticles,
+  fetchFxTwitterArticles as fetchPublicXArticles,
   fetchFxTwitterFollowers,
+  fetchFxTwitterFollowers as fetchPublicXFollowers,
   fetchFxTwitterFollowing,
+  fetchFxTwitterFollowing as fetchPublicXFollowing,
   fetchFxTwitterProfile,
+  fetchFxTwitterProfile as fetchPublicXProfile,
   fetchFxTwitterSearch,
+  fetchFxTwitterSearch as fetchPublicXSearch,
   fetchFxTwitterStatus,
+  fetchFxTwitterStatus as fetchPublicXStatus,
 } from './providers/x/fxtwitter.js'
 export type { XPostImage, XUploadedImage } from './providers/x/media.js'
 export {

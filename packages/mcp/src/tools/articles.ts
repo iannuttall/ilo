@@ -242,7 +242,7 @@ export const registerArticleTools = (server: McpServer) => {
     'ilo_get_x_article',
     {
       description:
-        'Read one locally saved X article with its full text and raw provider record',
+        'Read one locally saved X article with its full text and complete public record',
       inputSchema: {
         accountHandle,
         postId: z.string().trim().min(1).max(500),

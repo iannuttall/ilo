@@ -354,7 +354,8 @@ export const followersCommand = defineCommand({
         json: {
           type: 'boolean',
           default: false,
-          description: 'Print structured JSON including raw FxTwitter data.',
+          description:
+            'Print structured JSON including the complete stored public record.',
         },
       },
       run: ({ args }) => {

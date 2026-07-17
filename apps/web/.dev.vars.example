@@ -1,4 +1,4 @@
-# Optional self-hosted FXTwitter-compatible endpoint.
-FX_BASE_URL=https://api.fxtwitter.com
+# Optional custom public-X-data endpoint.
+FX_BASE_URL=
 FX_AUTH_HEADER=
 FX_AUTH_VALUE=

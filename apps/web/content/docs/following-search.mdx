@@ -55,15 +55,15 @@ Use `--pages` to choose a different page budget:
 ilo x following sync adamwathan --pages 100
 ```
 
-Use `--all` when the terminal can stay open until the provider returns the end of the available list, or repeated pages confirm that the saved profiles match X's reported total:
+Use `--all` when the terminal can stay open until ilo reaches the end of the available list, or repeated pages confirm that the saved profiles match X's reported total:
 
 ```sh
 ilo x following sync adamwathan --all
 ```
 
-A page asks for up to 100 profiles, but page count is not a profile count. The provider can return shorter pages or repeat an account. ilo reports unique saved relationships. If the provider keeps returning duplicate pages after the saved profiles exactly match X's reported following count, ilo confirms the count across three no-progress pages and completes the snapshot. Otherwise, the general no-progress guard stops the import without making a false completeness claim.
+A page asks for up to 100 profiles, but page count is not a profile count. A response can contain fewer profiles or repeat an account. ilo reports unique saved relationships. If duplicate pages continue after the saved profiles exactly match X's reported following count, ilo confirms the count across three no-progress pages and completes the snapshot. Otherwise, the general no-progress guard stops the import without making a false completeness claim.
 
-The sync stores much more than an ID and handle. Each available public profile includes its name, bio, location, website, follower and following counts, post, like, and media counts, join date, verification details, protected state, avatar, banner, fetch time, and raw provider object. The same relationship data also powers the reply inbox's `iFollow` filter.
+The sync stores much more than an ID and handle. Each available public profile includes its name, bio, location, website, follower and following counts, post, like, and media counts, join date, verification details, protected state, avatar, banner, fetch time, and complete public record. The same relationship data also powers the reply inbox's `iFollow` filter.
 
 ## Read coverage and freshness
 
@@ -74,9 +74,9 @@ ilo x following status adamwathan
 ilo x following status adamwathan --json
 ```
 
-Normal output answers the useful questions directly: how many complete profiles are searchable, how completion was confirmed, when the import last changed, and what command to run next. JSON includes the source account, saved cursor, pages fetched, unique profiles seen, expected following count when available, `completionReason`, completion time, latest error, data version, age, and stale state.
+Normal output answers the useful questions directly: how many complete profiles are searchable, how completion was confirmed, when the import last changed, and what command to run next. JSON includes the account handle, saved cursor, pages fetched, unique profiles seen, expected following count when available, `completionReason`, completion time, latest error, data version, age, and stale state.
 
-`complete: true` has two explicit meanings. `completionReason: "provider_end"` means the public provider returned no next cursor. `completionReason: "reported_count_confirmed"` means the unique saved profiles exactly matched X's reported following count and three later pages added nothing new. Both represent the full available snapshot, but neither guarantees that an unavailable profile became a public row. Deleted, protected, suspended, withheld, or otherwise unavailable profiles may be absent.
+`complete: true` has two explicit meanings. `completionReason: "provider_end"` means there was no next cursor. `completionReason: "reported_count_confirmed"` means the unique saved profiles exactly matched X's reported following count and three later pages added nothing new. Both represent the full available snapshot, but neither guarantees that an unavailable profile became a public row. Deleted, protected, suspended, withheld, or otherwise unavailable profiles may be absent.
 
 ilo marks a following snapshot stale when its last update is more than 24 hours old. Stale does not make the rows useless. It means you should refresh before making a claim about the account's current choices. A partial snapshot can prove that a returned profile was observed, but it cannot prove that an absent profile is not followed.
 
@@ -145,11 +145,11 @@ ilo x following search adamwathan \
   --csv ./adam-browser-builders.csv
 ```
 
-The CSV includes one row per matching profile with the query, evidence, public profile fields, fetch time, source account, searchable profile count, expected following count, completion state and reason, snapshot time, freshness, and last error. If you combine `--limit` with `--csv`, the terminal or JSON result is limited but the CSV still receives every local match. This prevents a display preference from silently truncating an export.
+The CSV includes one row per matching profile with the query, evidence, public profile fields, fetch time, account handle, searchable profile count, expected following count, completion state and reason, snapshot time, freshness, and last error. If you combine `--limit` with `--csv`, the terminal or JSON result is limited but the CSV still receives every local match. This prevents a display preference from silently truncating an export.
 
 ## Inspect one complete stored profile
 
-Search returns the fields normally needed to compare results. Use `profile` when you need the complete structured record and raw provider data for one account:
+Search returns the fields normally needed to compare results. Use `profile` when you need the complete stored public record for one account:
 
 ```sh
 ilo x following profile browser_builder \
@@ -160,7 +160,7 @@ ilo x following profile browser_builder \
   --json
 ```
 
-The first handle is the followed profile. `--account` names the source following list. Omit `--account` to use the default publishing account's X handle as the source namespace.
+The first handle is the followed profile. `--account` names the following list. Omit `--account` to use the default publishing account's X handle as the local namespace.
 
 Profile lookup is local and makes no fresh network request. The JSON response includes coverage alongside the profile so you can see whether that record belongs to a partial or stale snapshot.
 
@@ -173,7 +173,7 @@ Complete the [local MCP setup](/docs/mcp), then ask the agent to sync, check cov
 | `ilo_sync_x_following` | Fetches a bounded number of pages and stores complete public profiles. |
 | `ilo_x_following_sync_status` | Returns completion and its reason, profile counts, age, freshness, cursor, and errors. |
 | `ilo_search_x_following` | Searches the saved profile index and returns all matches unless `resultLimit` is supplied. |
-| `ilo_get_x_following_profile` | Reads one complete stored profile and raw provider object. |
+| `ilo_get_x_following_profile` | Reads one complete stored public profile record. |
 
 An initial sync call can use:
 
@@ -251,14 +251,14 @@ if (search.results[0]) {
 }
 ```
 
-Call `syncAllXFollowing({ handle: 'adamwathan' })` when a foreground process should keep fetching until the provider reports an end cursor or repeated pages confirm X's reported total. It checkpoints every page and can run for a while on a large following list. Use bounded `syncXFollowing()` calls in a request handler or agent loop so the caller controls how long each action can run.
+Call `syncAllXFollowing({ handle: 'adamwathan' })` when a foreground process should keep fetching until ilo reaches the end of the available list or repeated pages confirm X's reported total. It checkpoints every page and can run for a while on a large following list. Use bounded `syncXFollowing()` calls in a request handler or agent loop so the caller controls how long each action can run.
 
 Every function accepts `databasePath` when your application needs an isolated SQLite file. Search also accepts `resultLimit`, `now`, and `staleAfterMs`. The last two are useful for deterministic tests or a product with a different freshness policy. The [TypeScript package guide](/docs/typescript) covers installation, local storage, publishing approval, and the other public exports.
 
 ## Read the result without overstating it
 
-A useful answer includes the source handle, number of searchable profiles, completion state, snapshot age, exact query, total matches, and the public evidence for the profiles it names.
+A useful answer includes the account handle, number of searchable profiles, completion state, snapshot age, exact query, total matches, and the public evidence for the profiles it names.
 
-"The current local snapshot contains 12 followed profiles whose saved bios match all three words" is supportable. "These are everyone on X building browser tools" is not. The source account made the following choices, public profile data can be unavailable, and keyword search cannot infer every synonym or unstated interest.
+"The current local snapshot contains 12 followed profiles whose saved bios match all three words" is supportable. "These are everyone on X building browser tools" is not. The account owner made the following choices, public profile data can be unavailable, and keyword search cannot infer every synonym or unstated interest.
 
 Use [audience research](/docs/audience-research) when the question runs in the other direction and starts with an account's followers. Use [article monitoring](/docs/articles) when the goal is to keep complete native X Articles from selected writers searchable over time.

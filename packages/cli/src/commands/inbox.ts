@@ -197,7 +197,8 @@ export const inboxCommand = defineCommand({
         json: {
           type: 'boolean',
           default: false,
-          description: 'Print structured JSON including raw provider data.',
+          description:
+            'Print structured JSON including the complete stored public record.',
         },
       },
       run: async ({ args }) => {
@@ -244,7 +245,8 @@ export const inboxCommand = defineCommand({
         json: {
           type: 'boolean',
           default: false,
-          description: 'Print structured JSON including raw provider data.',
+          description:
+            'Print structured JSON including the complete stored public record.',
         },
       },
       run: async ({ args }) => {

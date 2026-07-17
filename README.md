@@ -118,7 +118,8 @@ COMMANDS
 ```
 
 The default publishing account's handle becomes the local namespace for
-article and inbox monitors. Those reads still use public FxTwitter data.
+article and inbox monitors. Research commands fetch public X data and keep the
+results local.
 Public follower research can run with no publishing connection. Commands that
 need a research namespace also accept an explicit handle.
 
@@ -194,9 +195,9 @@ ilo x following status adamwathan
 ```
 
 An omitted handle uses the default publishing account's X handle as the local
-research namespace. The profiles still come from FxTwitter. A bounded sync
+research namespace. A bounded sync
 reads 20 pages by default and resumes when you run it again. `--all` continues until the
-public provider reports the end, or until the saved profiles match X's
+available list ends, or until the saved profiles match X's
 reported total and repeated pages add nothing new. Running sync after a
 completed import starts a fresh snapshot, while `--restart` discards an
 unfinished cursor.
@@ -423,7 +424,7 @@ if (matches[0]) {
 The root package exports follower and following sync and search functions,
 complete stored profile lookup, article monitoring, reply inbox actions,
 publishing accounts, Typefully setup, local drafts, schedules, static image
-helpers, X OAuth, provider helpers, configuration, and storage paths. The
+helpers, X OAuth, public X helpers, configuration, and storage paths. The
 package is pre-1.0, so pin the version when another application depends on
 exact function signatures.
 
@@ -449,8 +450,9 @@ script.
 
 - X is the only publishing network today. It can publish through Typefully or
   direct X OAuth. Bluesky and LinkedIn publishing are planned.
-- Typefully is a publishing route in the current release. Research still uses
-  FxTwitter, and Typefully analytics ingestion is planned for later.
+- Typefully is a publishing route in the current release. Research works
+  independently of the publishing connection, and Typefully analytics
+  ingestion is planned for later.
 - Article monitors only collect native X Articles and refresh on demand.
 - Follower employer results classify claims in public bios. They do not verify
   someone's employment.
@@ -459,9 +461,8 @@ script.
 - Images can be JPEG, PNG, or WebP. Animated GIF and video uploads are still
   planned.
 
-Public endpoints can return incomplete, delayed, or unavailable data. ilo
-keeps coverage and provider errors visible so an agent can describe what the
-result supports.
+Public data can be incomplete, delayed, or unavailable. ilo keeps coverage and
+fetch errors visible so an agent can describe what the result supports.
 
 ## Common questions
 

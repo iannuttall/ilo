@@ -14,13 +14,8 @@ Those routes are website plumbing, not a documented API. Direct and cross-origin
 
 ## Optional environment
 
-Copy `.dev.vars.example` to `.dev.vars` only if you use a self-hosted FXTwitter-compatible endpoint:
-
-```txt
-FX_BASE_URL=https://api.fxtwitter.com
-FX_AUTH_HEADER=
-FX_AUTH_VALUE=
-```
+Copy `.dev.vars.example` to `.dev.vars` only when overriding the default
+public-data endpoint. The example lists the available variables.
 
 ## Checks
 

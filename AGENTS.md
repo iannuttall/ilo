@@ -91,6 +91,13 @@ pnpm -C apps/web exec wrangler deploy --dry-run
 
 Deploy the website through git push after CI passes. Do not add manual production migrations because the site has no database.
 
+## Releases
+
+- Default to patch version bumps for fixes and incremental work, such as
+  `0.6.0` to `0.6.1`.
+- Only bump the minor version for a substantial feature release. Do not assume
+  every npm publish needs a new minor version.
+
 ## Shared logic
 
 - Put cross-surface behavior in `packages/core`.

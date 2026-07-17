@@ -21,7 +21,7 @@ Install the current CLI from npm:
 npm i -g iloso
 ```
 
-Article commands use your default publishing account's X handle to keep each local library separate. The article reads still come from public FxTwitter data. Run the guided setup if you want that default:
+Article commands use your default publishing account's X handle to keep each local library separate. Each refresh fetches public X Articles and saves them locally. Run the guided setup if you want that default:
 
 ```sh
 ilo start
@@ -76,7 +76,7 @@ The important monitor fields have specific meanings:
 | `historyComplete` | `true` after the public timeline reaches a confirmed end. |
 | `cursor` | The saved position used to continue an unfinished history import. |
 | `lastCheckedAt` | When ilo last attempted a refresh. |
-| `lastError` | The latest provider error, or `null` after a successful refresh. |
+| `lastError` | The latest refresh error, or `null` after a successful refresh. |
 | `newestPostId` | The newest article post seen for this monitor. |
 
 Once history is complete, later refreshes check the newest timeline entries and stop when they reach the previously saved boundary.
@@ -111,7 +111,7 @@ Normal terminal output includes the title, writer, date, matching excerpt, and X
 ilo x articles search --query "browser tools" --json
 ```
 
-Each JSON search result includes `excerpt` and `bodyCharacters`, but omits the complete body and raw provider payload. This keeps an agent search from filling its context with every article before it chooses which one to read.
+Each JSON search result includes `excerpt` and `bodyCharacters`, but omits the complete body and stored public record. This keeps an agent search from filling its context with every article before it chooses which one to read.
 
 ## Read one complete saved article
 
@@ -122,13 +122,13 @@ ilo x articles show <post-id-or-status-url>
 ilo x articles show <post-id-or-status-url> --json
 ```
 
-Normal output prints the full stored body with its paragraph breaks. JSON adds the complete `bodyText`, article and post timestamps, cover image URL, public author fields, monitor matches, and raw public provider record.
+Normal output prints the full stored body with its paragraph breaks. JSON adds the complete `bodyText`, article and post timestamps, cover image URL, public author fields, monitor matches, and complete stored public record.
 
 `show` reads the local database. Refresh the monitor first if the article has not been saved yet.
 
 ## Pause, resume, or remove a monitor
 
-Use a source handle, full monitor id, or unique id prefix:
+Use a monitored handle, full monitor id, or unique id prefix:
 
 ```sh
 ilo x articles disable swyx
@@ -150,7 +150,7 @@ The article tools are separate so an agent can search compact results before loa
 
 | MCP tool | Action |
 | --- | --- |
-| `ilo_create_x_article_monitor` | Saves one source handle. |
+| `ilo_create_x_article_monitor` | Saves one X handle to monitor. |
 | `ilo_list_x_article_monitors` | Lists active and paused monitors with their history state. |
 | `ilo_refresh_x_articles` | Refreshes one monitor id or every active monitor. |
 | `ilo_search_x_articles` | Searches local titles, previews, and full text. |
@@ -205,7 +205,7 @@ Pass `databasePath` to any core function when an application needs a database ou
 
 ## Know what the local library can prove
 
-ilo stores monitor progress and article data in `~/.config/ilo/ilo.sqlite` by default. Saved articles include the title, preview, complete text returned by X, public author profile, dates, cover image URL, source monitor, first and latest seen times, and raw provider status.
+ilo stores monitor progress and article data in `~/.config/ilo/ilo.sqlite` by default. Saved articles include the title, preview, complete text returned by X, public author profile, dates, cover image URL, matching monitor, first and latest seen times, and complete public post record.
 
 The library still has practical limits:
 
@@ -213,7 +213,7 @@ The library still has practical limits:
 - Refreshes run only when you call them. Automatic background checks are not available yet.
 - `historyComplete: false` means the public timeline has more pages or the import stopped before a confirmed end.
 - Search is word-based FTS5. It does not understand synonyms or semantic similarity.
-- Public timelines and article bodies depend on what X and the public provider return at refresh time.
+- Public timelines and article bodies depend on what is available at refresh time.
 
 Treat the saved history as inspectable public evidence, not a guaranteed archive of everything a writer has ever published.
 

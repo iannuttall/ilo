@@ -113,7 +113,7 @@ Pass `account: null` to `createDraft()` when you deliberately want an unassigned
 
 The [audience research guide](/docs/audience-research) explains the same workflow across TypeScript, the CLI, and local MCP, including partial coverage, completed snapshots, and refreshes.
 
-Syncs use public FxTwitter data and save their cursor in local SQLite. Limit each call when the account is large, then call it again to resume:
+Syncs fetch public follower profiles and save their cursor in local SQLite. Limit each call when the account is large, then call it again to resume:
 
 ```ts
 import {
@@ -142,7 +142,7 @@ const profile = getXFollowerProfile({
 console.log(profile.profile.providerData)
 ```
 
-Call `syncAllXFollowers({ handle: 'adamwathan' })` when the process should continue until FxTwitter reports the end of the list. It checkpoints every page. `getXFollowerProfile()` returns the useful stored fields plus the raw public FxTwitter object without another network request.
+Call `syncAllXFollowers({ handle: 'adamwathan' })` when the process should continue until ilo reaches the end of the available list. It checkpoints every page. `getXFollowerProfile()` returns the useful fields plus the complete stored public record without another network request.
 
 The search result includes `coverage.complete`, the number of searchable profiles, X's reported follower total, and the last sync error when one exists. Each group includes conservative current, former, and unclear counts. The `results` array contains current matches and their public bio evidence by default. Pass `includeFormer: true` or `includeUnclear: true` to include those profiles. Search uses SQLite FTS5, so concrete names, handles, phrases, and locations work better than abstract semantic questions.
 
@@ -180,11 +180,11 @@ if (search.results[0]) {
 }
 ```
 
-`syncXFollowing()` saves its cursor and resumes an unfinished import. Calling it after a completed import starts a fresh snapshot. Use `syncAllXFollowing()` when a foreground process should continue until the provider reports the end of the available list, or until the saved profiles match X's reported total and repeated pages add nothing new.
+`syncXFollowing()` saves its cursor and resumes an unfinished import. Calling it after a completed import starts a fresh snapshot. Use `syncAllXFollowing()` when a foreground process should continue until ilo reaches the end of the available list, or until the saved profiles match X's reported total and repeated pages add nothing new.
 
 Search reads names, handles, bios, locations, and aliases with SQLite FTS5. It returns every matching profile unless `resultLimit` is supplied. Its `coverage` includes completion, `completionReason`, unique searchable profiles, expected following count, timestamps, last error, age, and a stale flag that becomes true after 24 hours.
 
-`getXFollowingProfile()` returns the saved structured fields and raw public provider object without another network request. All following functions accept `databasePath` when an application needs an isolated index. `getXFollowingStatus()`, `searchXFollowing()`, and `getXFollowingProfile()` also accept `now` and `staleAfterMs` for deterministic tests or a different freshness policy.
+`getXFollowingProfile()` returns the saved structured fields and complete public record without another network request. All following functions accept `databasePath` when an application needs an isolated index. `getXFollowingStatus()`, `searchXFollowing()`, and `getXFollowingProfile()` also accept `now` and `staleAfterMs` for deterministic tests or a different freshness policy.
 
 ## Monitor and search X articles
 
@@ -226,7 +226,7 @@ if (results[0]) {
 }
 ```
 
-Refreshes run on demand and save their progress in local SQLite. If `historyComplete` is false on a monitor, call the refresh again to continue from its cursor. Search results contain a short evidence excerpt and body character count. `getXArticle()` returns the complete stored body and raw FxTwitter status.
+Refreshes run on demand and save their progress in local SQLite. If `historyComplete` is false on a monitor, call the refresh again to continue from its cursor. Search results contain a short evidence excerpt and body character count. `getXArticle()` returns the complete stored body and public article record.
 
 The [article monitoring guide](/docs/articles) covers cursor state, CLI commands, MCP tools, stored fields, and the limits of the public article timeline.
 
@@ -269,7 +269,7 @@ if (items[0]) {
 }
 ```
 
-Refreshes are on demand and never publish. Saved items include public post text, engagement counts, author fields, monitor evidence, local read/archive/replied state, and the raw FxTwitter record. `listXInbox()` can also search saved post and author text through local SQLite FTS5.
+Refreshes are on demand and never publish. Saved items include public post text, engagement counts, author fields, monitor evidence, local read/archive/replied state, and the complete public post record. `listXInbox()` can also search saved post and author text through local SQLite FTS5.
 
 `followsMe` and `iFollow` are `boolean | null`. A matching imported relationship can return `true` before a sync finishes. A missing relationship only becomes `false` after the relevant follower or following sync completes; otherwise it stays `null`.
 
@@ -324,6 +324,6 @@ Most applications should call the root functions directly. `createServer()` and 
 
 ## Public exports
 
-The root package exports the FxTwitter provider helpers, follower and following sync and search functions, article monitors and search, reply inbox actions, publishing-account storage, Typefully setup and client helpers, draft actions, static image helpers, schedule parsing, X text validation, X OAuth helpers, local configuration, and storage paths. These exports are covered by the packed-package tests, but ilo is still pre-1.0. Pin the package version when another application depends on the exact function signatures.
+The root package exports public X fetch helpers, follower and following sync and search functions, article monitors and search, reply inbox actions, publishing-account storage, Typefully setup and client helpers, draft actions, static image helpers, schedule parsing, X text validation, X OAuth helpers, local configuration, and storage paths. These exports are covered by the packed-package tests, but ilo is still pre-1.0. Pin the package version when another application depends on the exact function signatures.
 
 Use the [CLI reference](/docs/cli) for interactive commands or the [local MCP guide](/docs/mcp) to connect an agent without writing integration code.
