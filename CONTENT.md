@@ -84,10 +84,6 @@ Do not repeat the surface list as a substitute for explaining the product.
 Do not switch between report, guide, tool, command, and audit unless the
 distinction helps the reader.
 
-Public copy describes research as public X data saved locally. Do not name the
-upstream research provider in the website, docs, README, command help, MCP tool
-descriptions, privacy copy, or changelog.
-
 ## Keep current and planned features separate
 
 The public report library covers useful X analytics questions today. Full local
