@@ -42,6 +42,7 @@ Use the local MCP tools when available:
 - `ilo_list_x_inbox`
 - `ilo_get_x_inbox_item`
 - `ilo_update_x_inbox_item`
+- `ilo_record_x_inbox_feedback`
 - `ilo_sync_x_following`
 - `ilo_x_following_sync_status`
 - `ilo_search_x_following`
@@ -74,6 +75,7 @@ ilo x monitors add "product mentions" --query '"product" OR "product.com" -is:re
 ilo x monitors list --json
 ilo x inbox refresh --json
 ilo x inbox list --unread --verified --json
+ilo x inbox list --unread --language en --sort signal --explain --json
 ilo x following sync [handle] --all --json
 ilo x following status [handle] --json
 ilo x following search [handle] --query "building browser tools" --json
@@ -82,6 +84,9 @@ ilo x following profile <followed-handle> --account <source-handle> --json
 ilo x inbox list --follows-me --json
 ilo x inbox list --i-follow --json
 ilo x inbox show <post-id-or-url> --json
+ilo x inbox useful <post-id-or-url> --reason actionable --json
+ilo x inbox dismiss <post-id-or-url> --reason promotional --json
+ilo x inbox feedback-clear <post-id-or-url> --json
 ilo x inbox draft <post-id-or-url> --text "Reply text" --json
 ilo drafts create --account <alias-or-handle> --text "Draft text" --json
 ilo drafts create --account <alias-or-handle> --reply-to <post-id-or-url> --text "Reply text" --image ./chart.png --alt "Chart description" --json
@@ -133,11 +138,45 @@ State the evidence limit when article history is incomplete. A monitor with `his
 
 Monitors are saved X advanced-search queries. Refresh them on demand with `ilo_refresh_x_inbox` or `ilo x inbox refresh`; ilo does not run an always-on monitor process yet. A refresh saves public post, author, engagement, monitor, and raw provider evidence locally. It does not publish.
 
-Use inbox filters to narrow results before proposing replies. `verified` is observed on the stored public author profile. `followsMe` and `iFollow` are tri-state: `true` is a known imported relationship, `false` is only reliable after the relevant full follower or following import, and `null` means unknown. Never turn `null` into false.
+Use inbox filters to narrow results before proposing replies. Pass `sort: "signal"` to `ilo_list_x_inbox`, or `--sort signal` in the CLI, when the user wants the strongest matches rather than the newest. Pass `explain: true` or `--explain` to return the score factors. `verified` is observed on the stored public author profile. `followsMe` and `iFollow` are tri-state: `true` is a known imported relationship, `false` is only reliable after the relevant full follower or following import, and `null` means unknown. Never turn `null` into false.
 
 Use the account's follower import for `followsMe` and its following import for `iFollow`. A partial import can prove a relationship it contains, but it cannot prove an absent relationship.
 
 Inspect the complete inbox item before drafting. Creating a reply draft and changing read, archive, or replied state are local actions and do not need publishing confirmation. Still show the exact reply target, text, images, and alt text before asking to publish the draft.
+
+## Filter research for signal
+
+The inbox returns a bounded evidence sample in recency order by default. Signal sorting applies ilo's local `signal-v1` model to content evidence, normalized public response, freshness, author fields, known relationships, duplicate wording, and saved usefulness feedback. Every ranked item includes a score from 0 to 100, a high, medium, or low confidence label, positive reasons, penalties, the model version, and any direct feedback.
+
+Start with the user's question, preferred language, time window, and useful source types. Exclude exact duplicates, near-duplicate announcements, irrelevant matches, and replies or reposts when the question needs original posts. Cluster posts that repeat the same story so one launch cannot fill the digest.
+
+Judge the post and its author separately:
+
+- For the post, look for direct evidence, original reporting or work, concrete details, novelty, relevance, and useful discussion. Compare engagement with posts of a similar age and with the author's normal response when that history is available.
+- For the author, use account age, profile completeness, subject fit, repeated useful posts, and known relationship evidence. Treat follower count and verification as weak signals. A large or verified account can still publish low-value promotional work.
+- Lower confidence for repetitive templates, copied wording, unexplained links, engagement bait, implausible ratios, extreme posting volume, or a feed that has drifted into launch noise. Do not label an account as spam from one clue.
+- Prefer primary sources when two posts cover the same story. Keep a strong independent explanation when it adds context the primary source does not.
+- Reserve some room for smaller or unfamiliar accounts. Raw reach should not crowd out specific, useful work.
+
+Use the signal score to order candidates, not as a probability or claim that the author is trustworthy. Do not invent another precise score from incomplete public data. For each selected item give a short reason, its confidence label, the source URL, and the evidence that could change the judgment. Mention how many candidates were reviewed and why obvious-looking items were left out.
+
+Record feedback only when the user makes the choice or explicitly asks the agent to apply it. Use `useful` for items worth keeping and `not_useful` for items the user wants ranked lower. Add a reason when it is known. The choice stays in local SQLite and also gives the author a cautious source-history adjustment. Clear mistaken feedback instead of adding an opposing label.
+
+## Present research as a digest
+
+When the user asks for a digest or a report result, return a clean Markdown document by default. Create a self-contained HTML file only when they ask for an artifact or when the task explicitly requires one. Visual polish should make the decisions easier to scan, not hide thin evidence.
+
+Use this order:
+
+1. A specific title naming the account or subject and period.
+2. A two or three sentence answer with the most useful finding and why it matters.
+3. A compact coverage table with sources, dates, collection time, candidate count, selected count, and missing data.
+4. Three to seven ranked findings. Each finding needs a plain title, why it matters, direct source links, visible metrics where relevant, confidence, and one counter-signal or limit.
+5. A short section for items filtered out as duplicates, weak matches, likely promotion, or low-confidence noise. Describe the reason without making unsupported claims about the author.
+6. No more than three next actions. Tie each action to a finding and state what to inspect or measure next.
+7. Open questions and evidence limits.
+
+Use tables only for real comparisons. Keep source links beside the claims they support. Separate observation from interpretation and recommendation. Missing views, bookmarks, relationships, history, or profile fields stay unknown rather than becoming zero or false. Do not pad the digest with generic social advice and do not publish anything from a research request.
 
 ## Replies and images
 

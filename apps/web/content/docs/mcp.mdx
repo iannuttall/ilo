@@ -96,9 +96,10 @@ Install both when your client supports skills. The CLI prints the installed path
 | `ilo_set_x_monitor_enabled` | Pauses or resumes one monitor. |
 | `ilo_delete_x_monitor` | Deletes one local monitor. |
 | `ilo_refresh_x_inbox` | Runs active monitors and saves new matching posts locally. |
-| `ilo_list_x_inbox` | Filters saved posts by state, monitor, verification, relationship, or local FTS5 query. |
+| `ilo_list_x_inbox` | Filters saved posts and can sort them by an explainable local signal score. |
 | `ilo_get_x_inbox_item` | Reads one saved post, author profile, monitor match, relationship state, and complete public record. |
 | `ilo_update_x_inbox_item` | Marks a local inbox item read, unread, archived, restored, replied, or unreplied. |
+| `ilo_record_x_inbox_feedback` | Marks an item useful or not useful, or clears that local feedback. |
 | `ilo_sync_x_following` | Builds or refreshes a resumable local index of complete public profiles an account follows. |
 | `ilo_x_following_sync_status` | Checks following-profile coverage, completion and its reason, age, freshness, cursor, and errors. |
 | `ilo_search_x_following` | Searches saved following names, handles, bios, locations, and aliases with local FTS5. |
@@ -143,12 +144,18 @@ Article refreshes run on demand. ilo saves each timeline cursor and resumes unfi
 Ask an agent to save a focused X search, refresh it, and show the strongest matches without publishing anything:
 
 ```txt
-Create a monitor called "ilo mentions" for `"ilo" OR "ilo.so" -is:retweet`. Refresh it, then show unread posts from verified authors. Do not draft or publish yet.
+Create a monitor called "ilo mentions" for `"ilo" OR "ilo.so" -is:retweet`. Refresh it, then rank unread English posts by signal. Explain the strongest positive and negative factors for the top five. Do not draft, record feedback, or publish yet.
 ```
 
 Monitors are saved X advanced-search queries. A refresh runs on demand, deduplicates posts across monitors, and stores public post, author, and engagement data locally. ilo does not run monitor refreshes in the background yet.
 
-`ilo_list_x_inbox` can filter by local state, monitor id, verified author, post or author text, `followsMe`, and `iFollow`. Relationship values are tri-state. A true value means the author was found in the relevant local import; false is only available after that import completes; `null` means ilo does not have enough follower or following data to answer.
+`ilo_list_x_inbox` can filter by local state, monitor id, language, verified author, post or author text, `followsMe`, and `iFollow`. Set `sort` to `signal` when the task needs the strongest candidates. Set `explain` to `true` to include the score, confidence, positive factors, penalties, model version, duplicate evidence, and saved feedback.
+
+Signal ranking is deterministic and local. It uses visible content and response evidence, freshness, author fields, relationships, duplicate wording, and prior useful or dismissed choices. The score orders the saved candidates. It is not a probability or a spam verdict.
+
+Call `ilo_record_x_inbox_feedback` only after the user chooses whether an item was useful. A reason such as `actionable`, `duplicate`, `promotional`, or `wrong-language` keeps the local preference inspectable. Pass `clear` to remove a mistaken choice.
+
+Relationship values are tri-state. A true value means the author was found in the relevant local import; false is only available after that import completes; `null` means ilo does not have enough follower or following data to answer.
 
 Use `ilo_sync_x_following` for `iFollow` evidence and `ilo_sync_x_followers` on the account itself for `followsMe` evidence. Do not describe an unknown relationship as false.
 

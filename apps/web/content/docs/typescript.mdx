@@ -238,6 +238,7 @@ Save X advanced-search queries as monitors and refresh them when your applicatio
 import {
   createXMonitor,
   listXInbox,
+  recordXInboxFeedback,
   refreshXMonitor,
   syncAllXFollowing,
   updateXInboxItem,
@@ -255,12 +256,21 @@ await syncAllXFollowing({ handle: 'ilodotso' })
 const items = listXInbox({
   accountHandle: 'ilodotso',
   status: 'unread',
-  verified: true,
   iFollow: true,
+  language: 'en',
+  sort: 'signal',
+  explain: true,
   limit: 20,
 })
 
 if (items[0]) {
+  console.log(items[0].signal)
+  recordXInboxFeedback({
+    accountHandle: 'ilodotso',
+    postId: items[0].postId,
+    value: 'useful',
+    reason: 'actionable',
+  })
   updateXInboxItem({
     accountHandle: 'ilodotso',
     postId: items[0].postId,
@@ -269,7 +279,9 @@ if (items[0]) {
 }
 ```
 
-Refreshes are on demand and never publish. Saved items include public post text, engagement counts, author fields, monitor evidence, local read/archive/replied state, and the complete public post record. `listXInbox()` can also search saved post and author text through local SQLite FTS5.
+Refreshes are on demand and never publish. Saved items include public post text, engagement counts, author fields, monitor evidence, local read/archive/replied state, and the complete public post record. `listXInbox()` can search saved post and author text through local SQLite FTS5. Signal sorting adds a deterministic score, confidence, factors, duplicate evidence, model version, and any saved feedback to each returned item.
+
+`recordXInboxFeedback()` saves a useful or not useful choice in local SQLite. Later posts from the same author receive a cautious adjustment. Pass `value: 'clear'` to remove feedback. The score helps order candidates; it does not prove an author is trustworthy or a post is spam.
 
 `followsMe` and `iFollow` are `boolean | null`. A matching imported relationship can return `true` before a sync finishes. A missing relationship only becomes `false` after the relevant follower or following sync completes; otherwise it stays `null`.
 

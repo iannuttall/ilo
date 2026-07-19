@@ -244,6 +244,24 @@ ilo x inbox archive <post-id-or-url>
 ilo x inbox restore <post-id-or-url>
 ```
 
+Sort by signal when you want useful candidates ahead of the newest match. `--explain` prints the strongest positive and negative factors beside each item:
+
+```sh
+ilo x inbox list --language en --sort signal --explain
+```
+
+The score compares visible response with views or account size when those fields exist. It also uses freshness, specific evidence, public author fields, known relationships, promotional wording, near-duplicates, and local feedback. Verification adds little on its own. The score is an ordering aid with a confidence label, not a probability that a post is good or an author is trustworthy.
+
+Teach the local ranking after you review an item. Reasons make the preference easier to inspect later:
+
+```sh
+ilo x inbox useful <post-id-or-url> --reason actionable
+ilo x inbox dismiss <post-id-or-url> --reason promotional
+ilo x inbox feedback-clear <post-id-or-url>
+```
+
+Useful and dismissed choices stay in local SQLite. They affect the selected post directly and give later posts from the same author a cautious adjustment. Clearing feedback removes that choice.
+
 Import the default publishing handle's following profiles to use `--i-follow`. The same index is searchable with `ilo x following search`. The existing follower import powers `--follows-me`:
 
 ```sh

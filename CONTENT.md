@@ -111,8 +111,9 @@ Safe current claims include:
   coverage to CSV.
 - The CLI, MCP server, and TypeScript package can save X advanced-search
   monitors, refresh them on demand into a local reply inbox, filter saved
-  posts, inspect public author and post evidence, and create local reply
-  drafts.
+  posts, rank them with an explainable local signal score, record useful or
+  dismissed feedback, inspect public author and post evidence, and create
+  local reply drafts.
 - The CLI, MCP server, and TypeScript package can monitor selected X handles
   for articles, resume older history imports, search saved titles, previews,
   and full text with SQLite FTS5, and read one complete stored article.

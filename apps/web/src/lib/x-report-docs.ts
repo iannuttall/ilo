@@ -436,10 +436,14 @@ function buildReportDoc(report: XReportWithGroup): XReportDoc {
   }
   const seo = specificSeo[report.slug] ?? defaultSeo(report)
   const { surfaceFocus, ...specific } = content
+  const digestPrompt = `${specific.agentPrompt}
+
+Format the result as a decision digest in Markdown. Use a specific title naming @handle and the period. Open with a two or three sentence answer. Then show a compact coverage table with sources, exact dates, collection time, candidate count, selected count, and missing data. Present three to seven ranked findings. Each finding must include why it matters, direct post links, the relevant visible metrics, a high, medium, or low confidence label, and one counter-signal or limit. Add a short note on duplicates, weak matches, or low-confidence noise that was filtered out. End with no more than three evidence-backed actions and a final section for open questions and limits. Keep observations, interpretations, and recommendations distinct. Do not invent missing values, bury caveats, or pad the report with generic social advice. Create self-contained HTML only if the user asks for an artifact.`
   return {
     ...report,
     ...specific,
     ...seo,
+    agentPrompt: digestPrompt,
     availability: `ilo does not currently include an automated ${report.title.toLowerCase()} command, MCP report tool, or TypeScript report function. This page is an executable research guide for public post data from the current tools and any separately supplied profile snapshots the question needs.`,
     checks: specific.method.map((step) => step.instruction),
     surfaces: buildSurfaces(report, surfaceFocus),

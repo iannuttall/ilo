@@ -62,6 +62,10 @@ it helps them choose or complete the next action.
 - Filter saved inbox posts by monitor, local state, verified author, post or
   author text, whether the author follows the account, and whether the account
   follows the author.
+- Rank saved inbox posts with an explainable local signal score based on
+  content evidence, normalized response, freshness, public author fields,
+  known relationships, duplicate wording, and the user's useful or dismissed
+  feedback. Keep every factor and confidence label with the result.
 - Import complete public profiles from an X following list into a resumable
   local snapshot. Search saved names, handles, bios, locations, and aliases
   with SQLite FTS5, inspect one complete profile, export every match to CSV,
@@ -99,7 +103,8 @@ Typefully analytics ingestion has not shipped yet.
 - Add optional Typefully post and follower analytics as another local evidence
   source without making it a requirement for research or publishing.
 - Import public profile and post history for repeatable analysis.
-- Add scheduled monitor refreshes and spam heuristics to the local reply inbox.
+- Add scheduled monitor refreshes and deeper source-history checks to the local
+  reply inbox.
 - Add animated GIF and video uploads, threads, schedule cancellation, retries,
   and stronger scheduler installation.
 - Add Bluesky publishing, then LinkedIn.
