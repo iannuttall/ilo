@@ -7,6 +7,7 @@ import {
   listXMonitors,
   normalizeXHandle,
   normalizeXPostId,
+  recordXInboxFeedback,
   refreshXInbox,
   refreshXMonitor,
   setXMonitorEnabled,
@@ -194,6 +195,17 @@ export const registerInboxTools = (server: McpServer) => {
         followsMe: z.boolean().optional(),
         iFollow: z.boolean().optional(),
         query: z.string().trim().min(1).max(500).optional(),
+        language: z
+          .string()
+          .trim()
+          .regex(/^[a-z]{2,3}(?:-[a-z0-9]+)*$/i)
+          .optional()
+          .describe('Only return posts with this saved language code'),
+        sort: z.enum(['recent', 'signal']).default('recent'),
+        explain: z
+          .boolean()
+          .default(false)
+          .describe('Include the explainable signal score and factors'),
         limit: z.number().int().min(1).max(500).default(50),
       },
       outputSchema: openOutputSchema,
@@ -211,6 +223,9 @@ export const registerInboxTools = (server: McpServer) => {
       followsMe,
       iFollow,
       query,
+      language,
+      sort,
+      explain,
       limit,
     }) => {
       try {
@@ -223,6 +238,9 @@ export const registerInboxTools = (server: McpServer) => {
           followsMe,
           iFollow,
           query,
+          language,
+          sort,
+          explain,
           limit,
         })
         return success(`${items.length} inbox items found.`, {
@@ -295,6 +313,59 @@ export const registerInboxTools = (server: McpServer) => {
           action,
         })
         return success(`Inbox item marked ${action}.`, { item })
+      } catch (error) {
+        return failure(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    'ilo_record_x_inbox_feedback',
+    {
+      description:
+        'Mark a saved X inbox item useful or not useful so local signal ranking can learn from the choice. Pass clear to remove feedback.',
+      inputSchema: {
+        accountHandle,
+        postId: z.string().trim().min(1).max(500),
+        value: z.enum(['useful', 'not_useful', 'clear']),
+        reason: z
+          .enum([
+            'relevant',
+            'original',
+            'actionable',
+            'primary-source',
+            'duplicate',
+            'promotional',
+            'irrelevant',
+            'wrong-language',
+            'too-shallow',
+            'other',
+          ])
+          .optional(),
+        note: z.string().trim().max(500).optional(),
+      },
+      outputSchema: openOutputSchema,
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    async ({ accountHandle, postId, value, reason, note }) => {
+      try {
+        const normalizedPostId = normalizeXPostId(postId)
+        const feedback = recordXInboxFeedback({
+          accountHandle: await resolveAccountHandle(accountHandle),
+          postId: normalizedPostId,
+          value,
+          reason,
+          note,
+        })
+        return success(
+          value === 'clear'
+            ? 'Inbox usefulness feedback cleared.'
+            : `Inbox item marked ${value === 'useful' ? 'useful' : 'not useful'}.`,
+          { postId: normalizedPostId, feedback },
+        )
       } catch (error) {
         return failure(error)
       }

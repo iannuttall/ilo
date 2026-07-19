@@ -14,6 +14,7 @@ import {
   getXInboxItem,
   listXInbox,
   listXMonitors,
+  recordXInboxFeedback,
   refreshXInbox,
   refreshXMonitor,
   setXMonitorEnabled,
@@ -264,6 +265,137 @@ test('refreshes every enabled monitor while retaining individual failures', asyn
         databasePath,
       }).find((monitor) => monitor.name === 'Broken')?.lastError,
       'upstream_broken',
+    )
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
+})
+
+test('persists feedback, ranks by signal, filters language, and can clear taste', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'ilo-inbox-signal-'))
+  const databasePath = join(directory, 'ilo.sqlite')
+  try {
+    const monitor = createXMonitor({
+      accountHandle: 'owner',
+      name: 'Research feed',
+      query: 'AI research',
+      databasePath,
+    })
+    const author = profile('author-id', 'researcher', {
+      description: 'Publishes careful benchmarks',
+      followers: 500,
+      following: 100,
+      joined: 'Mon Jan 01 00:00:00 +0000 2020',
+    })
+    const posts = [
+      {
+        ...status('300', author, 'We tested 12 models and published the data.'),
+        lang: 'en',
+        views: 4_000,
+        likes: 90,
+      },
+      {
+        ...status('301', author, 'Nous avons publié les résultats complets.'),
+        lang: 'fr',
+        views: 1_000,
+      },
+    ]
+    await refreshXMonitor(
+      { id: monitor.id, databasePath },
+      { search: async () => ({ posts, nextCursor: null }) },
+    )
+
+    const recent = listXInbox({ accountHandle: 'owner', databasePath })
+    assert.deepEqual(
+      recent.map((item) => item.postId),
+      ['301', '300'],
+    )
+    const english = listXInbox({
+      accountHandle: 'owner',
+      language: 'EN',
+      databasePath,
+    })
+    assert.deepEqual(
+      english.map((item) => item.postId),
+      ['300'],
+    )
+
+    const saved = recordXInboxFeedback({
+      accountHandle: 'owner',
+      postId: '300',
+      value: 'useful',
+      reason: 'original',
+      note: 'Good source data',
+      databasePath,
+      now: 123,
+    })
+    assert.equal(saved?.reason, 'original')
+    assert.equal(saved?.note, 'Good source data')
+
+    const ranked = listXInbox({
+      accountHandle: 'owner',
+      sort: 'signal',
+      databasePath,
+      now: Date.UTC(2026, 6, 19, 12),
+    })
+    assert.equal(ranked[0]?.postId, '300')
+    assert.equal(ranked[0]?.signal?.feedback?.value, 'useful')
+    assert.ok((ranked[0]?.signal?.factors.length ?? 0) > 0)
+
+    const updated = recordXInboxFeedback({
+      accountHandle: 'owner',
+      postId: '300',
+      value: 'not_useful',
+      reason: 'too-shallow',
+      databasePath,
+      now: 456,
+    })
+    assert.equal(updated?.createdAt, 123)
+    assert.equal(updated?.updatedAt, 456)
+    assert.equal(updated?.value, 'not_useful')
+    const dismissed = listXInbox({
+      accountHandle: 'owner',
+      sort: 'signal',
+      databasePath,
+    }).find((item) => item.postId === '300')
+    assert.equal(dismissed?.signal?.feedback?.reason, 'too-shallow')
+    assert.match(dismissed?.signal?.penalties.join(' ') ?? '', /not useful/i)
+
+    const cleared = recordXInboxFeedback({
+      accountHandle: 'owner',
+      postId: '300',
+      value: 'clear',
+      databasePath,
+    })
+    assert.equal(cleared, null)
+    const afterClear = listXInbox({
+      accountHandle: 'owner',
+      sort: 'signal',
+      databasePath,
+    })
+    assert.equal(
+      afterClear.find((item) => item.postId === '300')?.signal?.feedback,
+      null,
+    )
+
+    assert.throws(
+      () =>
+        recordXInboxFeedback({
+          accountHandle: 'owner',
+          postId: 'missing',
+          value: 'useful',
+          databasePath,
+        }),
+      /x_inbox_item_not_found/,
+    )
+    assert.throws(
+      () =>
+        listXInbox({
+          accountHandle: 'owner',
+          language: 'not a language',
+          databasePath,
+        }),
+      /invalid_x_inbox_language/,
     )
   } finally {
     rmSync(directory, { recursive: true, force: true })

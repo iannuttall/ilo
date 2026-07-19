@@ -257,6 +257,7 @@ test('CLI and public library share the local X inbox', async () => {
               quotes: 3,
               replies: 42,
               views: 20_000,
+              lang: 'en',
               author: {
                 id: 'adam-id',
                 name: 'Adam Wathan',
@@ -274,7 +275,20 @@ test('CLI and public library share the local X inbox', async () => {
 
     const list = spawnSync(
       process.execPath,
-      ['dist/cli.js', 'x', 'inbox', 'list', '--account', 'ilodotso', '--json'],
+      [
+        'dist/cli.js',
+        'x',
+        'inbox',
+        'list',
+        '--account',
+        'ilodotso',
+        '--language',
+        'en',
+        '--sort',
+        'signal',
+        '--explain',
+        '--json',
+      ],
       {
         cwd: new URL('..', import.meta.url),
         encoding: 'utf8',
@@ -288,6 +302,80 @@ test('CLI and public library share the local X inbox', async () => {
     assert.equal(inbox.items[0].author.verified, true)
     assert.equal(inbox.items[0].relationship.followsMe, null)
     assert.equal(inbox.items[0].relationship.iFollow, null)
+    assert.equal(inbox.sort, 'signal')
+    assert.equal(inbox.items[0].signal.modelVersion, 'signal-v1')
+    assert.ok(inbox.items[0].signal.factors.length > 0)
+
+    const useful = spawnSync(
+      process.execPath,
+      [
+        'dist/cli.js',
+        'x',
+        'inbox',
+        'useful',
+        '123456789',
+        '--account',
+        'ilodotso',
+        '--reason',
+        'actionable',
+        '--note',
+        'Worth a reply',
+        '--json',
+      ],
+      {
+        cwd: new URL('..', import.meta.url),
+        encoding: 'utf8',
+        env: { ...process.env, ILO_HOME: iloHome },
+      },
+    )
+    assert.equal(useful.status, 0, useful.stderr)
+    assert.equal(JSON.parse(useful.stdout).feedback.value, 'useful')
+
+    const rankedAfterFeedback = spawnSync(
+      process.execPath,
+      [
+        'dist/cli.js',
+        'x',
+        'inbox',
+        'list',
+        '--account',
+        'ilodotso',
+        '--sort',
+        'signal',
+        '--json',
+      ],
+      {
+        cwd: new URL('..', import.meta.url),
+        encoding: 'utf8',
+        env: { ...process.env, ILO_HOME: iloHome },
+      },
+    )
+    assert.equal(rankedAfterFeedback.status, 0, rankedAfterFeedback.stderr)
+    assert.equal(
+      JSON.parse(rankedAfterFeedback.stdout).items[0].signal.feedback.value,
+      'useful',
+    )
+
+    const clearFeedback = spawnSync(
+      process.execPath,
+      [
+        'dist/cli.js',
+        'x',
+        'inbox',
+        'feedback-clear',
+        '123456789',
+        '--account',
+        'ilodotso',
+        '--json',
+      ],
+      {
+        cwd: new URL('..', import.meta.url),
+        encoding: 'utf8',
+        env: { ...process.env, ILO_HOME: iloHome },
+      },
+    )
+    assert.equal(clearFeedback.status, 0, clearFeedback.stderr)
+    assert.equal(JSON.parse(clearFeedback.stdout).cleared, true)
 
     const draft = spawnSync(
       process.execPath,

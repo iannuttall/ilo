@@ -1,4 +1,4 @@
-import type { XInboxItem } from '@ilo/core'
+import type { XInboxResultItem } from '@ilo/core'
 import Table from 'cli-table3'
 import pc from 'picocolors'
 import { terminalColumns, wrapTerminalText } from '../terminal.js'
@@ -7,7 +7,7 @@ const number = new Intl.NumberFormat('en-GB', { notation: 'compact' })
 const formatNumber = (value: number) =>
   number.format(value).replace(/[kmbt]$/i, (suffix) => suffix.toUpperCase())
 
-const itemState = (item: XInboxItem) => {
+const itemState = (item: XInboxResultItem) => {
   if (item.state.archivedAt) return pc.dim('archived')
   if (item.state.repliedAt) return pc.green('replied')
   if (!item.state.readAt) return pc.cyan('new')
@@ -22,7 +22,7 @@ const relativeTime = (timestamp: number) => {
   return `${Math.floor(elapsed / 86_400_000)}d`
 }
 
-const relationshipSignals = (item: XInboxItem) => {
+const relationshipSignals = (item: XInboxResultItem) => {
   const signals: string[] = []
   if (item.author.verified) signals.push(pc.blue('verified'))
   if (item.relationship.followsMe === true)
@@ -36,10 +36,17 @@ const relationshipSignals = (item: XInboxItem) => {
     signals.push(pc.dim("you don't follow"))
   if (item.relationship.iFollow === null)
     signals.push(pc.dim('you follow: unknown'))
+  if (item.signal) {
+    signals.unshift(
+      pc.magenta(
+        `signal ${item.signal.score} (${item.signal.confidence} confidence)`,
+      ),
+    )
+  }
   return signals
 }
 
-const engagement = (item: XInboxItem) =>
+const engagement = (item: XInboxResultItem) =>
   [
     `${formatNumber(item.replies)} replies`,
     `${formatNumber(item.likes)} likes`,
@@ -48,7 +55,22 @@ const engagement = (item: XInboxItem) =>
     .filter(Boolean)
     .join(' · ')
 
-const renderWideInbox = (items: XInboxItem[], columns: number) => {
+const signalExplanation = (item: XInboxResultItem) => {
+  if (!item.signal) return ''
+  return item.signal.factors
+    .slice(0, 6)
+    .map(
+      (factor) =>
+        `${factor.impact > 0 ? '+' : ''}${factor.impact} ${factor.label}`,
+    )
+    .join(' · ')
+}
+
+const renderWideInbox = (
+  items: XInboxResultItem[],
+  columns: number,
+  explain: boolean,
+) => {
   const targetWidth = Math.min(columns - 4, 156)
   const table = new Table({
     head: [
@@ -72,13 +94,17 @@ const renderWideInbox = (items: XInboxItem[], columns: number) => {
       `${item.author.name}\n${pc.cyan(`@${item.author.handle}`)}${followers}`,
       relationshipSignals(item).join('\n'),
       item.monitors.map((monitor) => monitor.name).join('\n'),
-      `${item.text || pc.dim('(no text)')}\n${pc.dim(`${relativeTime(item.createdAt)} · ${engagement(item)}`)}\n${pc.dim(item.url)}`,
+      `${item.text || pc.dim('(no text)')}\n${pc.dim(`${relativeTime(item.createdAt)} · ${engagement(item)}`)}${explain && item.signal ? `\n${pc.dim(signalExplanation(item))}` : ''}\n${pc.dim(item.url)}`,
     ])
   }
   return table.toString()
 }
 
-const renderStackedInbox = (items: XInboxItem[], columns: number) => {
+const renderStackedInbox = (
+  items: XInboxResultItem[],
+  columns: number,
+  explain: boolean,
+) => {
   const contentWidth = Math.max(24, columns - 4)
   const divider = pc.dim('─'.repeat(Math.min(contentWidth, 88)))
   return items
@@ -93,6 +119,9 @@ const renderStackedInbox = (items: XInboxItem[], columns: number) => {
         relationshipSignals(item).join(pc.dim(' · ')),
         wrapTerminalText(item.text || '(no text)', contentWidth),
         pc.dim(engagement(item)),
+        explain && item.signal
+          ? pc.dim(wrapTerminalText(signalExplanation(item), contentWidth))
+          : '',
         pc.dim(item.url),
       ]
         .filter(Boolean)
@@ -103,14 +132,15 @@ const renderStackedInbox = (items: XInboxItem[], columns: number) => {
 
 export const renderXInbox = (
   accountHandle: string,
-  items: XInboxItem[],
+  items: XInboxResultItem[],
   requestedColumns = process.stdout.columns ?? 120,
+  explain = false,
 ) => {
   const columns = terminalColumns(requestedColumns)
   const output =
     columns >= 140
-      ? renderWideInbox(items, columns)
-      : renderStackedInbox(items, columns)
+      ? renderWideInbox(items, columns, explain)
+      : renderStackedInbox(items, columns, explain)
   return [
     pc.bold(`X inbox for @${accountHandle}`),
     pc.dim(`${items.length} item${items.length === 1 ? '' : 's'}`),

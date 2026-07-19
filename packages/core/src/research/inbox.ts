@@ -17,11 +17,24 @@ import {
   setMonitorEnabledRecord,
   storeMonitorPosts,
   updateInboxStateRecord,
+  type XInboxItem,
   type XInboxStateAction,
   type XInboxStatus,
   type XMonitor,
 } from '../storage/inbox.js'
+import {
+  clearInboxFeedbackRecord,
+  listInboxFeedbackEvidenceRecords,
+  recordInboxFeedbackRecord,
+  type XInboxFeedbackReason,
+  type XInboxFeedbackValue,
+} from '../storage/inbox-feedback.js'
 import { normalizeXHandle, toFtsQuery } from './followers.js'
+import {
+  rankXInbox,
+  type XInboxRankedItem,
+  type XInboxSignal,
+} from './inbox-signal.js'
 
 export type XMonitorResearchClient = {
   search(input: {
@@ -39,6 +52,10 @@ export type XMonitorRefreshResult = {
   newMatches: number
   truncated: boolean
 }
+
+export type XInboxSort = 'recent' | 'signal'
+
+export type XInboxResultItem = XInboxItem & { signal?: XInboxSignal }
 
 const cleanRequired = (
   value: string,
@@ -309,28 +326,117 @@ export const refreshXInbox = async (
   }
 }
 
+const normalizeLanguage = (value?: string) => {
+  const language = value?.trim().toLowerCase()
+  if (!language) return undefined
+  if (!/^[a-z]{2,3}(?:-[a-z0-9]+)*$/.test(language)) {
+    throw new Error('invalid_x_inbox_language')
+  }
+  return language
+}
+
 export const listXInbox = (input: {
   accountHandle: string
   monitorId?: string
   status?: XInboxStatus
+  language?: string
   verified?: boolean
   followsMe?: boolean
   iFollow?: boolean
   query?: string
   limit?: number
+  sort?: XInboxSort
+  explain?: boolean
+  now?: number
   databasePath?: string
-}) =>
-  listInboxRecords({
+}): XInboxResultItem[] => {
+  const sort = input.sort ?? 'recent'
+  if (sort !== 'recent' && sort !== 'signal') {
+    throw new Error('invalid_x_inbox_sort')
+  }
+  const limit = Math.min(500, Math.max(1, input.limit ?? 50))
+  const includeSignal = sort === 'signal' || input.explain === true
+  const items = listInboxRecords({
     accountHandle: normalizeXHandle(input.accountHandle),
     monitorId: input.monitorId?.trim() || undefined,
     status: input.status,
+    language: normalizeLanguage(input.language),
     verified: input.verified,
     followsMe: input.followsMe,
     iFollow: input.iFollow,
     ftsQuery: input.query?.trim() ? toFtsQuery(input.query) : undefined,
-    limit: input.limit,
+    limit: includeSignal ? 500 : limit,
     path: input.databasePath,
   })
+  if (!includeSignal) return items
+  const ranked = rankXInbox({
+    items,
+    feedback: listInboxFeedbackEvidenceRecords({
+      accountHandle: normalizeXHandle(input.accountHandle),
+      path: input.databasePath,
+    }),
+    now: input.now,
+  })
+  if (sort === 'signal') return ranked.slice(0, limit)
+  const byPostId = new Map(ranked.map((item) => [item.postId, item]))
+  return items
+    .map((item) => byPostId.get(item.postId) as XInboxRankedItem)
+    .slice(0, limit)
+}
+
+const feedbackReasons = new Set<XInboxFeedbackReason>([
+  'relevant',
+  'original',
+  'actionable',
+  'primary-source',
+  'duplicate',
+  'promotional',
+  'irrelevant',
+  'wrong-language',
+  'too-shallow',
+  'other',
+])
+
+export const recordXInboxFeedback = (input: {
+  accountHandle: string
+  postId: string
+  value: XInboxFeedbackValue | 'clear'
+  reason?: XInboxFeedbackReason
+  note?: string
+  databasePath?: string
+  now?: number
+}) => {
+  const accountHandle = normalizeXHandle(input.accountHandle)
+  const postId = input.postId.trim()
+  if (!postId) throw new Error('x_inbox_post_id_required')
+  if (input.value === 'clear') {
+    clearInboxFeedbackRecord({
+      accountHandle,
+      postId,
+      path: input.databasePath,
+    })
+    return null
+  }
+  if (input.value !== 'useful' && input.value !== 'not_useful') {
+    throw new Error('invalid_x_inbox_feedback_value')
+  }
+  if (input.reason && !feedbackReasons.has(input.reason)) {
+    throw new Error('invalid_x_inbox_feedback_reason')
+  }
+  const note = input.note?.trim() || null
+  if (note && note.length > 500) {
+    throw new Error('x_inbox_feedback_note_too_long')
+  }
+  return recordInboxFeedbackRecord({
+    accountHandle,
+    postId,
+    value: input.value,
+    reason: input.reason ?? null,
+    note,
+    path: input.databasePath,
+    now: input.now,
+  })
+}
 
 export const getXInboxItem = (input: {
   accountHandle: string

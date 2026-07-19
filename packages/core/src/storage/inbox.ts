@@ -526,6 +526,7 @@ export const listInboxRecords = (input: {
   monitorId?: string
   postId?: string
   status?: XInboxStatus
+  language?: string
   verified?: boolean
   followsMe?: boolean
   iFollow?: boolean
@@ -545,6 +546,10 @@ export const listInboxRecords = (input: {
     if (input.postId) {
       conditions.push('p.post_id = ?')
       values.push(input.postId)
+    }
+    if (input.language) {
+      conditions.push('p.language = ? COLLATE NOCASE')
+      values.push(input.language)
     }
     const status = input.status ?? 'active'
     if (status === 'active') conditions.push('s.archived_at IS NULL')

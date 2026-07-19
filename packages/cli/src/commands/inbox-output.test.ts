@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { stripVTControlCharacters } from 'node:util'
-import type { XInboxItem, XMonitor } from '@ilo/core'
+import type { XInboxItem, XInboxResultItem, XMonitor } from '@ilo/core'
 import { renderXInbox } from './inbox-output.js'
 import { renderMonitors } from './monitors.js'
 
@@ -61,6 +61,44 @@ test('keeps the wide inbox table inside the terminal width', () => {
   assert.match(output, /State\s+│\s+Account\s+│\s+Signals/)
   assert.ok(
     output.split('\n').every((line) => line.length <= 156),
+    output,
+  )
+})
+
+test('shows signal scores and their strongest factors when requested', () => {
+  const ranked: XInboxResultItem = {
+    ...item,
+    signal: {
+      score: 82,
+      confidence: 'high',
+      modelVersion: 'signal-v1',
+      factors: [
+        {
+          key: 'first-hand',
+          label: 'Describes first-hand work or evidence',
+          impact: 5,
+        },
+        {
+          key: 'promotion',
+          label: 'Uses promotional or engagement-bait wording',
+          impact: -3,
+        },
+      ],
+      reasons: ['Describes first-hand work or evidence'],
+      penalties: ['Uses promotional or engagement-bait wording'],
+      duplicateOfPostId: null,
+      feedback: null,
+    },
+  }
+  const output = stripVTControlCharacters(
+    renderXInbox('ilodotso', [ranked], 96, true),
+  )
+
+  assert.match(output, /signal 82 \(high confidence\)/)
+  assert.match(output, /\+5 Describes first-hand work or evidence/)
+  assert.match(output, /-3 Uses promotional or engagement-bait wording/)
+  assert.ok(
+    output.split('\n').every((line) => line.length <= 96),
     output,
   )
 })

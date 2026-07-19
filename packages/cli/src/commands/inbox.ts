@@ -5,9 +5,13 @@ import {
   listXInbox,
   listXMonitors,
   normalizeXPostId,
+  recordXInboxFeedback,
   refreshXInbox,
   refreshXMonitor,
   updateXInboxItem,
+  type XInboxFeedbackReason,
+  type XInboxFeedbackValue,
+  type XInboxSort,
   type XInboxStateAction,
   type XInboxStatus,
 } from '@ilo/core'
@@ -49,6 +53,37 @@ const requestedStatus = (args: Record<string, unknown>): XInboxStatus => {
   return statuses[0]?.[1] ?? 'active'
 }
 
+const requestedSort = (value: unknown): XInboxSort => {
+  if (value === 'recent' || value === 'signal') return value
+  throw new Error('sort_must_be_recent_or_signal')
+}
+
+const feedbackReasons = new Set<XInboxFeedbackReason>([
+  'relevant',
+  'original',
+  'actionable',
+  'primary-source',
+  'duplicate',
+  'promotional',
+  'irrelevant',
+  'wrong-language',
+  'too-shallow',
+  'other',
+])
+
+const requestedFeedbackReason = (
+  value: unknown,
+): XInboxFeedbackReason | undefined => {
+  if (value === undefined) return undefined
+  if (
+    typeof value === 'string' &&
+    feedbackReasons.has(value as XInboxFeedbackReason)
+  ) {
+    return value as XInboxFeedbackReason
+  }
+  throw new Error('invalid_x_inbox_feedback_reason')
+}
+
 const stateCommand = (action: XInboxStateAction, description: string) =>
   defineCommand({
     meta: { name: action, description },
@@ -73,6 +108,52 @@ const stateCommand = (action: XInboxStateAction, description: string) =>
       })
       if (args.json) return printJson({ item })
       printLine(`Marked ${item.url} as ${action}.`)
+    },
+  })
+
+const feedbackCommand = (
+  name: string,
+  value: XInboxFeedbackValue,
+  description: string,
+) =>
+  defineCommand({
+    meta: { name, description },
+    args: {
+      post: {
+        type: 'positional',
+        required: true,
+        description: 'X post ID or URL.',
+      },
+      reason: {
+        type: 'string',
+        description:
+          'Why: relevant, original, actionable, primary-source, duplicate, promotional, irrelevant, wrong-language, too-shallow, or other.',
+      },
+      note: {
+        type: 'string',
+        description: 'Optional local note, up to 500 characters.',
+      },
+      account: accountArg,
+      json: {
+        type: 'boolean',
+        default: false,
+        description: 'Print structured JSON.',
+      },
+    },
+    run: async ({ args }) => {
+      const feedback = recordXInboxFeedback({
+        accountHandle: await resolveXAccountHandle(args.account),
+        postId: normalizeXPostId(String(args.post)),
+        value,
+        reason: requestedFeedbackReason(args.reason),
+        note: typeof args.note === 'string' ? args.note : undefined,
+      })
+      if (args.json) return printJson({ feedback })
+      printLine(
+        value === 'useful'
+          ? `Marked post ${feedback?.postId} as useful.`
+          : `Dismissed post ${feedback?.postId} as not useful.`,
+      )
     },
   })
 
@@ -149,6 +230,20 @@ export const inboxCommand = defineCommand({
           type: 'string',
           description: 'Search saved post text and author profiles with FTS5.',
         },
+        language: {
+          type: 'string',
+          description: 'Only show posts with this saved language code.',
+        },
+        sort: {
+          type: 'string',
+          default: 'recent',
+          description: 'Sort by recent or signal.',
+        },
+        explain: {
+          type: 'boolean',
+          default: false,
+          description: 'Show the factors behind each signal score.',
+        },
         verified: {
           type: 'boolean',
           default: false,
@@ -203,6 +298,7 @@ export const inboxCommand = defineCommand({
       },
       run: async ({ args }) => {
         const accountHandle = await resolveXAccountHandle(args.account)
+        const sort = requestedSort(args.sort)
         const monitors = listXMonitors({
           accountHandle,
           includeDisabled: true,
@@ -215,22 +311,33 @@ export const inboxCommand = defineCommand({
           accountHandle,
           monitorId,
           status: requestedStatus(args),
+          language:
+            typeof args.language === 'string' ? args.language : undefined,
           verified: args.verified ? true : undefined,
           followsMe: args['follows-me'] ? true : undefined,
           iFollow: args['i-follow'] ? true : undefined,
           query: typeof args.query === 'string' ? args.query.trim() : undefined,
+          sort,
+          explain: args.explain,
           limit: boundedInteger(args.limit, {
             code: 'limit_must_be_1_to_500',
             maximum: 500,
           }),
         })
-        if (args.json) return printJson({ accountHandle, items })
+        if (args.json) return printJson({ accountHandle, sort, items })
         if (!items.length) {
           return printLine(
             `No matching inbox items for @${accountHandle}. Run \`ilo x inbox refresh\` to check active monitors.`,
           )
         }
-        printLine(renderXInbox(accountHandle, items))
+        printLine(
+          renderXInbox(
+            accountHandle,
+            items,
+            process.stdout.columns ?? 120,
+            args.explain,
+          ),
+        )
       },
     }),
     show: defineCommand({
@@ -322,5 +429,44 @@ export const inboxCommand = defineCommand({
     restore: stateCommand('restore', 'Restore an archived inbox item'),
     replied: stateCommand('replied', 'Mark an inbox item as replied'),
     unreplied: stateCommand('unreplied', 'Clear the replied state'),
+    useful: feedbackCommand(
+      'useful',
+      'useful',
+      'Teach signal ranking that this item was useful',
+    ),
+    dismiss: feedbackCommand(
+      'dismiss',
+      'not_useful',
+      'Teach signal ranking that this item was not useful',
+    ),
+    'feedback-clear': defineCommand({
+      meta: {
+        name: 'feedback-clear',
+        description: 'Clear local usefulness feedback for an inbox item',
+      },
+      args: {
+        post: {
+          type: 'positional',
+          required: true,
+          description: 'X post ID or URL.',
+        },
+        account: accountArg,
+        json: {
+          type: 'boolean',
+          default: false,
+          description: 'Print structured JSON.',
+        },
+      },
+      run: async ({ args }) => {
+        const postId = normalizeXPostId(String(args.post))
+        recordXInboxFeedback({
+          accountHandle: await resolveXAccountHandle(args.account),
+          postId,
+          value: 'clear',
+        })
+        if (args.json) return printJson({ cleared: true, postId })
+        printLine(`Cleared usefulness feedback for post ${postId}.`)
+      },
+    }),
   },
 })

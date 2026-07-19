@@ -127,6 +127,8 @@ export {
   X_FOLLOWING_STALE_AFTER_MS,
 } from './research/following.js'
 export type {
+  XInboxResultItem,
+  XInboxSort,
   XMonitorRefreshResult,
   XMonitorResearchClient,
 } from './research/inbox.js'
@@ -136,11 +138,22 @@ export {
   getXInboxItem,
   listXInbox,
   listXMonitors,
+  recordXInboxFeedback,
   refreshXInbox,
   refreshXMonitor,
   setXMonitorEnabled,
   updateXInboxItem,
 } from './research/inbox.js'
+export type {
+  XInboxRankedItem,
+  XInboxSignal,
+  XInboxSignalConfidence,
+  XInboxSignalFactor,
+} from './research/inbox-signal.js'
+export {
+  rankXInbox,
+  X_INBOX_SIGNAL_MODEL_VERSION,
+} from './research/inbox-signal.js'
 export { parseScheduleTime } from './scheduling/parse.js'
 export type { PublishingAccountOptions, XPostOptions } from './service.js'
 export {
@@ -206,5 +219,11 @@ export type {
   XInboxStatus,
   XMonitor,
 } from './storage/inbox.js'
+export type {
+  XInboxFeedback,
+  XInboxFeedbackEvidence,
+  XInboxFeedbackReason,
+  XInboxFeedbackValue,
+} from './storage/inbox-feedback.js'
 export { iloConfigPath, iloDatabasePath, iloHome } from './storage/paths.js'
 export { ILO_VERSION } from './version.js'

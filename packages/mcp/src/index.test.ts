@@ -33,6 +33,7 @@ test('exposes follower, article, inbox, and draft tools through MCP', async () =
     assert.equal(names.includes('ilo_create_x_monitor'), true)
     assert.equal(names.includes('ilo_refresh_x_inbox'), true)
     assert.equal(names.includes('ilo_list_x_inbox'), true)
+    assert.equal(names.includes('ilo_record_x_inbox_feedback'), true)
     assert.equal(names.includes('ilo_sync_x_following'), true)
     assert.equal(names.includes('ilo_x_following_sync_status'), true)
     assert.equal(names.includes('ilo_search_x_following'), true)
@@ -278,6 +279,7 @@ test('exposes follower, article, inbox, and draft tools through MCP', async () =
               reposts: 1,
               quotes: 0,
               replies: 2,
+              lang: 'en',
               author: {
                 id: 'follower-id',
                 name: 'Follower',
@@ -305,6 +307,65 @@ test('exposes follower, article, inbox, and draft tools through MCP', async () =
     }
     assert.equal(inboxContent.items[0]?.postId, '456')
     assert.equal(inboxContent.items[0]?.relationship.followsMe, true)
+
+    const useful = await client.callTool({
+      name: 'ilo_record_x_inbox_feedback',
+      arguments: {
+        accountHandle: 'subject',
+        postId: 'https://x.com/follower/status/456',
+        value: 'useful',
+        reason: 'relevant',
+        note: 'Good reply opportunity',
+      },
+    })
+    assert.equal(useful.isError, undefined)
+    const usefulContent = useful.structuredContent as {
+      feedback: { value: string; reason: string; note: string }
+    }
+    assert.equal(usefulContent.feedback.value, 'useful')
+    assert.equal(usefulContent.feedback.reason, 'relevant')
+    assert.equal(usefulContent.feedback.note, 'Good reply opportunity')
+
+    const rankedInbox = await client.callTool({
+      name: 'ilo_list_x_inbox',
+      arguments: {
+        accountHandle: 'subject',
+        language: 'en',
+        sort: 'signal',
+        explain: true,
+      },
+    })
+    assert.equal(rankedInbox.isError, undefined)
+    const rankedInboxContent = rankedInbox.structuredContent as {
+      items: Array<{
+        postId: string
+        signal: {
+          score: number
+          confidence: string
+          modelVersion: string
+          factors: unknown[]
+          feedback: { value: string }
+        }
+      }>
+    }
+    assert.equal(rankedInboxContent.items[0]?.postId, '456')
+    assert.equal(rankedInboxContent.items[0]?.signal.modelVersion, 'signal-v1')
+    assert.equal(rankedInboxContent.items[0]?.signal.feedback.value, 'useful')
+    assert.ok((rankedInboxContent.items[0]?.signal.factors.length ?? 0) > 0)
+
+    const clearedFeedback = await client.callTool({
+      name: 'ilo_record_x_inbox_feedback',
+      arguments: {
+        accountHandle: 'subject',
+        postId: '456',
+        value: 'clear',
+      },
+    })
+    assert.equal(clearedFeedback.isError, undefined)
+    assert.equal(
+      (clearedFeedback.structuredContent as { feedback: unknown }).feedback,
+      null,
+    )
 
     const read = await client.callTool({
       name: 'ilo_update_x_inbox_item',
